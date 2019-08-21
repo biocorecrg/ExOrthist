@@ -1,0 +1,52 @@
+##SCRIPTS EXSCANOR (Exon Scanning Ortology pipeline)##
+
+Total Scripts: 37
+
+Module I.
+
+	 1. IntroduceEXON_toGTF_v3.pl
+	 2. get_aa_pos_exon.pl
+	 3. get_ex_size_phase.pl
+	 4. get_exint_file.pl
+	 5. get_genomic_coords_intron.pl
+	 6. get_prot_isof_exon_2.pl
+	 7. get_prot_isof_exon_3.pl
+	 8. get_prot_sizes_exint.pl
+	 9. get_ref_prot.pl
+	10. get_ref_prot_exint_file.pl
+	11. get_ref_proteins.pl
+	12. get_trs_gtf.pl
+	13. join_annot_fake_files.pl
+
+Module II.
+
+	 1. AlignIntronPos.pl
+	 2. Filter_final_exons_pair.pl
+	 3. Join_best_scores_files.pl
+	 4. Prepare_and_Submit_Aln-StepV_2.pl
+	 5. Realign_target_exons_by_part.pl
+	 6. Run_best_ex_pairs.pl
+	 7. Run_join_all_scores.pl
+	 8. Run_map_each_exon_prot.pl
+	 9. Run_realn_exons.pl
+	10. Run_score_all_exon_introns.pl
+	11. Run_score_by_exon.pl
+	12. Score_exons_introns_pair_sp.pl
+	13. filter_exons_by_score.pl
+	14. get_best_score_ex_pair.pl
+	15. get_count_exons.pl
+	16. get_overlap_exons.pl
+	17. get_score_by_exon.pl
+	18. get_scores_exons_introns.pl
+	19. join_score_files.pl
+	20. map_each_exon_prot.pl
+
+
+Module III.
+
+	 1. Get_Pre_cluster_exons.pl
+	 2. Get_Pre_cluster_exons_V2.pl
+	 3. Get_pre_table_clusters.pl
+	 4. Run_clustering_exons.pl
+
+
