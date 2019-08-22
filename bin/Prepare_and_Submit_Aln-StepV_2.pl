@@ -153,12 +153,12 @@ for my $i (0..$#species){
 		### Submits for exons and introns
 		if (defined ($verbose)){
 		    print "\nsubmitjob long -l h_rt=50:00:00,virtual_free=30G ".
-			"env perl $bin/Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ".
+			"perl $bin/Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ".
 			"$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part $bin $bl62 $of\n";
 		}
 		
 		system "submitjob long -l h_rt=50:00:00,virtual_free=30G ". # job conditions
-		    "env perl $bin/Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
+		    "perl $bin/Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
 		    "$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part $bin $bl62 $of\n" if $submit_aln; # input files and outputs
 		#}
 	    }

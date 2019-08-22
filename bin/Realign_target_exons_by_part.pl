@@ -132,7 +132,7 @@ while (<IN>){
 		open (TMPALN,">$texf");
 		print TMPALN ">$l[1]\n$sq1\n>$l[8]\n$sq2\n"; 
 		close (TMPALN);
-		`env perl $bin/AlignIntronPos.pl $texf`;
+		`perl $bin/AlignIntronPos.pl $texf`;
 		## 2) OPENING OUTPUT GDE FILE
 		$name="";
 		%seq=();

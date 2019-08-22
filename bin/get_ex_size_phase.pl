@@ -12,7 +12,7 @@ for ($i=0; $i<=$#ARGV; $i++){
 		$outfile=$ARGV[$i]; 		
 	}	
 	if($ARGV[$i] eq "-h"){
-		print "For running the program: env perl get_ex_size_phase.pl -GTF <gtf_file> -out <name_outfile>\n";
+		print "For running the program: perl get_ex_size_phase.pl -GTF <gtf_file> -out <name_outfile>\n";
 	}
 }
 

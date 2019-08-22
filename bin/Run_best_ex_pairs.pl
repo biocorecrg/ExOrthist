@@ -75,10 +75,10 @@ for my $i (0..$#species){
 	    system `cd $pair_folder`;
 	    if (defined ($verbose)){
 			print "cd $pair_folder\n";
-			print "submitjob env perl $bin/get_best_score_ex_pair.pl $in $of\n";
+			print "submitjob perl $bin/get_best_score_ex_pair.pl $in $of\n";
 	    }
 	    if (defined ($submit_jobs)){
-			system "submitjob env perl $bin/get_best_score_ex_pair.pl $in $of";
+			system "submitjob perl $bin/get_best_score_ex_pair.pl $in $of";
 	    }
                                                                    
 	}

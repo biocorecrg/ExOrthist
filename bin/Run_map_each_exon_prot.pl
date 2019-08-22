@@ -125,7 +125,7 @@ for my $i (0..$#species){
 			"$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part $bin $bl62 $of\n";
 		}
 		system "submitjob long -l h_rt=300:00:00,virtual_free=30G ". # job conditions
-		    "env perl $bin/map_each_exon_prot.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
+		    "perl $bin/map_each_exon_prot.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
 		    "$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part $bin $bl62 $of\n" if $submit_aln; # input files and outputs
 	    }
 	}	

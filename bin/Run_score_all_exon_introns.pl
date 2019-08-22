@@ -80,10 +80,10 @@ for my $i (0..$#species){
 	    my $if1=$int_pos{$sp1};
 	    my $if2=$int_pos{$sp2};
 	    if (defined ($verbose)){
-			print "submitjob long -l h_rt=3:00:00,virtual_free=10G env perl $bin/get_scores_exons_introns.pl $sp1 $sp2 $in1 $in2 $in3 $e1 $e2 $if1 $if2 $out\n";
+			print "submitjob long -l h_rt=3:00:00,virtual_free=10G perl $bin/get_scores_exons_introns.pl $sp1 $sp2 $in1 $in2 $in3 $e1 $e2 $if1 $if2 $out\n";
 	    }
 	    if (defined ($submit_jobs)){
-			system "submitjob long -l h_rt=3:00:00,virtual_free=10G env perl $bin/get_scores_exons_introns.pl $sp1 $sp2 $in1 $in2 $in3 $e1 $e2 $if1 $if2 $out";
+			system "submitjob long -l h_rt=3:00:00,virtual_free=10G perl $bin/get_scores_exons_introns.pl $sp1 $sp2 $in1 $in2 $in3 $e1 $e2 $if1 $if2 $out";
 	    }
                                                                    
 	}

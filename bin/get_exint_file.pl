@@ -18,7 +18,7 @@ for ($i=0; $i<=$#ARGV; $i++){
 		$outfile=$ARGV[$i]; 		
 	}	
 	if($ARGV[$i] eq "-h"){	
-		print "For running the program: env perl get_exint_file.pl -GTF <gtf_file> -G <genome.fa> -out <name_outfile>\n";
+		print "For running the program: perl get_exint_file.pl -GTF <gtf_file> -G <genome.fa> -out <name_outfile>\n";
 	}
 }
 ##Opening genome file
