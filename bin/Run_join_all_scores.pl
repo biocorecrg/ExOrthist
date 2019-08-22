@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use warnings;
 use strict;
 use Getopt::Long;
@@ -74,10 +74,10 @@ for my $i (0..$#species){
 	    system `cd $pair_folder`;
 	    if (defined ($verbose)){
 			print "cd $pair_folder\n";
-			print "submitjob perl $bin/join_score_files.pl $pair_folder\n";
+			print "submitjob env perl $bin/join_score_files.pl $pair_folder\n";
 	    }
 			if (defined ($submit_jobs)){
-				system "submitjob perl $bin/join_score_files.pl $pair_folder";
+				system "submitjob env perl $bin/join_score_files.pl $pair_folder";
 			}
                                                                    
 	}

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use warnings;
 use strict;
 use Getopt::Long;
@@ -84,11 +84,11 @@ for my $i (0..$#species){
 			$p=~s/$tx//;
 			$jid="R".$p."_".$sp1.",".$sp2;
 			if (defined ($verbose)){
-				print "system \"submitjob long -l h_rt=70:00:00,virtual_free=20G perl $bin/Realign_target_exons_by_part.pl $sp1 $sp2 $in $f_exint{$sp1} $f_exint{$sp2} $p $of $pair_folder $bl62 $bin\";\n";
+				print "system \"submitjob long -l h_rt=70:00:00,virtual_free=20G env perl $bin/Realign_target_exons_by_part.pl $sp1 $sp2 $in $f_exint{$sp1} $f_exint{$sp2} $p $of $pair_folder $bl62 $bin\";\n";
 
 			}
 			if (defined ($submit_aln)){
-				system "submitjob long -l h_rt=70:00:00,virtual_free=20G perl $bin/Realign_target_exons_by_part.pl $sp1 $sp2 $in $f_exint{$sp1} $f_exint{$sp2} $p $of $pair_folder $bl62 $bin\n";
+				system "submitjob long -l h_rt=70:00:00,virtual_free=20G env perl $bin/Realign_target_exons_by_part.pl $sp1 $sp2 $in $f_exint{$sp1} $f_exint{$sp2} $p $of $pair_folder $bl62 $bin\n";
 			}
 	    }		
 

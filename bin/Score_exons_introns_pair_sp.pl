@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #use warnings;
 use strict;
 
@@ -343,7 +343,7 @@ foreach $el (@keys){
 	    print TMPALN "$seqs{$t1[$zj]}\n$seqs{$t2[$zi]}\n"; 
 	    close (TMPALN);
 	    # RUNNING ALIGN INTRON POS
-	    `perl $bin/AlignIntronPos.pl $te`; 
+	    `env perl $bin/AlignIntronPos.pl $te`; 
 	    # ADDS GDE TO MERGE 
 	    close MERGE_ALN;
 	    system "cat $tg >> $f_merged_aln"; # we could already print a post-processed aln instead

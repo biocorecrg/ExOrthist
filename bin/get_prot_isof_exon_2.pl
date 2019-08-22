@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/env perl 
 use strict;
 #Arguments
 my ($i, $i1, $i2, $i3, $out, $out2);

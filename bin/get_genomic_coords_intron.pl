@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 use strict;
 #Declaration of variables
 #Arguments
@@ -33,7 +33,7 @@ for ($i=0; $i<=$#ARGV; $i++){
 		$out2=$ARGV[$i]; 		
 	}
 	if($ARGV[$i] eq "-h"){	
-		print "For running the program: perl get_genomic_coords_intron.pl -\n";
+		print "For running the program: env perl get_genomic_coords_intron.pl -\n";
 	}
 }
 ##Opening GTF file##

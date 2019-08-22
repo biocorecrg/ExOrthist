@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # From Scott's original script and adaptations in 2014
 # Adapted and modified AGAIN on 08/03/16 --MI

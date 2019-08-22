@@ -18,7 +18,7 @@ RUN cd mafft-${MAFFT_VERSION}-with-extensions/core;make clean; make; make instal
 RUN yum install -y epel-release libxml2-devel libcurl-devel 
 RUN yum install R-${R_VERSION} -y
 RUN mkdir -p /usr/share/doc/R-${R_VERSION}/html
-RUN Rscript -e "install.packages(c('data.table','flexdashboard','dplyr','plyr','ggExtra','ggplot2','hexbin','knitr','optparse','RColorBrewer','reshape2'), repos='http://cran.us.r-project.org')"
+RUN Rscript -e "install.packages(c('igraph'), repos='http://cran.us.r-project.org')"
 
 
 # Clean cache

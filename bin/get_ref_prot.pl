@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #use warnings;
 use strict;
 my $i1=$ARGV[0]; #

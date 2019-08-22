@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #use warnings;
 use strict;
 my ($i,$i1,$sps,$out,$m,$int,$id,$C,$A);
@@ -28,7 +28,7 @@ for ($i=0; $i<=$#ARGV; $i++){
 		$id=$ARGV[$i]; 		
 	}
 	if($ARGV[$i] eq "-h"){	
-		print "For running the program: perl filt_exons_by_score.pl -b <best_hit_exons> -s <species list separated by comma> -out outfile -max_size <max % dif size between scored exons> -int <introns to be scored>
+		print "For running the program: env perl filt_exons_by_score.pl -b <best_hit_exons> -s <species list separated by comma> -out outfile -max_size <max % dif size between scored exons> -int <introns to be scored>
 -id <min %sim between exons pairs and upstream and downstream exons>\n";
 	}
 }

@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 # started on 19/11/16
 # unlike IntroduceEXON.pl, this scripts introduces non-annotated exons into the GTFs

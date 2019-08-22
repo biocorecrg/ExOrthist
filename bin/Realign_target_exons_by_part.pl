@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use warnings;
 use strict;
 my $s1=$ARGV[0];
@@ -132,7 +132,7 @@ while (<IN>){
 		open (TMPALN,">$texf");
 		print TMPALN ">$l[1]\n$sq1\n>$l[8]\n$sq2\n"; 
 		close (TMPALN);
-		`perl $bin/AlignIntronPos.pl $texf`;
+		`env perl $bin/AlignIntronPos.pl $texf`;
 		## 2) OPENING OUTPUT GDE FILE
 		$name="";
 		%seq=();

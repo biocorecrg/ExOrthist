@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use warnings;
 use strict;
 use Getopt::Long;
@@ -64,10 +64,10 @@ for my $i (0..$#species){
 	    my $pair_folder=$dir."/".$project_dir."/".$sp1."_".$sp2;
 	    my $inf=$pair_folder."/Final_aln_scores_".$sp1."_".$sp2.".txt";
 	    if (defined ($verbose)){
-			print "submitjob long -l h_rt=10:00:00,virtual_free=10G perl $bin/get_score_by_exon.pl $inf $pair_folder\n";
+			print "submitjob long -l h_rt=10:00:00,virtual_free=10G env perl $bin/get_score_by_exon.pl $inf $pair_folder\n";
 	    }
 	    if (defined ($submit_jobs)){
-			system "submitjob long -l h_rt=10:00:00,virtual_free=10G perl $bin/get_score_by_exon.pl $inf $pair_folder";
+			system "submitjob long -l h_rt=10:00:00,virtual_free=10G env perl $bin/get_score_by_exon.pl $inf $pair_folder";
 	    }
                                                                    
 	}
