@@ -103,9 +103,9 @@ foreach my $species (@SPECIES){
 		    else {  
 			if ($res==0){ $phase=0; } elsif ($res==1 ){ $phase=2; } elsif ($res==2) { $phase=1; } 
 		    }
-				$size=($line[4]-$line[3])+1;
+		    $size=($line[4]-$line[3])+1;
 		    $tmpseq=substr($seq{$line[0]},($line[3]-1),($size));
-				if ($line[6] eq "-"){  $tmpseq=~tr/ATCG/TAGC/; $tmpseq=reverse($tmpseq); }
+		    if ($line[6] eq "-"){  $tmpseq=~tr/ATCG/TAGC/; $tmpseq=reverse($tmpseq); }
 		    $ntseq{$prot}.=$tmpseq;
 		    $rseq{$prot}.="|".$tmpseq;			
 		    $nuc=$nuc+$size;
@@ -121,70 +121,23 @@ foreach my $species (@SPECIES){
     
 ###Getting protein sequence####
     my %codons;
-    $codons{"TTT"}="F";
-    $codons{"TTC"}="F";
-    $codons{"TTA"}="L";
-    $codons{"TTG"}="L";
-    $codons{"CTT"}="L";
-    $codons{"CTC"}="L";
-    $codons{"CTA"}="L";
-    $codons{"CTG"}="L";
-    $codons{"TCT"}="S";
-    $codons{"TCC"}="S";
-    $codons{"TCA"}="S";
-    $codons{"TCG"}="S";
-    $codons{"AGT"}="S";
-    $codons{"AGC"}="S";
-    $codons{"TAT"}="Y";
-    $codons{"TAC"}="Y";
-    $codons{"TGT"}="C";
-    $codons{"TGC"}="C";
-    $codons{"TGG"}="W";
-    $codons{"CCT"}="P";
-    $codons{"CCC"}="P";
-    $codons{"CCA"}="P";
-    $codons{"CCG"}="P";
-    $codons{"CAT"}="H";
-    $codons{"CAC"}="H";
-    $codons{"CAA"}="Q";
-    $codons{"CAG"}="Q";
-    $codons{"CGT"}="R";
-    $codons{"CGC"}="R";
-    $codons{"CGA"}="R";
-    $codons{"CGG"}="R";
-    $codons{"AGA"}="R";
-    $codons{"AGG"}="R";
-    $codons{"ATT"}="I";
-    $codons{"ATC"}="I";
-    $codons{"ATA"}="I";
-    $codons{"ATG"}="M";
-    $codons{"ACT"}="T";
-    $codons{"ACC"}="T";
-    $codons{"ACA"}="T";
-    $codons{"ACG"}="T";
-    $codons{"AAT"}="N";
-    $codons{"AAC"}="N";
-    $codons{"AAA"}="K";
-    $codons{"AAG"}="K";
-    $codons{"GTT"}="V";
-    $codons{"GTC"}="V";
-    $codons{"GTA"}="V";
-    $codons{"GTG"}="V";
-    $codons{"GCT"}="A";
-    $codons{"GCC"}="A";
-    $codons{"GCA"}="A";
-    $codons{"GCG"}="A";
-    $codons{"GAT"}="D";
-    $codons{"GAC"}="D";
-    $codons{"GAA"}="E";
-    $codons{"GAG"}="E";
-    $codons{"GGT"}="G";
-    $codons{"GGC"}="G";
-    $codons{"GGA"}="G";
-    $codons{"GGG"}="G";
-    $codons{"TAG"}="stop";
-    $codons{"TAA"}="stop";
-    $codons{"TGA"}="stop";
+    $codons{"TTT"}="F";    $codons{"TTC"}="F";    $codons{"TTA"}="L";    $codons{"TTG"}="L";
+    $codons{"CTT"}="L";    $codons{"CTC"}="L";    $codons{"CTA"}="L";    $codons{"CTG"}="L";
+    $codons{"TCT"}="S";    $codons{"TCC"}="S";    $codons{"TCA"}="S";    $codons{"TCG"}="S";
+    $codons{"TAT"}="Y";    $codons{"TAC"}="Y";    $codons{"TAA"}="stop"; $codons{"TAG"}="stop";
+    $codons{"TGT"}="C";    $codons{"TGC"}="C";    $codons{"TGA"}="stop"; $codons{"TGG"}="W";    
+    $codons{"CCT"}="P";    $codons{"CCC"}="P";    $codons{"CCA"}="P";    $codons{"CCG"}="P";    
+    $codons{"CAT"}="H";    $codons{"CAC"}="H";    $codons{"CAA"}="Q";    $codons{"CAG"}="Q";    
+    $codons{"CGT"}="R";    $codons{"CGC"}="R";    $codons{"CGA"}="R";    $codons{"CGG"}="R";    
+    $codons{"AGT"}="S";    $codons{"AGC"}="S";    $codons{"AGA"}="R";    $codons{"AGG"}="R";    
+    $codons{"ATT"}="I";    $codons{"ATC"}="I";    $codons{"ATA"}="I";    $codons{"ATG"}="M";
+    $codons{"ACT"}="T";    $codons{"ACC"}="T";    $codons{"ACA"}="T";    $codons{"ACG"}="T";
+    $codons{"AAT"}="N";    $codons{"AAC"}="N";    $codons{"AAA"}="K";    $codons{"AAG"}="K";    
+    $codons{"GTT"}="V";    $codons{"GTC"}="V";    $codons{"GTA"}="V";    $codons{"GTG"}="V";
+    $codons{"GCT"}="A";    $codons{"GCC"}="A";    $codons{"GCA"}="A";    $codons{"GCG"}="A";    
+    $codons{"GAT"}="D";    $codons{"GAC"}="D";    $codons{"GAA"}="E";    $codons{"GAG"}="E";
+    $codons{"GGT"}="G";    $codons{"GGC"}="G";    $codons{"GGA"}="G";    $codons{"GGG"}="G";
+
     my @keys=keys(%ntseq);
     my $el;
     my $p;
@@ -271,3 +224,6 @@ foreach my $species (@SPECIES){
     close L_P_OUTPUT;
     close L_E_OUTPUT;
 }
+
+
+### get_trs_gtf.pl could go straight here, although there could be some clashes with variables => OK if redo species loop
