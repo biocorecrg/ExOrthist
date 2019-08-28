@@ -7,6 +7,7 @@ my $gtf_folder;
 my $genome_folder;
 my $exons_db_folder="./";
 my $species_string;
+my $verboseFlag=1;
 my $help;
 
 #Arguments
@@ -16,29 +17,42 @@ GetOptions(  "GTF=s" => \$gtf_folder,
 	     "G=s" => \$genome_folder,
 	     "EX_DB=s" => \$exons_db_folder,
 	     "sp=s" => \$species_string,
+	     "verbose=s" => \$verboseFlag,
 	     "h" => \$help,
 	     "help" => \$help
     );
 
 
+sub verbPrint {
+    my $verbMsg = shift;
+    unless ($verboseFlag == 0 || $verboseFlag eq "F" || $verboseFlag eq "FALSE") {
+	chomp($verbMsg);
+	print STDERR "[exorter mod I]: $verbMsg\n";
+    }
+}
+
 if (!defined $genome_folder || !defined $gtf_folder || !defined $species_string || defined $help){
     die "\nUsage: Run_Module_I.pl -GTF path_to_gtfs/ -G path_to_genomes/ -sp Sp1,Sp2 [-EX_DB path_to_EXONS_DB/]
 
 COMPULSORY
-     -GTF          Path where GTFs are stored (they should be named Sp1_annot.gtf)
-     -G            Path where gDNAs are stores (they should be named Sp1_gDNA.fasta)
-     -sp Sp1,Sp2   String of species.
+     -GTF            Path where GTFs are stored (they should be named Sp1_annot.gtf)
+     -G              Path where gDNAs are stores (they should be named Sp1_gDNA.fasta)
+     -sp Sp1,Sp2     String of species.
 
 OPTIONAL
-     -EX_DB        Path to EXONS_DB/ folder (default ./)     
-     -h/--help     This help message.
+     -EX_DB          Path to EXONS_DB/ folder (default ./)
+     -verbose T/F    Verbose (default TRUE) 
+     -h/--help       This help message.
 
 ";
     
 }
 
-my @SPECIES = split(/\,/, $species_string);
+### just giving the info
+verbPrint("EXONS_DB path set to $exons_db_folder\n");
 
+### loops for each species
+my @SPECIES = split(/\,/, $species_string);
 foreach my $species (@SPECIES){
 ##Opening genome file
     my (%seq);
@@ -46,12 +60,15 @@ foreach my $species (@SPECIES){
     my @g;
     my $genome_file = "$genome_folder/$species"."_gDNA.fasta";
     open (GENOME, $genome_file) || die "Cannot open $genome_file for $species\n";
+    verbPrint("Parsing gDNA file for $species\n");
     while (<GENOME>){
 	chomp($_);
 	if ($_=~/\>/){ $_=~s/\>//; @g=split(/\s+/,$_); $chr=$g[0]; }
 	else { $seq{$chr}.=$_;  }    
     }
     close (GENOME);
+
+    verbPrint("Generating exint file for $species\n");
     
 ##Opening GTF file##
 # Format GTF:
@@ -178,6 +195,8 @@ foreach my $species (@SPECIES){
     }
     close (EXINT_OUT);
 
+    verbPrint("Generating size and references files for $species\n");
+
     ### output files (former -F 2 run) 
     my $size_output = "$exons_db_folder/$species/$species"."_prot_sizes.txt";
     open (SIZE_OUT, ">$size_output") || die "Cannot open $size_output\n";
@@ -199,7 +218,7 @@ foreach my $species (@SPECIES){
 	}
 	else { 
 	    my $s2=length($_);
-	    $exint_data{$exint_prot_name}="$header\n$_\n";
+	    $exint_data{$exint_prot_name}="$header\n$_";
 	    
 	    print SIZE_OUT "$exint_prot_name\t$exint_gene_name\t$s2\n";
 	    
