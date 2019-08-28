@@ -36,34 +36,34 @@ for ($i=0; $i<=$#ARGV; $i++){
 my @species=split(/\,/,$sp);
 my (@l);
 my ($fgtf, $fref, $fgen, $out1, $out2, $rp, $j, $sfile, $n, $s, $hq);
-	for ($j=0; $j<scalar(@species); $j++){
-		$fgtf=$gtf.$species[$j]."_annot.gtf";	
-		$fgen=$genome.$species[$j]."_gDNA.fasta";
-		$rp=$species[$j]."_ref_proteins.txt";
-		$out1=$species[$j].".exint";
-		$sfile=$species[$j]."_prot_sizes.txt";
-		$out2=$species[$j]."_ref_proteins.exint";
-		$hq=$species[$j]."_HQ_prots.txt";
-		#1) Getting exint file
-		if ($f==1){
-			`perl $bin/get_exint_file.pl -GTF $fgtf -G $fgen -out $out1`;
-		}
-		else { 
-		#2) Getting sizes of annotated proteins
-		open (EXINT, "$out1");
-		open (SIZES, ">$sfile");
-		while (<EXINT>){
-			if($_=~/\>/){ 
-				@l=split(/\s+/,$_);
-				$n=$l[0];
-				$n=~s/\>//; $n=~s/\|/\t/;
-			}
-			else { chomp($_); $s=length($_); print SIZES "$n\t$s\n";  }				
-		}
-		#3) Getting reference proteins
-		`perl $bin/get_ref_prot.pl $sfile $rp`;
-		`perl $bin/get_ref_prot_exint_file.pl $rp $out1 $out2`;
+for ($j=0; $j<scalar(@species); $j++){
+    $fgtf=$gtf.$species[$j]."_annot.gtf";	
+    $fgen=$genome.$species[$j]."_gDNA.fasta";
+    $rp=$species[$j]."_ref_proteins.txt";
+    $out1=$species[$j].".exint";
+    $sfile=$species[$j]."_prot_sizes.txt";
+    $out2=$species[$j]."_ref_proteins.exint";
+    $hq=$species[$j]."_HQ_prots.txt";
+    #1) Getting exint file
+    if ($f==1){
+	`perl $bin/get_exint_file.pl -GTF $fgtf -G $fgen -out $out1`;
+    }
+    else { 
+	#2) Getting sizes of annotated proteins
+	open (EXINT, "$out1");
+	open (SIZES, ">$sfile");
+	while (<EXINT>){
+	    if($_=~/\>/){ 
+		@l=split(/\s+/,$_);
+		$n=$l[0];
+		$n=~s/\>//; $n=~s/\|/\t/;
+	    }
+	    else { chomp($_); $s=length($_); print SIZES "$n\t$s\n";  }				
 	}
+	#3) Getting reference proteins
+	`perl $bin/get_ref_prot.pl $sfile $rp`;
+	`perl $bin/get_ref_prot_exint_file.pl $rp $out1 $out2`;
+    }
 }
 
 
