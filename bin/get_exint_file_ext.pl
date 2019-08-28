@@ -5,6 +5,7 @@ use Getopt::Long;
 #Declaration of variables
 my $gtf_folder;
 my $genome_folder;
+my $exons_db_folder="./";
 my $species_string;
 my $help;
 
@@ -13,6 +14,7 @@ my $help;
 Getopt::Long::Configure("no_auto_abbrev");
 GetOptions(  "GTF=s" => \$gtf_folder,
 	     "G=s" => \$genome_folder,
+	     "EX_DB=s" => \$exons_db_folder,
 	     "sp=s" => \$species_string,
 	     "h" => \$help,
 	     "help" => \$help
@@ -20,12 +22,15 @@ GetOptions(  "GTF=s" => \$gtf_folder,
 
 
 if (!defined $genome_folder || !defined $gtf_folder || !defined $species_string || defined $help){
-    die "\nUsage: Run_Module_I.pl -GTF path_to_gtfs/ -G path_to_genomes/
+    die "\nUsage: Run_Module_I.pl -GTF path_to_gtfs/ -G path_to_genomes/ -sp Sp1,Sp2 [-EX_DB path_to_EXONS_DB/]
 
-OPTIONS
+COMPULSORY
      -GTF          Path where GTFs are stored (they should be named Sp1_annot.gtf)
      -G            Path where gDNAs are stores (they should be named Sp1_gDNA.fasta)
      -sp Sp1,Sp2   String of species.
+
+OPTIONAL
+     -EX_DB        Path to EXONS_DB/ folder (default ./)     
      -h/--help     This help message.
 
 ";
@@ -145,7 +150,7 @@ foreach my $species (@SPECIES){
     my $c=0;
  
     ### output files (former -F 1 run)
-    my $exint_output = "$species/$species.exint";
+    my $exint_output = "$exons_db_folder/$species/$species.exint";
     open (EXINT_OUT, ">$exint_output") || die "Cannot open $exint_output\n";
 
     foreach $el(@keys){ 
@@ -174,7 +179,7 @@ foreach my $species (@SPECIES){
     close (EXINT_OUT);
 
     ### output files (former -F 2 run) 
-    my $size_output = "$species/$species"."_prot_sizes.txt";
+    my $size_output = "$exons_db_folder/$species/$species"."_prot_sizes.txt";
     open (SIZE_OUT, ">$size_output") || die "Cannot open $size_output\n";
     print SIZE_OUT "ProteinID\tGeneID\tSize\n";
     
@@ -211,8 +216,8 @@ foreach my $species (@SPECIES){
     close EXINT_IN;
     close SIZE_OUT;
     
-    my $longest_prot_output = "$species/$species"."_ref_proteins.txt";
-    my $longest_exint_output = "$species/$species"."_ref_proteins.exint";
+    my $longest_prot_output = "$exons_db_folder/$species/$species"."_ref_proteins.txt";
+    my $longest_exint_output = "$exons_db_folder/$species/$species"."_ref_proteins.exint";
     open (L_P_OUTPUT, ">$longest_prot_output") || die "Cannot open $longest_prot_output\n";
     open (L_E_OUTPUT, ">$longest_exint_output") || die "Cannot open $longest_exint_output\n";
     
