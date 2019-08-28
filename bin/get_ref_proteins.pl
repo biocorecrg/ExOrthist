@@ -29,9 +29,8 @@ for ($i=0; $i<=$#ARGV; $i++){
 	    $bin=$ARGV[$i];
         }
 	if($ARGV[$i] eq "-h"){	
-		print "For running the program: perl get_ref_proteins.pl -GTF <folder GTF files> -G <folder with Genome sequences> -S <species list separated by comma> -F <1 or 2> -bin <bin_directory>
-\n";
-		print "-F 1 for generating the exint file; -F 2 for generating the reference file\n"
+		die "\nFor running the program: perl get_ref_proteins.pl -GTF <folder GTF files> -G <folder with Genome sequences> -S <species list separated by comma> -F <1 or 2> -bin <bin_directory>\n\n".
+		    "OPTIONS\n-F 1 for generating the exint file; -F 2 for generating the reference file\n\n";
 	}
 }
 my @species=split(/\,/,$sp);
