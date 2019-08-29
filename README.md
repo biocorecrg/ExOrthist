@@ -33,3 +33,15 @@ Docker image was uploaded to [Docker Hub](https://cloud.docker.com/u/biocorecrg/
 
 
 * deprecates: get_ref_proteins.pl, get_exint_file.pl, get_ref_prot.pl, get_ref_prot_exint_file.pl
+
+# Nextflow pipeline
+2 modules.
+
+* Module 1
+     * input:
+     * output:
+     * options:
+     * scripts that have to be called and the command line for their use.
+          * script 1
+          * script 2
+          * etc...
