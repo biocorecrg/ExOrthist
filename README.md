@@ -31,6 +31,7 @@ Docker image was uploaded to [Docker Hub](https://cloud.docker.com/u/biocorecrg/
      -sp Sp1,Sp2   String of species.
      -h/--help     This help message.`
 
+**LUCA** I think that asking for naming conventions of gtf and fasta file is not a good idea... how many genomes do you expect? why not indicating them like a list of files? -GTF Sp1_annot.gtf,Sp2_annot.gtf.. -G Sp1_gDNA.fasta,Sp2_gDNA.fasta etc? 
 
 * deprecates: get_ref_proteins.pl, get_exint_file.pl, get_ref_prot.pl, get_ref_prot_exint_file.pl
 
