@@ -641,7 +641,7 @@ if ($vastdb_refs){
 	    $s=$line[3]; $s=~s/\,/\|/g; $s=~s/\-/\,/g; $s=~s/\|/\-/g;
 	    @n=split(/\|/,$line[0]);
 	    ### This gave WARNINGS: basically, nc transcripts do not have prot?
-#	    $trid{$n[0]}="NA" if (!$trid{$n[0]}); # this adds lines in the output for nc exons
+#	    $trid{$n[0]}="NA" if (!$trid{$n[0]}); # this solution adds lines in the output for nc exons
 	    $coords{$trid{$n[0]}}=$line[1].":".$line[3].":".$line[2] if (defined $trid{$n[0]});
 	    if ($line[3]=~/\-/){
 		@c=split(/\-/,$_);
@@ -662,7 +662,8 @@ if ($vastdb_refs){
 		    }
 		    if (!$pid{$ex}){
 			$pid{$ex}=$trid{$n[0]};
-			$lprot{$ex}=$psize{$trid{$n[0]}};
+			# This gave warnings
+			$lprot{$ex}=$psize{$trid{$n[0]}} if (defined $trid{$n[0]});
 		    }
 		    else {  
 			if ($psize{$trid{$n[0]}} > $lprot{$ex}){
