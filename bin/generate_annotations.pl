@@ -34,7 +34,9 @@ sub verbPrint {
 }
 
 if (!defined $genome_folder || !defined $gtf_folder || !defined $species_string || defined $help){
-    die "\nUsage: Run_Module_I.pl -GTF path_to_gtfs/ -G path_to_genomes/ -sp Sp1,Sp2 [-EX_DB path_to_EXONS_DB/]
+    die "\nUsage: generate_annotations.pl -GTF path_to_gtfs/ -G path_to_genomes/ -sp Sp1,Sp2 [-EX_DB path_to_EXONS_DB/]
+
+Script that creates all annotation files needed for the second module of the pipeline
 
 COMPULSORY
      -GTF              Path where GTFs are stored (they should be named Sp1_annot.gtf)
