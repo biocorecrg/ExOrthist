@@ -1,6 +1,7 @@
 #!/usr/bin/env perl -w
 use strict;
 use Getopt::Long;
+use Cwd qw(abs_path cwd);
 
 #Declaration of variables
 my $gtf_folder;
@@ -34,7 +35,7 @@ sub verbPrint {
 }
 
 if (!defined $genome_folder || !defined $gtf_folder || !defined $species_string || defined $help){
-    die "\nUsage: generate_annotations.pl -GTF path_to_gtfs/ -G path_to_genomes/ -sp Sp1,Sp2 [-EX_DB path_to_EXONS_DB/]
+    die "\nUsage: generate_annotations.pl -GTF path_to_gtfs/ -G path_to_genomes/ -sp Sp1,Sp2 [-EX_DB path_to_EXONS_DB/ -vastdb REF1,REF2]
 
 Script that creates all annotation files needed for the second module of the pipeline
 
@@ -471,6 +472,7 @@ if (defined $vastdb_refs){
 	    @line=split(/\t/,$_);
 	    $s=$line[3]; $s=~s/\,/\|/g; $s=~s/\-/\,/g; $s=~s/\|/\-/g;
 	    $coords{$line[0]}=$line[1].":".$line[3].":".$line[2];
+	    
 	    if ($line[3]=~/\-/){
 		@c=split(/\-/,$_);
 		for ($l=1; $l<scalar(@c)-1; $l++){
@@ -480,9 +482,18 @@ if (defined $vastdb_refs){
 		    $tmp=~s/\,/\-/;
 		    $ex2=$line[1].":".$tmp;
 		    if ($line[2] eq "+"){ 
+			no warnings;
+			# WARNING :This line emits a nasty warning, but it's probably OK (the + value is ignored)
+			#          It could be disabled with:     $t1[1] = "NA" if !defined $t1[1];
 			$ex=$line[1].":".$t1[1].",".$tmp.",".$t2[0].":".$line[2];
 		    }
-		    else {  $ex=$line[1].":".$t2[0].",".$tmp.",".$t1[1].":".$line[2]; }
+		    else {
+			no warnings;
+			# WARNING :This line emits a nasty warning, but it's probably OK (the + value is ignored)
+			#          It could be disabled with:     $t1[1] = "NA" if !defined $t1[1];
+			$ex=$line[1].":".$t2[0].",".$tmp.",".$t1[1].":".$line[2]; 
+		    }
+
 		    if (!$pid{$ex}){
 			$pid{$ex}=$line[0];				
 			$pid{$ex2}=$line[0];
@@ -504,7 +515,9 @@ if (defined $vastdb_refs){
 		    if ($line[2] eq "+"){
 			$intron=$line[1].":".$t1[0].",".$t1[1].":".$line[2];
 		    }
-		    else {  $intron=$line[1].":".$t1[1].",".$t1[0].":".$line[2]; }
+		    else {  
+			$intron=$line[1].":".$t1[1].",".$t1[0].":".$line[2]; 
+		    }
 		    if (!$pid{$intron}){
 			$pid{$intron}=$line[0];
 			$lprot{$intron}=$psize{$line[0]};
@@ -625,10 +638,14 @@ if (defined $vastdb_refs){
 	open (INTHR, $i3) || die "Cannot open $i3 (loop 4)\n";
 	# Format: BL20899_cuf1|BL20899	Sc0000317	-	255783,255866-258240,258374-259202,259294
 	while (<INTHR>){ 
+	    no warnings;
+	    ### This whole loop gives quite a few warnings. Clean
+
 	    chomp($_);		
 	    @line=split(/\t/,$_);
 	    $s=$line[3]; $s=~s/\,/\|/g; $s=~s/\-/\,/g; $s=~s/\|/\-/g;
 	    @n=split(/\|/,$line[0]);
+	    ### This gives WARNINGS
 	    $coords{$trid{$n[0]}}=$line[1].":".$line[3].":".$line[2];
 	    if ($line[3]=~/\-/){
 		@c=split(/\-/,$_);
@@ -638,9 +655,15 @@ if (defined $vastdb_refs){
 		    $tmp=$c[$l];
 		    $tmp=~s/\,/\-/;
 		    if ($line[2] eq "+"){
+			no warnings;
+			# WARNINGS: same issues as above
 			$ex=$line[1].":".$t1[1].",".$tmp.",".$t2[0].":".$line[2];
 		    }
-		    else {  $ex=$line[1].":".$t2[0].",".$tmp.",".$t1[1].":".$line[2]; }
+		    else {  
+			no warnings;
+			# WARNINGS: same issues as above
+			$ex=$line[1].":".$t2[0].",".$tmp.",".$t1[1].":".$line[2]; 
+		    }
 		    if (!$pid{$ex}){
 			$pid{$ex}=$trid{$n[0]};
 			$lprot{$ex}=$psize{$trid{$n[0]}};
@@ -658,7 +681,9 @@ if (defined $vastdb_refs){
 		    if ($line[2] eq "+"){
 			$intron=$line[1].":".$t1[0].",".$t1[1].":".$line[2];
 		    }
-		    else {  $intron=$line[1].":".$t1[1].",".$t1[0].":".$line[2]; }
+		    else {  
+			$intron=$line[1].":".$t1[1].",".$t1[0].":".$line[2]; 
+		    }
 		    if (!$pid{$intron}){
 			$pid{$intron}=$trid{$n[0]};
 			$lprot{$intron}=$psize{$trid{$n[0]}};
