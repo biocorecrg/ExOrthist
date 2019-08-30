@@ -640,12 +640,9 @@ if ($vastdb_refs){
 	    @line=split(/\t/,$_);
 	    $s=$line[3]; $s=~s/\,/\|/g; $s=~s/\-/\,/g; $s=~s/\|/\-/g;
 	    @n=split(/\|/,$line[0]);
-	    ### This gave WARNINGS
-#	    $line[1]="NA" if (!defined $line[1]);
-#	    $line[2]="NA" if (!defined $line[2]);
-#	    $line[3]="NA" if (!defined $line[3]);
-	    
-	    $coords{$trid{$n[0]}}=$line[1].":".$line[3].":".$line[2];
+	    ### This gave WARNINGS: basically, nc transcripts do not have prot?
+#	    $trid{$n[0]}="NA" if (!$trid{$n[0]}); # this adds lines in the output for nc exons
+	    $coords{$trid{$n[0]}}=$line[1].":".$line[3].":".$line[2] if (defined $trid{$n[0]});
 	    if ($line[3]=~/\-/){
 		@c=split(/\-/,$_);
 		for ($l=1; $l<scalar(@c)-1; $l++){
@@ -655,12 +652,12 @@ if ($vastdb_refs){
 		    $tmp=~s/\,/\-/;
 		    if ($line[2] eq "+"){
 			# WARNINGS: same issues as above
-			$t1[1]= "NA" if !defined $t1[1];
+			$t1[1]= "NA" if (!defined $t1[1]);
 			$ex=$line[1].":".$t1[1].",".$tmp.",".$t2[0].":".$line[2];
 		    }
 		    else {  
 			# WARNINGS: same issues as above
-			$t1[1]= "NA" if !defined $t1[1];
+			$t1[1]= "NA" if (!defined $t1[1]);
 			$ex=$line[1].":".$t2[0].",".$tmp.",".$t1[1].":".$line[2]; 
 		    }
 		    if (!$pid{$ex}){
@@ -678,9 +675,13 @@ if ($vastdb_refs){
 		for ($l=1; $l<scalar(@c)-1; $l++){
 		    @t1=split(/\-/,$c[$l]);
 		    if ($line[2] eq "+"){
+			# WARNINGS: same issues as above
+			$t1[1]= "NA" if (!defined $t1[1]);
 			$intron=$line[1].":".$t1[0].",".$t1[1].":".$line[2];
 		    }
-		    else {  
+		    else { 
+ 			# WARNINGS: same issues as above
+			$t1[1]= "NA" if (!defined $t1[1]);
 			$intron=$line[1].":".$t1[1].",".$t1[0].":".$line[2]; 
 		    }
 		    if (!$pid{$intron}){
