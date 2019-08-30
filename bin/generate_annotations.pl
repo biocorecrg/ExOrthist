@@ -482,16 +482,12 @@ if ($vastdb_refs){
 		    $tmp=~s/\,/\-/;
 		    $ex2=$line[1].":".$tmp;
 		    if ($line[2] eq "+"){ 
-#			no warnings;
-			# WARNING :This line emits a nasty warning, but it's probably OK (the + value is ignored)
-			#          It could be disabled with:     $t1[1] = "NA" if !defined $t1[1];
+			# WARNING :This line emited a nasty warning, but it's probably OK (the + value is ignored)
 			$t1[1]= "NA" if !defined $t1[1];
 			$ex=$line[1].":".$t1[1].",".$tmp.",".$t2[0].":".$line[2];
 		    }
 		    else {
-#			no warnings;
-			# WARNING :This line emits a nasty warning, but it's probably OK (the + value is ignored)
-			#          It could be disabled with:     $t1[1] = "NA" if !defined $t1[1];
+			# WARNING :This line emited a nasty warning, but it's probably OK (the + value is ignored)
 			$t1[1]= "NA" if !defined $t1[1];
 			$ex=$line[1].":".$t2[0].",".$tmp.",".$t1[1].":".$line[2]; 
 		    }
@@ -640,14 +636,15 @@ if ($vastdb_refs){
 	open (INTHR, $i3) || die "Cannot open $i3 (loop 4)\n";
 	# Format: BL20899_cuf1|BL20899	Sc0000317	-	255783,255866-258240,258374-259202,259294
 	while (<INTHR>){ 
-	    no warnings;
-	    ### This whole loop gives quite a few warnings. Clean
-
 	    chomp($_);		
 	    @line=split(/\t/,$_);
 	    $s=$line[3]; $s=~s/\,/\|/g; $s=~s/\-/\,/g; $s=~s/\|/\-/g;
 	    @n=split(/\|/,$line[0]);
-	    ### This gives WARNINGS
+	    ### This gave WARNINGS
+#	    $line[1]="NA" if (!defined $line[1]);
+#	    $line[2]="NA" if (!defined $line[2]);
+#	    $line[3]="NA" if (!defined $line[3]);
+	    
 	    $coords{$trid{$n[0]}}=$line[1].":".$line[3].":".$line[2];
 	    if ($line[3]=~/\-/){
 		@c=split(/\-/,$_);
@@ -657,13 +654,13 @@ if ($vastdb_refs){
 		    $tmp=$c[$l];
 		    $tmp=~s/\,/\-/;
 		    if ($line[2] eq "+"){
-			no warnings;
 			# WARNINGS: same issues as above
+			$t1[1]= "NA" if !defined $t1[1];
 			$ex=$line[1].":".$t1[1].",".$tmp.",".$t2[0].":".$line[2];
 		    }
 		    else {  
-			no warnings;
 			# WARNINGS: same issues as above
+			$t1[1]= "NA" if !defined $t1[1];
 			$ex=$line[1].":".$t2[0].",".$tmp.",".$t1[1].":".$line[2]; 
 		    }
 		    if (!$pid{$ex}){
