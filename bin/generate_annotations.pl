@@ -662,7 +662,7 @@ if ($vastdb_refs){
 		    }
 		    if (!$pid{$ex}){
 			$pid{$ex}=$trid{$n[0]};
-			# This gave warnings
+			# This gave warnings (likely for nc transcripts)
 			$lprot{$ex}=$psize{$trid{$n[0]}} if (defined $trid{$n[0]});
 		    }
 		    else {  
@@ -687,12 +687,14 @@ if ($vastdb_refs){
 		    }
 		    if (!$pid{$intron}){
 			$pid{$intron}=$trid{$n[0]};
-			$lprot{$intron}=$psize{$trid{$n[0]}};
+			# This gave warnings (likely for nc transcripts)
+			$lprot{$intron}=$psize{$trid{$n[0]}} if (defined $trid{$n[0]});
 		    }
 		    else {  
 			if ($psize{$trid{$n[0]}} > $lprot{$intron}){
 			    $pid{$intron}=$trid{$n[0]};
-			    $lprot{$intron}=$psize{$trid{$n[0]}};
+			    # This gave warnings (likely for nc transcripts) 
+			    $lprot{$intron}=$psize{$trid{$n[0]}} if (defined $trid{$n[0]});
 			}
 		    }
 		}
