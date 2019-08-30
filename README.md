@@ -13,7 +13,9 @@ Docker image was uploaded to [Docker Hub](https://cloud.docker.com/u/biocorecrg/
 
      a) IntroduceEXON_toGTF_v3.pl 
 
-`Usage: IntroduceEXON_toGTF_v3.pl REFERENCE GTF Sp Dir_vastb_files genome_file`
+```
+Usage: IntroduceEXON_toGTF_v3.pl REFERENCE GTF Sp Dir_vastb_files genome_file
+```
 
 * deprecates: join_annot_fake_files.pl
 * comments: add proper get_options functionality?
@@ -23,23 +25,26 @@ Docker image was uploaded to [Docker Hub](https://cloud.docker.com/u/biocorecrg/
 
 1) generate_annotations.pl
 
-`Usage: generate_annotations.pl -GTF path_to_gtfs/ -G path_to_genomes/ -sp Sp1,Sp2 [-EX_DB path_to_EXONS_DB/ -vastdb REF1,REF2]`
+```
+Usage: generate_annotations.pl -GTF path_to_gtfs/ -G path_to_genomes/ -sp Sp1,Sp2 [-EX_DB path_to_EXONS_DB/ -vastdb REF1,REF2]
 
-`Script that creates all annotation files needed for the second module of the pipeline`
+Script that creates all annotation files needed for the second module of the pipeline
 
-`COMPULSORY
+COMPULSORY
      -GTF              Path where GTFs are stored (they should be named Sp1_annot.gtf)
      -G                Path where gDNAs are stores (they should be named Sp1_gDNA.fasta)
-     -sp Sp1,Sp2       String of species.`
+     -sp Sp1,Sp2       String of species.
 
-`OPTIONAL
+OPTIONAL
      -vastdb r1,r2     Comma-separated list of VASTDB reference files (must match species list in -sp)
                            If a species is missing the reference file, "NA" should be provided
      -EX_DB            Path to EXONS_DB/ folder (default ./; i.e. working directory)
                            If it does not exit, it will create a EXONS_DB/ folder in the working directory
      -verbose T/F      Verbose (default TRUE) 
-     -h/--help         This help message.`
-     
+     -h/--help         This help message.
+
+```
+
      
 
 * deprecates: all other scripts from Module I
