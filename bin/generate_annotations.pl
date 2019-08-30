@@ -30,7 +30,7 @@ sub verbPrint {
     my $verbMsg = shift;
     unless ($verboseFlag == 0 || $verboseFlag eq "F" || $verboseFlag eq "FALSE") {
 	chomp($verbMsg);
-	print STDERR "[exorter mod I]: $verbMsg\n";
+	print STDERR "[exorter annotation]: $verbMsg\n";
     }
 }
 
@@ -66,7 +66,7 @@ my @SPECIES = split(/\,/, $species_string);
 
 ### prepares VASTDB references files
 my %VASTDB_files;
-if (defined $vastdb_refs){
+if ($vastdb_refs){
     my @temp_vts=split(/\,/,$vastdb_refs);
     die "You need to provide the same number of comma-separated elements for -vastdb and -sp\n" if $#SPECIES != $#temp_vts;
     foreach my $i (0..$#SPECIES){
@@ -423,7 +423,7 @@ foreach my $species (@SPECIES){
 
 
 ### Only if VASTDB files provided
-if (defined $vastdb_refs){
+if ($vastdb_refs){
     ### loops for each species (Loop 3: get_prot_isof_exon_2.pl)
     #   -i1 Hsa_prot_sizes.txt -i2 Hsa_tr_coords_CDS.txt -i3 REFERENCE-ALL_ANNOT-Hs2136.tab 
     #   -o1 Ref_protein_exons_Hsa_1.txt -o2 missing_exons.txt
@@ -482,15 +482,17 @@ if (defined $vastdb_refs){
 		    $tmp=~s/\,/\-/;
 		    $ex2=$line[1].":".$tmp;
 		    if ($line[2] eq "+"){ 
-			no warnings;
+#			no warnings;
 			# WARNING :This line emits a nasty warning, but it's probably OK (the + value is ignored)
 			#          It could be disabled with:     $t1[1] = "NA" if !defined $t1[1];
+			$t1[1]= "NA" if !defined $t1[1];
 			$ex=$line[1].":".$t1[1].",".$tmp.",".$t2[0].":".$line[2];
 		    }
 		    else {
-			no warnings;
+#			no warnings;
 			# WARNING :This line emits a nasty warning, but it's probably OK (the + value is ignored)
 			#          It could be disabled with:     $t1[1] = "NA" if !defined $t1[1];
+			$t1[1]= "NA" if !defined $t1[1];
 			$ex=$line[1].":".$t2[0].",".$tmp.",".$t1[1].":".$line[2]; 
 		    }
 
