@@ -66,7 +66,7 @@ if (defined $vastdb_refs){
     foreach my $i (0..$#SPECIES){
 	$VASTDB_files{$SPECIES[$i]}=$temp_vts[$i];
     }
-    verbPrint("VASTDB Reference files provided\n";
+    verbPrint("VASTDB Reference files provided\n");
 }
 
 ### loops for each species (Loop 1: previous get_ref_proteins.pl)
@@ -415,7 +415,7 @@ foreach my $species (@SPECIES){
 
 ### Only if VASTDB files provided
 if (defined $vastdb_refs){
-    ### loops for each species (loop 3: get_prot_isof_exon_2.pl)
+    ### loops for each species (Loop 3: get_prot_isof_exon_2.pl)
     #   -i1 Hsa_prot_sizes.txt -i2 Hsa_tr_coords_CDS.txt -i3 REFERENCE-ALL_ANNOT-Hs2136.tab 
     #   -o1 Ref_protein_exons_Hsa_1.txt -o2 missing_exons.txt
     foreach my $species (@SPECIES){  
@@ -434,17 +434,17 @@ if (defined $vastdb_refs){
 	# Declaration of input files
 	my $i1 = "$exons_db_folder/$species/$species"."_prot_sizes.txt";
 	my $i2 = "$exons_db_folder/$species/$species"."_tr_coords_CDS.txt";
-	my $i3 = $VASTDB_refs{$species};
+	my $i3 = $VASTDB_files{$species};
 	
 	# Declaration of output files
 	my $out = "$exons_db_folder/$species/Ref_protein_exons_".$species."_1.txt";
 	my $out2 = "$exons_db_folder/$species/missing_exons.txt";
 	open (OUT,">$out") || die "Cannot open $out (loop 3)\n";
 	open (MISS,">$out2") || die "Cannot open $out2 (loop 3)\n";
-
+	
 	verbPrint("Generating Ref_protein_exons_".$species."_1.txt and missing_exons.txt from VASTDB\n");
 
-	open (INONE, $i1) || die "Cannot open $i (loop 3)\n";
+	open (INONE, $i1) || die "Cannot open $i1 (loop 3)\n";
         # Format: BL21561_evm0	BL21561	476
 	while (<INONE>){ 
 	    chomp($_);
@@ -718,8 +718,7 @@ if (defined $vastdb_refs){
 	close IN;
     }
 }
-} # shit
-    
+
 ### loops for each species (Loop 5: get_aa_pos_exon.pl)
 #   -i Hsa_annot_exons_prot_ids.txt –v Hsa_vast_exons_prot_ids.txt -GTF Hsa_annot.gtf 
 #   -out Hsa_protein_ids_exons_pos.txt
@@ -730,7 +729,7 @@ foreach my $species (@SPECIES){
     my (%header, %ntseq);
     my $b=0;
     my (@l, @l1, @line, @l2, @l3, @s);
-
+    
     # Declaration of input files
     my $p = "$exons_db_folder/$species/$species"."_annot_exons_prot_ids.txt";
     my $v = "$exons_db_folder/$species/$species"."_vast_exons_prot_ids.txt" if (-e "$exons_db_folder/$species/$species"."_vast_exons_prot_ids.txt");
@@ -837,8 +836,8 @@ foreach my $species (@SPECIES){
     my $p = "$exons_db_folder/$species/$species"."_annot_exons_prot_ids.txt";
     my $v = "$exons_db_folder/$species/$species"."_vast_exons_prot_ids.txt" if (-e "$exons_db_folder/$species/$species"."_vast_exons_prot_ids.txt");
     my $t = "$exons_db_folder/$species/$species"."_trid_protid.txt";
-    my $c1 = "$exons_db_folder/$species/$species"."_tr_coords.txt";
-    my $c2 = "$exons_db_folder/$species/$species"."_tr_coords_CDS.txt";
+    my $i1 = "$exons_db_folder/$species/$species"."_tr_coords.txt";
+    my $i2 = "$exons_db_folder/$species/$species"."_tr_coords_CDS.txt";
     
     # Declaration of output files
     my $out1 = "$exons_db_folder/$species/$species"."_protein_ids_intron_pos.txt";
