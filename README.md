@@ -21,23 +21,42 @@ Docker image was uploaded to [Docker Hub](https://cloud.docker.com/u/biocorecrg/
      b) cat Fake.gtf >> Sp_annot.gtf
 
 
-1) get_exint_file_ext.pl 
+1) generate_annotations.pl
 
-`Usage: Run_Module_I.pl -GTF path_to_gtfs/ -G path_to_genomes/`
+`Usage: generate_annotations.pl -GTF path_to_gtfs/ -G path_to_genomes/ -sp Sp1,Sp2 [-EX_DB path_to_EXONS_DB/ -vastdb REF1,REF2]`
 
-`OPTIONS
-     -GTF          Path where GTFs are stored (they should be named Sp1_annot.gtf)
-     -G            Path where gDNAs are stores (they should be named Sp1_gDNA.fasta)
-     -sp Sp1,Sp2   String of species.
-     -h/--help     This help message.`
+`Script that creates all annotation files needed for the second module of the pipeline`
 
-* deprecates: get_ref_proteins.pl, get_exint_file.pl, get_ref_prot.pl, get_ref_prot_exint_file.pl
+`COMPULSORY
+     -GTF              Path where GTFs are stored (they should be named Sp1_annot.gtf)
+     -G                Path where gDNAs are stores (they should be named Sp1_gDNA.fasta)
+     -sp Sp1,Sp2       String of species.`
+
+`OPTIONAL
+     -vastdb r1,r2     Comma-separated list of VASTDB reference files (must match species list in -sp)
+                           If a species is missing the reference file, "NA" should be provided
+     -EX_DB            Path to EXONS_DB/ folder (default ./; i.e. working directory)
+                           If it does not exit, it will create a EXONS_DB/ folder in the working directory
+     -verbose T/F      Verbose (default TRUE) 
+     -h/--help         This help message.`
+     
+     
+
+* deprecates: all other scripts from Module I
+* Example to run it on test
+perl ../../bin/generate_annotations.pl -GTF ../GTF/ -G ../GENOMES/ -sp Dme,Ame -vastdb ../VASTDB_files/REFERENCE-ALL_ANNOT-Dme66.tab,../VASTDB_files/REFERENCE-ALL_ANNOT-Ame101.tab
+
+* It creates all files, but some may have different names and other for sure can be deleted after running.
+
 
 **LUCA**
 ```
  I think that asking for naming conventions of gtf and fasta file is not a good idea... how many genomes do you expect? why not indicating them like a list of files? -GTF Sp1_annot.gtf,Sp2_annot.gtf.. -G Sp1_gDNA.fasta,Sp2_gDNA.fasta etc? 
 ```
-
+**MANU**
+```
+It could a possibility. It would require changing the code a bit and it's a bit more tedious (and ugly) to run. For instance, Yamile ran it for 16 species. 
+```
 
 # Nextflow pipeline
 2 modules.
