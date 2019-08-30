@@ -44,7 +44,8 @@ COMPULSORY
 OPTIONAL
      -vastdb r1,r2     Comma-separated list of VASTDB reference files (must match species list in -sp)
                            If a species is missing the reference file, \"NA\" should be provided
-     -EX_DB            Path to EXONS_DB/ folder (default ./)
+     -EX_DB            Path to EXONS_DB/ folder (default ./; i.e. working directory)
+                           If it does not exit, it will create a EXONS_DB/ folder in the working directory
      -verbose T/F      Verbose (default TRUE) 
      -h/--help         This help message.
 
@@ -52,8 +53,10 @@ OPTIONAL
     
 }
 
-### just giving the info
-verbPrint("EXONS_DB path set to $exons_db_folder\n");
+### setting EXONS_DB
+system "mkdir $exons_db_folder" unless (-e $exons_db_folder);
+my $full_path_exons_db = abs_path($exons_db_folder);
+verbPrint("EXONS_DB path set to $full_path_exons_db\n");
 
 ### Gets @SPECIES array
 my @SPECIES = split(/\,/, $species_string);
@@ -71,7 +74,10 @@ if (defined $vastdb_refs){
 
 ### loops for each species (Loop 1: previous get_ref_proteins.pl)
 foreach my $species (@SPECIES){
-##Opening genome file
+    # In this first loop, it checks if the folders for each species exist or create them
+    system "mkdir $exons_db_folder/$species" unless (-e "$exons_db_folder/$species");
+
+    # Opening genome file
     my (%seq);
     my $chr;
     my @g;
