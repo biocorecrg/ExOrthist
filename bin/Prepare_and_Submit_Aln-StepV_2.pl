@@ -2,6 +2,7 @@
 use warnings;
 use strict;
 use Getopt::Long;
+use Data::Dumper;
 
 ### AIMS OF SCRIPT
 #* to split the gene clusters into smaller bits (e.g. 1000 clusters per file)
@@ -53,7 +54,7 @@ Usage: Prepare_and_Submit_Aln-StepV_2.pl -sp Sp1,Sp2,Sp3 --gene_cluster FILE [op
 OPTIONS
     --clean                   Force removal of previous data [def OFF]
     --submit_aln              Submit the jobs of for scoring ex/introns [def OFF]
-    --dir PATH                Root directory where project will be created. This directory has to have the EXONS_DB folder with the output obtained in Module I for each species.
+    --dir PATH                EXONS_DB folder with the output obtained in Module I for each species.
     --bin PATH                Bin directory where the exon orthology pipeline is located                 
     --verbose                 Prints commands in screen [def OFF]
     --N_split int             Number of cluster per subfile in jobs [def 1000]       
@@ -75,10 +76,11 @@ my %f_exon_pos;
 my %f_intron_pos;
 
 foreach my $sp (@species){ # technically speaking, the downstream scripts should handle with just providing Sp1 and Sp2
-    $f_exint{$sp}="$dir/EXONS_DB/$sp/$sp"."_annot_fake.exint";
-    $f_protIDs{$sp}="$dir/EXONS_DB/$sp/$sp"."_annot_fake_protein_ids_exons.txt";
-    $f_exon_pos{$sp}="$dir/EXONS_DB/$sp/$sp"."_annot_fake_protein_ids_exons_pos.txt";
-    $f_intron_pos{$sp}="$dir/EXONS_DB/$sp/$sp"."_annot_fake_protein_ids_intron_pos_CDS.txt";
+    # I removed the hardcoded EXONS_DB
+    $f_exint{$sp}="$dir/$sp/$sp".".exint";
+    $f_protIDs{$sp}="$dir/$sp/$sp"."_annot_exons_prot_ids.txt"; # before _annot_fake_protein_ids_exons.txt"
+    $f_exon_pos{$sp}="$dir/$sp/$sp"."_protein_ids_exons_pos.txt";
+    $f_intron_pos{$sp}="$dir/$sp/$sp"."_protein_ids_intron_pos_CDS.txt";
 
     die "Cannot find exint file for $sp\n" unless (-e $f_exint{$sp});
     die "Cannot find prot IDs file for $sp\n" unless (-e $f_protIDs{$sp});
@@ -182,28 +184,28 @@ sub split_cluster {
     my $n=0;
     open (CL, $full_cluster) || die "Cannot open $full_cluster file\n";
     while (<CL>){ 
-	chomp($_);
-	my @line = split(/\t/,$_);    	
-    	open (OUT, ">>$cluster_root-part_"."$part"); # first part already defined
-	if ($n<$N_split){
-		if (!$cid{$line[0]}){
+		chomp($_);
+		my @line = split(/\t/,$_);    	
+			open (OUT, ">>$cluster_root-part_"."$part"); # first part already defined
+		if ($n<$N_split){
+			if (!exists($cid{$line[0]})){
+				$n++;
+				$cid{$line[0]}=1;
+			}
+			print OUT "$_\n";
+		}
+		else {
+
 			$n++;
 			$cid{$line[0]}=1;
+			print OUT "$_\n";
+			$n=0;
+			$part++;
+
 		}
-		print OUT "$_\n";
-	}
-	else {
+		close (OUT);	
 
-		$n++;
-		$cid{$line[0]}=1;
-		print OUT "$_\n";
-		$n=0;
-		$part++;
-
-	}
-	close (OUT);	
-
-    }
+		}
     close (CL);
     $N_parts{$full_cluster}=$part;
 
