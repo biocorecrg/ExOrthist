@@ -65,7 +65,7 @@ It could a possibility. It would require changing the code a bit and it's a bit 
 
 **LUCA**
 ```
-Yes but this then is easy to wrap with NF and to even laungh the 16 species in parallel. Moreover we can allow the use of gzipped input files as an option. 
+Yes but this then is easy to wrap with NF and to even launch the 16 species in parallel. Moreover we can allow the use of gzipped input files as an option. 
 ```
 
 
