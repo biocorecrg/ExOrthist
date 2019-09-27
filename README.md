@@ -60,8 +60,14 @@ perl ../../bin/generate_annotations.pl -GTF ../GTF/ -G ../GENOMES/ -sp Dme,Ame -
 ```
 **MANU**
 ```
-It could a possibility. It would require changing the code a bit and it's a bit more tedious (and ugly) to run. For instance, Yamile ran it for 16 species. 
+It could a possibility. It would require changing the code a bit and it's a bit more tedious (and ugly) to run. For instance, Yamile ran it for 16 species.
 ```
+
+**LUCA**
+```
+Yes but this then is easy to wrap with NF and to even laungh the 16 species in parallel. Moreover we can allow the use of gzipped input files as an option. 
+```
+
 
 # Nextflow pipeline
 2 modules.
