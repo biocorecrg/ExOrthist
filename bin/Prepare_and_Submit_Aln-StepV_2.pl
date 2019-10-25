@@ -34,7 +34,7 @@ my $help;
 
 ### Get options:
 Getopt::Long::Configure("no_auto_abbrev");
-GetOptions(  "gene_cluster=s" => \$f_gene_cluster,
+GetOptions( "gene_cluster=s" => \$f_gene_cluster,
 	     "extra_cluster=s" => \$f_extra_cluster,
 	     "sp=s" => \$species_array,
 	     "clean" => \$clean,
@@ -56,6 +56,7 @@ OPTIONS
     --submit_aln              Submit the jobs of for scoring ex/introns [def OFF]
     --dir PATH                EXONS_DB folder with the output obtained in Module I for each species.
     --bin PATH                Bin directory where the exon orthology pipeline is located                 
+    --outfolder               output folder                 
     --verbose                 Prints commands in screen [def OFF]
     --N_split int             Number of cluster per subfile in jobs [def 1000]       
     --extra_cluster  FILE     Additional file for certain species [def OFF]
@@ -134,16 +135,7 @@ for my $i (0..$#species){
 	    ### here it could read the file with ALL previous aln to weight the hours in job submission
 	    
 	    my $temp_cl_file = $f_gene_cluster; # used by default
-	    
-	    ### hard-coded behaviour for some species:
-	    if (defined ($f_extra_cluster)){
-		if (($sp1 eq "Bla") || ($sp2 eq "Bla")) {$temp_cl_file = $f_extra_cluster;}
-		elsif (($sp1 eq "Spu") || ($sp2 eq "Spu")){$temp_cl_file = $f_extra_cluster;}
-		elsif (($sp1 eq "Sma") || ($sp2 eq "Sma")){$temp_cl_file = $f_extra_cluster;}
-		elsif (($sp1 eq "Obi") || ($sp2 eq "Obi")){$temp_cl_file = $f_extra_cluster;}
-		elsif (($sp1 eq "Dme") || ($sp2 eq "Dme")){$temp_cl_file = $f_extra_cluster;}
-	    }
-	    
+	        
 	    for my $part (1..$N_parts{$temp_cl_file}){
 		$temp_cl_file=~s/.+\///;
 		$temp_cl_file="$dir/$project_dir/GENE_CLUSTERS/$temp_cl_file";
@@ -185,28 +177,27 @@ sub split_cluster {
     open (CL, $full_cluster) || die "Cannot open $full_cluster file\n";
     while (<CL>){ 
 		chomp($_);
-		my @line = split(/\t/,$_);    	
-			open (OUT, ">>$cluster_root-part_"."$part"); # first part already defined
-		if ($n<$N_split){
-			if (!exists($cid{$line[0]})){
-				$n++;
-				$cid{$line[0]}=1;
+		if ($_ ne "") { 
+			my @line = split(/\t/,$_);    	
+				open (OUT, ">>$cluster_root-part_"."$part"); # first part already defined
+			if ($n<$N_split){
+				if (!exists($cid{$line[0]})){
+					$n++;
+					$cid{$line[0]}=1;
+				}
+				print OUT "$_\n";
 			}
-			print OUT "$_\n";
-		}
-		else {
-
-			$n++;
-			$cid{$line[0]}=1;
-			print OUT "$_\n";
-			$n=0;
-			$part++;
-
+			else {
+				#$n++;
+				$cid{$line[0]}=1;
+				print OUT "$_\n";
+				$n=0;
+				$part++;
+	
+			}
 		}
 		close (OUT);	
-
-		}
+	}
     close (CL);
     $N_parts{$full_cluster}=$part;
-
 }
