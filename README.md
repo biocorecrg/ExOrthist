@@ -7,7 +7,7 @@ Please choose a license for this project!
 Docker image was uploaded to [Docker Hub](https://cloud.docker.com/u/biocorecrg/repository/docker/biocorecrg/exon_intron_pipe). 
 
 
-## NextFLow pipeline
+## NextFlow pipeline
 Test data are in the folder **test**. Input files are:
 * Genomic sequences in fasta files (can be gzipped). The prefix must match the corresponding annotation file
 * Annotation files in GTF format (can be gzipped). The prefix must match the corresponding GTF file
