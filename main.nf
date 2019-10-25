@@ -36,11 +36,12 @@ Biocore@CRG Yamile's pipeline - N F  ~  version ${version}
 ╚╦╝╠═╣║║║║║  ║╣ ╚═╗  ├─┘│├─┘├┤ │  ││││├┤ 
  ╩ ╩ ╩╩ ╩╩╩═╝╚═╝╚═╝  ┴  ┴┴  └─┘┴─┘┴┘└┘└─┘
                                                                                        
-====================================================
-annotations (folder with GTF files)                : ${params.annotations}
-genomes (folder with fasta files)                  : ${params.genomes}
-output (output folder)           : ${params.output}
-email for notification           : ${params.email}
+==============================================================================
+annotations (GTF files)      : ${params.annotations}
+genomes (fasta files)     	 : ${params.genomes}
+cluster file (txt files)     : ${params.clusters}
+output (output folder)       : ${params.output}
+email for notification       : ${params.email}
 """
 
 if (params.help) {
@@ -69,12 +70,12 @@ Channel
     .set {annotations}
 
 genomes.join(annotations).into{pipe_data; data_to_annotation}
-pipe_data.println()
 
 /*
  * Generate annotations
  */
 process generate_annotations {
+    tag { genomeid }
     publishDir "${params.output}/", mode: 'copy'	  
 
     input:
@@ -87,11 +88,12 @@ process generate_annotations {
 	def cmd_anno = unzipBash(annotation)
 	def cmd_genome = unzipBash(genome)
 	"""
-	echo $cmd_anno $annotation
 	generate_annotations_lc.pl -GTF ${cmd_anno} -G ${cmd_genome} -sp ${genomeid} 
 	"""
-
 }
+
+
+
 
 /*
 * functions
