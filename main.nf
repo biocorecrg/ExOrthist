@@ -37,20 +37,21 @@ Biocore@CRG Yamile's pipeline - N F  ~  version ${version}
  ╩ ╩ ╩╩ ╩╩╩═╝╚═╝╚═╝  ┴  ┴┴  └─┘┴─┘┴┘└┘└─┘
                                                                                        
 ====================================================
-annotations (GTF)                 : ${params.annotations}
-genomes (fasta)                  : ${params.genomes}
+annotations (folder with GTF files)                : ${params.annotations}
+genomes (folder with fasta files)                  : ${params.genomes}
 output (output folder)           : ${params.output}
 email for notification           : ${params.email}
-
 """
 
 if (params.help) {
-    log.info """This is the  pipeline"""
+    log.info """This is the pipeline"""
     log.info """Please write some description here\n"""
     exit 1
 }
 if (params.resume) exit 1, "Are you making the classical --resume typo? Be careful!!!! ;)"
 
+annofolder        = getFolderName(params.annotations)
+seqfolder         = getFolderName(params.genomes)
 outputQC          = "${params.output}/QC"
 
 
@@ -67,25 +68,36 @@ Channel
     .ifEmpty { error "Cannot find any annotation matching: ${params.annotations}" }
     .set {annotations}
 
-genomes.join(annotations).set{pipe_data}
+genomes.join(annotations).into{pipe_data; data_to_annotation}
 pipe_data.println()
 
 /*
- * Extract read length 
-process testProcess {
+ * Generate annotations
+ */
+process generate_annotations {
+    publishDir "${params.output}/", mode: 'copy'	  
+
     input:
-    file(single_read_pairs) from read_files_for_size.first()
-
+    set id, file(genome), file(annotation) from data_to_annotation
+    
     output:
-    stdout into (read_length_for_merging)
-
+    file("${id}") into idfolder
+    
 	script:
-	def qc = new QualityChecker(input:single_read_pairs)
-	qc.getReadSize()
+	"""
+	generate_annotations.pl -GTF ./ -G ./ -sp ${id} 
+	"""
+
 }
+
+/*
+* functions
 */
 
-
+def getFolderName(sample) {
+   folder_info = sample.toString().tokenize("/")
+   return folder_info[-2]
+}
 
 /*
  * Mail notification
