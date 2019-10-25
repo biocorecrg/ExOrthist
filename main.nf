@@ -78,14 +78,17 @@ process generate_annotations {
     publishDir "${params.output}/", mode: 'copy'	  
 
     input:
-    set id, file(genome), file(annotation) from data_to_annotation
+    set genomeid, file(genome), file(annotation) from data_to_annotation
     
     output:
-    file("${id}") into idfolder
+    file("${genomeid}") into idfolder
     
 	script:
+	def cmd_anno = unzipBash(annotation)
+	def cmd_genome = unzipBash(genome)
 	"""
-	generate_annotations.pl -GTF ./ -G ./ -sp ${id} 
+	echo $cmd_anno $annotation
+	generate_annotations_lc.pl -GTF ${cmd_anno} -G ${cmd_genome} -sp ${genomeid} 
 	"""
 
 }
@@ -99,6 +102,14 @@ def getFolderName(sample) {
    return folder_info[-2]
 }
 
+// make named pipe 
+def unzipBash(filename) { 
+    def cmd = filename.toString()
+    if (cmd[-3..-1] == ".gz") {
+    	cmd = "<(zcat ${filename})"
+    }
+    return cmd
+}
 /*
  * Mail notification
  */

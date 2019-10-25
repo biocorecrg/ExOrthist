@@ -1059,4 +1059,3 @@ foreach my $species (@SPECIES){
     verbPrint ">>> All annotation files generated for $species\n";
 }
 
-
