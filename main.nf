@@ -39,7 +39,7 @@ Biocore@CRG Yamile's pipeline - N F  ~  version ${version}
 ==============================================================================
 annotations (GTF files)      : ${params.annotations}
 genomes (fasta files)     	 : ${params.genomes}
-cluster file (txt files)     : ${params.clusters}
+cluster file (txt files)     : ${params.cluster}
 output (output folder)       : ${params.output}
 email for notification       : ${params.email}
 """
@@ -51,8 +51,7 @@ if (params.help) {
 }
 if (params.resume) exit 1, "Are you making the classical --resume typo? Be careful!!!! ;)"
 
-annofolder        = getFolderName(params.annotations)
-seqfolder         = getFolderName(params.genomes)
+clusterfile       = file(params.cluster)
 outputQC          = "${params.output}/QC"
 
 
@@ -92,6 +91,31 @@ process generate_annotations {
 	"""
 }
 
+/*
+ * split cluster file
+ */
+process split_cluster_file {
+    tag { clusterfile }
+
+    input:
+    file(clusterfile)
+    
+    output:
+    file("*.cls.tab") into cls_tab_files
+    
+	script:
+
+	"""
+   if [ `echo ${clusterfile} | grep ".gz"` ]; then 
+       zcat ${clusterfile} > cluster_file			
+       get_gcl_sp_pair.pl -f cluster_file
+       rm cluster_file
+    else
+       get_gcl_sp_pair.pl -f ${clusterfile}
+    fi
+	"""
+}
+
 
 
 
@@ -112,6 +136,7 @@ def unzipBash(filename) {
     }
     return cmd
 }
+
 /*
  * Mail notification
  */
