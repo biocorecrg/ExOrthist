@@ -13,13 +13,11 @@ use Data::Dumper;
          
 
 #### DECLARATION AND GENERATION OF VARIABLES
-my $clean; # forces full deletion of pre-existing runs
 my $f_gene_cluster; # file with the gene clusters for the give species pair => it may need additional and specific rules...
 my $f_extra_cluster; # a different cluster file for some species (hard to generalize); eventually allow it to be comma separated
 my $sp1; ##species1 
 my $sp2; ##species2
 my $submit_aln; # whether to submit the jobs
-my $bin; # default (folder where files and program of ORTH_PIPE are located)
 my $expath;
 my $project_dir; ##output folder
 my $verbose; # prints steps
@@ -29,29 +27,25 @@ my $help;
 ### Get options:
 Getopt::Long::Configure("no_auto_abbrev");
 GetOptions( "gene_cluster=s" => \$f_gene_cluster, ##gene clusters for sp1 and sp2
-	     "s1=s" => \$sp1,
-	     "s2=s" => \$sp2,
-	     "clean" => \$clean,
+	     "sp1=s" => \$sp1,
+	     "sp2=s" => \$sp2,
 	     "submit_aln" => \$submit_aln,
 	     "expath=s" => \$expath,
 	     "project_dir=s" => \$project_dir,
-	     "bin=s" => \$bin,
 	     "verbose" => \$verbose,
 	     "N_split=i" => \$N_split,
 	     "help" => \$help
     );
 
 ### Help
-if (!defined ($f_gene_cluster) || !defined($bin) || !defined($expath) || !defined($project_dir) || !defined($sp1) || !defined($sp2)|| defined ($help)){
+if (!defined ($f_gene_cluster) || !defined($expath) || !defined($project_dir) || !defined($sp1) || !defined($sp2)|| defined ($help)){
     die "
-Usage: Prepare_and_Submit_Aln_sp_pair.pl -s1 sp1 -s2 sp2 --gene_cluster FILE --expath Exons_DB_folder  --project_dir Output_folder --bin bin_folder [options]
+Usage: Prepare_and_Submit_Aln_sp_pair.pl -sp1 sp1 -sp2 sp2 --gene_cluster FILE --expath Exons_DB_folder  --project_dir Output_folder 
 
 OPTIONS
-    --clean                   Force removal of previous data [def OFF]
     --submit_aln              Submit the jobs of for scoring ex/introns [def OFF]
     --sp1		      Species 1
     --sp2		      Species 2
-    --bin		      Bin folder
     --expath PATH             EXONS_DB folder with the output obtained in Module I for each species.
     --project_dir PATH        Output folder: the species pair folder will be created here
     --verbose                 Prints commands in screen [def OFF]
@@ -101,22 +95,10 @@ die "Cannot find intron pos file for $sp2\n" unless (-e $f_intron_pos{$sp2});
 
 my $pair_folder=$sp1."_".$sp2;
 
-if (defined ($verbose)){
-	print "\nrm -r $project_dir/$pair_folder\n" if $clean && (-e "$project_dir/$pair_folder"); #Forces full deletion of data
-	print "\nmkdir $project_dir/$pair_folder\n" unless (-e "$project_dir/$pair_folder");
-}
-system "rm -rf $project_dir/$pair_folder" if $clean && (-e "$project_dir/$pair_folder"); #Forces full deletion of data
-system "mkdir $project_dir/$pair_folder" unless (-e "$project_dir/$pair_folder");
-
 
 my %N_parts; # stores the number of splits for each file of clusters
 my $gcl=0;
-if (-e "$project_dir/$pair_folder/GENE_CLUSTERS"){ 
-	$gcl=1; 
-	my $parts=`ls $project_dir/$pair_folder/GENE_CLUSTERS/*part* | wc -l`;
-	$N_parts{$f_gene_cluster}=$parts;
-
-} else { system "mkdir $project_dir/$pair_folder/GENE_CLUSTERS"; }
+system "mkdir $project_dir/$pair_folder/"; 
 
 ### Splitting clusters
 
@@ -130,22 +112,22 @@ print "\n$f_gene_cluster parts: $N_parts{$f_gene_cluster}\n" if defined ($verbos
 my $temp_cl_file = $f_gene_cluster; # used by default
 for my $part (1..$N_parts{$temp_cl_file}){
 		$temp_cl_file=~s/.+\///;
-		$temp_cl_file="$project_dir/$pair_folder/GENE_CLUSTERS/$temp_cl_file";
+		$temp_cl_file="$project_dir/$pair_folder/$temp_cl_file";
 		my $cl_part = $temp_cl_file."-part_".$part;
-		my $tb=$bin;
+		my $tb="";
 		$tb=~s/bin/files/;		
 		my $bl62 = "$tb/blosum62.txt";
 		my $of=$project_dir."/".$pair_folder;
 		### Submits for exons and introns
 		if (defined ($verbose)){
 		    print "\nsubmitjob long -l h_rt=50:00:00,virtual_free=30G ".
-			"perl $bin/Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ".
-			"$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part $bin $bl62 $of\n";
+			"perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ".
+			"$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part  $bl62 $of\n";
 		}
 		
 		system "submitjob long -l h_rt=50:00:00,virtual_free=30G ". # job conditions
-		    "perl $bin/Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
-		    "$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part $bin $bl62 $of\n" if $submit_aln; # input files and outputs
+		    "perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
+		    "$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part  $bl62 $of\n" if $submit_aln; # input files and outputs
 
 }
     
@@ -156,7 +138,7 @@ sub split_cluster {
     my $full_cluster = $input[0];
     my $cluster_root = $full_cluster;
     $cluster_root =~ s/.+\///; # removes the path
-    $cluster_root = "$project_dir/$pair_folder/GENE_CLUSTERS/$cluster_root";
+    $cluster_root = "$project_dir/$pair_folder/$cluster_root";
     my %size;
     my $part=1;
     my %cid;

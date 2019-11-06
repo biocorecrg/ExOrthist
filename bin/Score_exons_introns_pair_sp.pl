@@ -15,11 +15,17 @@ my $i7=$ARGV[8]; ##file with intron positions in aa of species 2
 my $i8=$ARGV[9];  ##exint file species 1
 my $i9=$ARGV[10];  ##exint file species 
 my $part=$ARGV[11];
-my $bin=$ARGV[12]; ##bin folder with alignintron pos script
-my $bl=$ARGV[13]; ##blosum62  matrix
-my $outf=$ARGV[14];
+my $bl=$ARGV[12]; ##blosum62  matrix
+my $outf=$ARGV[13]; ## outputfile
+my $cpus=$ARGV[14]; ## CPUs for MAFFT
+
+$cpus=1 if !$cpus;
+
 my ($dir,$project_dir)=$outf=~/(.+)\/(.+?)\/.+?\//;
 my ($sp1,$sp2)=($s1,$s2);
+system "mkdir $outf"; 
+
+
 my $exsc=$outf."/score_exons_".$s1."_".$s2."_part_".$part.".txt";##outputfile for exon scores
 my $insc=$outf."/score_introns_".$s1."_".$s2."_part_".$part.".txt";
 my $prsc=$outf."/score_proteins_".$s1."_".$s2."_part_".$part.".txt";##outputfile for scores of whole protein alignment
@@ -343,7 +349,7 @@ foreach $el (@keys){
 	    print TMPALN "$seqs{$t1[$zj]}\n$seqs{$t2[$zi]}\n"; 
 	    close (TMPALN);
 	    # RUNNING ALIGN INTRON POS
-	    `perl $bin/AlignIntronPos.pl $te`; 
+	    `AlignIntronPos.pl $te MAFFT $cpus`; 
 	    # ADDS GDE TO MERGE 
 	    close MERGE_ALN;
 	    system "cat $tg >> $f_merged_aln"; # we could already print a post-processed aln instead

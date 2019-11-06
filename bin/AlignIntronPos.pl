@@ -8,6 +8,7 @@ use English;
 ### variables
 $exint=$ARGV[0];
 $aligner=$ARGV[1];
+$cpus=$ARGV[2];
 $aligner="MAFFT" if !$aligner;
 
 #($root) = $exint =~ /([^\/]+)\./; # Exint file
@@ -19,7 +20,7 @@ if ($aligner=~/clustal/i){
     system "clustalw2 $exint -output=gde";
 }
 elsif ($aligner=~/MAFFT/i){
-    system "/users/mirimia/ymarquez/SOFTWARE/get_introns_MAFFT_v2.0/MAFFT/mafft-linux32/mafft.bat --auto --quiet $exint | sed 's/>/%/g' > $root.gde";  
+    system "mafft --auto --thread $cpus --quiet $exint | sed 's/>/%/g' > $root.gde";  
 }
 
 open (OUT, ">$root.INT_ALIGN.aln") || die "Can't open output file\n";
