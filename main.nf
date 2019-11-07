@@ -86,13 +86,11 @@ process generate_annotations {
     set genomeid, file(genome), file(annotation) from data_to_annotation
     
     output:
-    set val(genomeid), file (genomeid) into idfolders_A, idfolders_B
-    
+    set val(genomeid), file (genomeid) into idfolders
+	
 	script:
-	def cmd_anno = unzipBash(annotation)
-	def cmd_genome = unzipBash(genome)
 	"""
-	generate_annotations_lc.pl -GTF ${cmd_anno} -G ${cmd_genome} -sp ${genomeid} 
+	generate_annotations_lc.pl -GTF ${annotation} -G ${genomeid} -sp ${genomeid} 
 	"""
 }
 
@@ -120,28 +118,17 @@ process split_cluster_file {
 	"""
 }
 
-// sort the channel
-idfolders_A.combine(idfolders_B).map{
-  ["${it[0]}-${it[2]}",it[1],it[3]]
-}.toSortedList{ entry -> entry[0] }.flatten().collate( 3 ).set{sorted_idfolders}
 
-// make a triangular matrix 
-noids = [:]
-sorted_idfolders.map{
-    idCombs = it[0].split('-')
-    nameA = idCombs[0]
-    nameB = idCombs[1]
-    idA = it[1]
-    idB = it[2]
-    noids["${nameB}-${nameA}"] = "no"
-    if (nameA!=nameB && !noids["${nameA}-${nameB}"]) {
-   		["${nameA}-${nameB}", idA, idB]   		
-    } 
-}.into{cluster_2_split; spaccimm}
+idfolders
+  .toList().map{ [it, it].combinations().findAll{ a, b -> a[1] > b[1]} }
+  .flatMap()
+  .map { ["${it[0][0]}-${it[1][0]}", it[0][1], it[1][1]] }
+  .set{cluster_2_split}
 
 /*
  * split clusters
  */
+ 
 process split_clusters {
     tag { id_comb }
 
@@ -159,9 +146,10 @@ process split_clusters {
 }
 
 cls_files_2_align.transpose().set{cls_files_2_align_t}
+
 /*
- * split clusters
-*/
+ * Align pairs
+ */
  
 process align_pairs {
     tag { "${cls_part_file}" }
@@ -170,7 +158,10 @@ process align_pairs {
     input:
     file(blosumfile)
     set file(sp1), file(sp2), file(cls_part_file) from cls_files_2_align_t
-    
+
+    output:
+    set file(sp1), file(sp2), file("${sp1}-${sp2}_*") into aligned_subclusters
+
 	script:
     def cls_parts = "${cls_part_file}".split("_")
 	"""
@@ -178,7 +169,31 @@ process align_pairs {
 ${sp1}/${sp1}_annot_exons_prot_ids.txt ${sp2}/${sp2}_annot_exons_prot_ids.txt \
 ${sp1}/${sp1}_protein_ids_exons_pos.txt ${sp2}/${sp2}_protein_ids_exons_pos.txt \
 ${sp1}/${sp1}_protein_ids_intron_pos_CDS.txt ${sp2}/${sp2}_protein_ids_intron_pos_CDS.txt \
-${sp1}/${sp1}.exint ${sp2}/${sp2}.exint 0 ${blosumfile} ${cls_parts[1]} ${task.cpus}
+${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${sp2}_${cls_parts[1]} ${task.cpus}
+	"""
+}
+
+/*
+ * Realign target exons
+ */
+
+process realign_exons {
+    tag { "${aligned_output}" }
+    label 'big_cpus'
+    
+    input:
+    file(blosumfile)
+    set file(sp1), file(sp2), file(aligned_output) from aligned_subclusters
+    
+    output:
+    file("realigned_exons_${sp1}_${sp2}_*.txt") into realigned_exons
+   
+	script:
+    def cls_parts = "${aligned_output}".split("_")
+	"""
+		Realign_target_exons_by_part.pl ${sp1} ${sp2} ${aligned_output}/exons_to_realign_part_${cls_parts[1]}.txt \
+${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} realigned_exons_${sp1}_${sp2}_${cls_parts[1]}.txt \
+${sp1}_${sp2} ${blosumfile} ${task.cpus}
 	"""
 }
 

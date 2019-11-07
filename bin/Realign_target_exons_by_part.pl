@@ -10,7 +10,9 @@ my $part=$ARGV[5];
 my $outf=$ARGV[6];
 my $odir=$ARGV[7];
 my $bl=$ARGV[8]; #path to blossum 62 matrix  
-my $bin=$ARGV[9]; #path to bin folder
+my $cpus=$ARGV[9]; #cpus
+$cpus=1 if !$cpus;
+
 my  %sim; ##AA similarity
 $odir.="/";
 my $texf=$odir."tex_part_".$part.".exint";
@@ -132,7 +134,7 @@ while (<IN>){
 		open (TMPALN,">$texf");
 		print TMPALN ">$l[1]\n$sq1\n>$l[8]\n$sq2\n"; 
 		close (TMPALN);
-		`perl $bin/AlignIntronPos.pl $texf`;
+		`AlignIntronPos.pl $texf MAFFT $cpus`;
 		## 2) OPENING OUTPUT GDE FILE
 		$name="";
 		%seq=();

@@ -16,7 +16,7 @@ my $vastdb_refs;
 #Arguments
 
 Getopt::Long::Configure("no_auto_abbrev");
-GetOptions(  "GTF=s" => \$gtf_file,
+GetOptions("GTF=s" => \$gtf_file,
 	     "G=s" => \$genome_file,
 	     "EX_DB=s" => \$exons_db_folder,
 	     "sp=s" => \$species_id,
@@ -86,7 +86,12 @@ my $species = $species_id;
     my $chr;
     my @g;
     #my $genome_file = "$genome_folder/$species"."_gDNA.fasta";
-    open (GENOME, $genome_file) || die "Cannot open $genome_file for $species (loop 1)\n";
+	if ($genome_file =~ /.gz$/) {
+		open(GENOME, "gunzip -c $genome_file |") || die "can’t open pipe to $genome_file";
+	}
+	else {
+		open(GENOME, $genome_file) || die "can’t open $genome_file";
+	}    #open (GENOME, $genome_file) || die "Cannot open $genome_file for $species (loop 1)\n";
     verbPrint("Parsing gDNA file for $species\n");
     while (<GENOME>){
 	chomp($_);
@@ -111,7 +116,12 @@ my $species = $species_id;
     my %fex; ##saving the phase of the first exon
     #my $gtf_file = "$gtf_folder/$species"."_annot.gtf";
 
-    open (GTF,"$gtf_file") || die "Cannot open $gtf_file for $species (loop 1)\n";
+	if ($gtf_file =~ /.gz$/) {
+		open(GTF, "gunzip -c $gtf_file |") || die "can’t open pipe to $gtf_file";
+	}
+	else {
+		open(GTF, $gtf_file) || die "can’t open $gtf_file";
+	}
     while (<GTF>){
 	chomp($_); 
 	@line=split(/\t/,$_);
@@ -287,10 +297,15 @@ my $species = $species_id;
     my %intron;
     my (%chr1, %chr2);
 
-    my $infile1 = $gtf_file;
+    #my $infile1 = $gtf_file;
     #"$gtf_folder/$species"."_annot.gtf";
-    open (INFILEONE, $infile1) || die "Cannot open $infile1 (loop 2)\n"; 
-    while (<INFILEONE>){ 
+	if ($gtf_file =~ /.gz$/) {
+		open(INFILEONE, "gunzip -c $gtf_file |") || die "can’t open pipe to $gtf_file";
+	}
+	else {
+		open(INFILEONE, $gtf_file) || die "can’t open $gtf_file";
+	}    
+	while (<INFILEONE>){ 
 	if($_){ 
 	    chomp($_);
 	    @line=split(/\t/,$_);
@@ -803,7 +818,12 @@ if ($vastdb_refs){
     my %rseq;
     my ($res, $size, $new, $id, $e);
     my %fex; ##saving the phase of the first exon
-    open (GTF,"$gtf_file") || die "Cannot open $gtf_file (loop 5)\n";
+	if ($gtf_file =~ /.gz$/) {
+		open(GTF, "gunzip -c $gtf_file |") || die "can’t open pipe to $gtf_file";
+	}
+	else {
+		open(GTF, $gtf_file) || die "can’t open $gtf_file";
+	}
     while (<GTF>){
 	chomp($_); 
 	@line=split(/\t/,$_);
@@ -1004,8 +1024,13 @@ if ($vastdb_refs){
 
     ### Parsing GTF file
     #my $gtf_file = "$gtf_folder/$species"."_annot.gtf";
-    open (GTF,"$gtf_file") || die "Cannot open $gtf_file for $species (loop 1)\n";
-    while (<GTF>){
+	if ($gtf_file =~ /.gz$/) {
+		open(GTF, "gunzip -c $gtf_file |") || die "can’t open pipe to $gtf_file";
+	}
+	else {
+		open(GTF, $gtf_file) || die "can’t open $gtf_file";
+	}
+	while (<GTF>){
 	chomp($_); 
 	@line=split(/\t/,$_);
 	if ($line[2] eq "CDS"){
