@@ -2,13 +2,9 @@ step 1
 generate_annotations.pl -sp sp1 -GTF sp1.gtf -G sp1.fasta 
 generate_annotations.pl -sp sp2 -GTF sp2.gtf -G sp2.fasta
 
-step 2
-splitcluster.pl cluster_file.tab // cluster of genes) 
-- sp1_sp2_01.tab
-- sp1_sp2_02.tab
-- sp1_sp2_03.tab
-- sp1_sp3.tab
-...
+step 2 (Modifying this step to split clusters by number of alignments!)
+perl Split_gcl_by_alns.pl -s1 sp1 -s2 sp2 --ex1 sp1.exint --ex2 sp2.exint --gene_cluster GCL_sp1-sp2.tab --N_split 2000 --split --clean
+##The  Prepare_and_Submit_Aln_sp_pair.pl needs to be modified
 
 step 3
 align.pl sp1.gtf sp1.fasta sp2.gtf sp2.fasta sp1_sp2_01.tab
