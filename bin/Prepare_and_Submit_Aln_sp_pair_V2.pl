@@ -209,37 +209,50 @@ sub split_cluster {
 	print NALN "\nTotal alignments\t$taln\t$max\nNumber of clusters with warnings\t$w\n";
 	if ($w){ 
 		print STDERR "\n\nWARNING!!! $w clusters exceed the maximum number of alignments: $N  !!!!\n\n"; 
-    	print STDERR "WARNING!!! Skipping $w clusters in the splitted files !!!\n\n"; 
-    }
+    		#print STDERR "WARNING!!! Skipping $w clusters in the splitted files !!!\n\n"; 
+    	}	
     	$sum=0;
     	$part=1;
     	open (CL, "$full_cluster");
     	while (<CL>){
-			chomp($_);
-			@l=split(/\t/,$_);
-			if (!$warn{$l[0]}){
+		chomp($_);
+		@l=split(/\t/,$_);
+		if (!$warn{$l[0]}){
 	    		open (OUT, ">>$cluster_root-part_"."$part"); # first part already defined
 	    		if ($sum<$N){
-					if (!exists($prcid{$l[0]})){
+				if (!exists($prcid{$l[0]})){
 		    			$sum+=$nalns{$l[0]};
 		    			$prcid{$l[0]}=1;
-		    		}
-		    		print OUT "$_\n";
-				}				
-				else {       
-					if ($prcid{$l[0]}){
+		 		}
+		  		print OUT "$_\n";
+			}				
+			else {       
+				if ($prcid{$l[0]}){
 		    			print OUT "$_\n";
-					}
-					elsif (!exists($prcid{$l[0]})){
+				}
+				elsif (!exists($prcid{$l[0]})){
 		    			$sum=$nalns{$l[0]};
 		    			$part++;
 		    			open (OUT, ">>$cluster_root-part_"."$part");
 		    			print OUT "$_\n";
 		    			$prcid{$l[0]}=1;
-					}
+				}
 	    		}
 	    	}
+	}
+	##printing files of clusters with > N alignments
+	open (CL, "$full_cluster");
+	while (<CL>){
+		chomp($_);
+		@l=split(/\t/,$_);
+		if ($warn{$l[0]}){
+			if (!$print{$l[0]}){
+				$part++;
+				$print{$l[0]}=1
+			}
+	    		open (OUT, ">>$cluster_root-part_"."$part"); # first part already defined
+		    	print OUT "$_\n";
 		}
+	}		
 	$N_parts{$full_cluster}=$part;
-
 }
