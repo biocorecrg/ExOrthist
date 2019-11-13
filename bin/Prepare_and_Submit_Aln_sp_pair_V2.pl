@@ -19,7 +19,6 @@ my $f_extra_cluster; # a different cluster file for some species (hard to genera
 my $sp1; ##species1 
 my $sp2; ##species2
 my $submit_aln; # whether to submit the jobs
-my $bin; # default (folder where files and program of ORTH_PIPE are located)
 my $expath;
 my $project_dir; ##output folder
 my $verbose; # prints steps
@@ -37,15 +36,14 @@ GetOptions( "gene_cluster=s" => \$f_gene_cluster, ##gene clusters for sp1 and sp
 	     "submit_aln" => \$submit_aln,
 	     "expath=s" => \$expath,
 	     "project_dir=s" => \$project_dir,
-	     "bin=s" => \$bin,
 	     "verbose" => \$verbose,
 	     "help" => \$help
     );
 
 ### Help
-if (!defined ($f_gene_cluster) || !defined($bin) || !defined($expath) || !defined($project_dir) || !defined($sp1) || !defined($sp2)|| defined ($help)){
+if (!defined ($f_gene_cluster) || !defined($expath) || !defined($project_dir) || !defined($sp1) || !defined($sp2)|| defined ($help)){
     die "
-Usage: Prepare_and_Submit_Aln_sp_pair.pl -s1 sp1 -s2 sp2 --gene_cluster FILE --expath Exons_DB_folder  --project_dir Output_folder --bin bin_folder [options]
+Usage: Prepare_and_Submit_Aln_sp_pair.pl -s1 sp1 -s2 sp2 --gene_cluster FILE --expath Exons_DB_folder  --project_dir Output_folder [options]
 
 OPTIONS
     --clean            Force removal of previous data [def OFF]
@@ -53,7 +51,6 @@ OPTIONS
     --N_split int      Number of alignments in subfile [def 10000]
     --sp1		       Species 1
     --sp2		       Species 2
-    --bin		       Bin folder
     --expath PATH      EXONS_DB folder with the output obtained in Module I for each species.
     --project_dir PATH Output folder: the species pair folder will be created here
     --verbose          Prints commands in screen [def OFF]
@@ -63,7 +60,6 @@ OPTIONS
 
 my @species=($sp1,$sp2);
 @species=sort(@species); # sort alphanumerically
-##
 $sp1=$species[0];
 $sp2=$species[1];
 ### Stores the relevant files from EXONS_DB/Sp
@@ -131,19 +127,19 @@ for my $part (1..$N_parts{$temp_cl_file}){
 		$temp_cl_file=~s/.+\///;
 		$temp_cl_file="$project_dir/$pair_folder/GENE_CLUSTERS/$temp_cl_file";
 		my $cl_part = $temp_cl_file."-part_".$part;
-		my $tb=$bin;
+		my $tb="";
 		$tb=~s/bin/files/;		
 		my $bl62 = "$tb/blosum62.txt";
 		my $of=$project_dir."/".$pair_folder;
 		### Submits for exons and introns
 		if (defined ($verbose)){
 		    print "\nsubmitjob long -l h_rt=50:00:00,virtual_free=30G ".
-			"perl $bin/Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ".
+			"perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ".
 			"$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part $bin $bl62 $of\n";
 		}
 		
 		system "submitjob long -l h_rt=50:00:00,virtual_free=30G ". # job conditions
-		    "perl $bin/Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
+		    "perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
 		    "$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part $bin $bl62 $of\n" if $submit_aln; # input files and outputs
 
 }
@@ -210,7 +206,7 @@ sub split_cluster {
 	print NALN "\nTotal alignments\t$taln\t$max\nNumber of clusters with warnings\t$w\n";
 	if ($w){ 
 		print STDERR "\n\nWARNING!!! $w clusters exceed the maximum number of alignments: $N  !!!!\n\n"; 
-    	print STDERR "WARNING!!! Skipping $w clusters in the splitted files !!!\n"; 
+    	print STDERR "WARNING!!! Skipping $w clusters in the splitted files !!!\n\n"; 
     }
     	$sum=0;
     	$part=1;
