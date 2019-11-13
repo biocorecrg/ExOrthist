@@ -29,8 +29,8 @@ my $help;
 ### Get options:
 Getopt::Long::Configure("no_auto_abbrev");
 GetOptions( "gene_cluster=s" => \$f_gene_cluster, ##gene clusters for sp1 and sp2
-	     "s1=s" => \$sp1,
-	     "s2=s" => \$sp2,
+	     "sp1=s" => \$sp1,
+	     "sp2=s" => \$sp2,
 	     "clean" => \$clean,
 	     "N_split=i" => \$N,
 	     "submit_aln" => \$submit_aln,
@@ -103,15 +103,15 @@ if (defined ($verbose)){
 system "rm -rf $project_dir/$pair_folder" if $clean && (-e "$project_dir/$pair_folder"); #Forces full deletion of data
 system "mkdir $project_dir/$pair_folder" unless (-e "$project_dir/$pair_folder");
 
+### Setting up and creating PROJECT directory
+
+my $pair_folder=$sp1."_".$sp2;
+
 
 my %N_parts; # stores the number of splits for each file of clusters
 my $gcl=0;
-if (-e "$project_dir/$pair_folder/GENE_CLUSTERS"){ 
-	$gcl=1; 
-	my $parts=`ls $project_dir/$pair_folder/GENE_CLUSTERS/*part* | wc -l`;
-	$N_parts{$f_gene_cluster}=$parts;
+system "mkdir $project_dir/$pair_folder/"; 
 
-} else { system "mkdir $project_dir/$pair_folder/GENE_CLUSTERS"; }
 
 ### Splitting clusters
 
@@ -122,10 +122,13 @@ print "\n$f_gene_cluster parts: $N_parts{$f_gene_cluster}\n" if defined ($verbos
 ### Prepares submissions
 ### here it could read the file with ALL previous aln to weight the hours in job submission
 	    
+### Prepares submissions
+### here it could read the file with ALL previous aln to weight the hours in job submission
+	    
 my $temp_cl_file = $f_gene_cluster; # used by default
 for my $part (1..$N_parts{$temp_cl_file}){
 		$temp_cl_file=~s/.+\///;
-		$temp_cl_file="$project_dir/$pair_folder/GENE_CLUSTERS/$temp_cl_file";
+		$temp_cl_file="$project_dir/$pair_folder/$temp_cl_file";
 		my $cl_part = $temp_cl_file."-part_".$part;
 		my $tb="";
 		$tb=~s/bin/files/;		
@@ -135,12 +138,12 @@ for my $part (1..$N_parts{$temp_cl_file}){
 		if (defined ($verbose)){
 		    print "\nsubmitjob long -l h_rt=50:00:00,virtual_free=30G ".
 			"perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ".
-			"$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part $bin $bl62 $of\n";
+			"$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part  $bl62 $of\n";
 		}
 		
 		system "submitjob long -l h_rt=50:00:00,virtual_free=30G ". # job conditions
 		    "perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
-		    "$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part $bin $bl62 $of\n" if $submit_aln; # input files and outputs
+		    "$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part  $bl62 $of\n" if $submit_aln; # input files and outputs
 
 }
     
@@ -156,7 +159,7 @@ sub split_cluster {
     my $sp2=$input[5];
     my $cluster_root = $full_cluster;
     $cluster_root =~ s/.+\///; # removes the path
-    $cluster_root = "$project_dir/$pair_folder/GENE_CLUSTERS/$cluster_root";
+    $cluster_root = "$project_dir/$pair_folder/$cluster_root";
     my %size;
     my $part=1;
     my %cid;
@@ -189,7 +192,7 @@ sub split_cluster {
 	}
 	my @k=sort(keys(%cid));
 	my $el;
-	open (NALN, ">$project_dir/$pair_folder/GENE_CLUSTERS/Num_alns_by_cl_$sp1-$sp2.log");
+	open (NALN, ">$cluster_root/Num_alns_by_cl_$sp1-$sp2.log");
 	foreach $el (@k){
     	$naln=$nt{$el}{$sp1}*$nt{$el}{$sp2};
     	$taln+=$naln;
