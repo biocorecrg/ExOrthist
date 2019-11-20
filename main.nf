@@ -37,11 +37,13 @@ Biocore@CRG Yamile's pipeline - N F  ~  version ${version}
  ╩ ╩ ╩╩ ╩╩╩═╝╚═╝╚═╝  ┴  ┴┴  └─┘┴─┘┴┘└┘└─┘
                                                                                        
 ==============================================================================
-annotations (GTF files)      : ${params.annotations}
-genomes (fasta files)     	 : ${params.genomes}
-cluster file (txt files)     : ${params.cluster}
-output (output folder)       : ${params.output}
-email for notification       : ${params.email}
+annotations (GTF files)          : ${params.annotations}
+genomes (fasta files)     	     : ${params.genomes}
+cluster file (txt files)         : ${params.cluster}
+clusternum (number of clusters)  : ${params.clusternum}
+output (output folder)           : ${params.output}
+email for notification           : ${params.email}
+
 """
 
 if (params.help) {
@@ -90,14 +92,14 @@ process generate_annotations {
 	
 	script:
 	"""
-	generate_annotations_lc.pl -GTF ${annotation} -G ${genomeid} -sp ${genomeid} 
+	generate_annotations_lc.pl -GTF ${annotation} -G ${genome} -sp ${genomeid} 
 	"""
 }
 
 /*
  * split cluster file
  */
-process split_cluster_file {
+process split_cluster_file_per_specie {
     tag { clusterfile }
 
     input:
@@ -120,11 +122,11 @@ process split_cluster_file {
 
 
 idfolders
-  .toList().map{ [it, it].combinations().findAll{ a, b -> a[1] > b[1]} }
+  .toList().map{ [it, it] .combinations().findAll{ a, b -> a[0] < b[0]} }
   .flatMap()
   .map { ["${it[0][0]}-${it[1][0]}", it[0][1], it[1][1]] }
-  .set{cluster_2_split}
-
+  .into{cluster_2_split; limorte}
+  
 /*
  * split clusters
  */
@@ -141,7 +143,7 @@ process split_clusters {
     
 	script:
 	"""
-		Prepare_and_Submit_Aln_sp_pair.pl --sp1 ${idfolder_A} --sp2 ${idfolder_B} --expath ./ --project_dir ./ --gene_cluster ${id_comb}.cls.tab
+		Prepare_and_Submit_Aln_sp_pair_V2.pl --sp1 ${idfolder_A} --sp2 ${idfolder_B} --expath ./ --project_dir ./ --N_split ${params.clusternum} --gene_cluster ${id_comb}.cls.tab
 	"""
 }
 
@@ -150,7 +152,7 @@ cls_files_2_align.transpose().set{cls_files_2_align_t}
 /*
  * Align pairs
  */
- 
+
 process align_pairs {
     tag { "${cls_part_file}" }
     label 'big_cpus'
@@ -179,7 +181,7 @@ ${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${s
 
 process realign_exons {
     tag { "${aligned_output}" }
-    label 'big_cpus'
+    label 'incr_time_cpus'
     
     input:
     file(blosumfile)
@@ -244,7 +246,10 @@ else {
 }
 
 workflow.onComplete {
-    println "Pipeline BIOCORE@CRG completed at: $workflow.complete"
+    println "Pipeline BIOCORE@CRG YAMILE'S PIPELINE!"
+    println "Started at  $workflow.start" 
+    println "Finished at $workflow.complete"
+    println "Time elapsed: $workflow.duration"
     println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }
 

@@ -14,6 +14,7 @@ my $cpus=$ARGV[9]; #cpus
 $cpus=1 if !$cpus;
 
 my  %sim; ##AA similarity
+mkdir $odir;
 $odir.="/";
 my $texf=$odir."tex_part_".$part.".exint";
 my $tmpgde=$odir."tex_part_".$part.".gde";

@@ -106,13 +106,10 @@ system "mkdir $project_dir/$pair_folder/";
 
 print "\n$f_gene_cluster parts: $N_parts{$f_gene_cluster}\n" if defined ($verbose);
 
-### Prepares submissions
-### here it could read the file with ALL previous aln to weight the hours in job submission
-	    
 my $temp_cl_file = $f_gene_cluster; # used by default
 for my $part (1..$N_parts{$temp_cl_file}){
 		$temp_cl_file=~s/.+\///;
-		$temp_cl_file="$project_dir/$pair_folder/$temp_cl_file";
+		$temp_cl_file="$project_dir/$pair_folder/GENE_CLUSTERS/$temp_cl_file";
 		my $cl_part = $temp_cl_file."-part_".$part;
 		my $tb="";
 		$tb=~s/bin/files/;		
@@ -122,12 +119,12 @@ for my $part (1..$N_parts{$temp_cl_file}){
 		if (defined ($verbose)){
 		    print "\nsubmitjob long -l h_rt=50:00:00,virtual_free=30G ".
 			"perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ".
-			"$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part  $bl62 $of\n";
+			"$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part $bin $bl62 $of\n";
 		}
 		
 		system "submitjob long -l h_rt=50:00:00,virtual_free=30G ". # job conditions
 		    "perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
-		    "$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part  $bl62 $of\n" if $submit_aln; # input files and outputs
+		    "$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part $bin $bl62 $of\n" if $submit_aln; # input files and outputs
 
 }
     
