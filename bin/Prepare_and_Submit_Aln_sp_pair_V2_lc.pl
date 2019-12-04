@@ -108,7 +108,7 @@ my $gcl=0;
 
 ### Splitting clusters
 
-&split_cluster($f_gene_cluster,$f_exint{$sp1},$f_exint{$sp2},$N,$sp1,$sp2,$project_dir,$pair_folder) if ($gcl==0); 
+&split_cluster($f_gene_cluster,$f_exint{$sp1},$f_exint{$sp2},$N,$sp1,$sp2) if ($gcl==0); 
 
 print "\n$f_gene_cluster parts: $N_parts{$f_gene_cluster}\n" if defined ($verbose);
 
@@ -150,8 +150,6 @@ sub split_cluster {
     my $N=$input[3];
     my $sp1=$input[4];
     my $sp2=$input[5];
-    my $project_dir=$input[6];
-    my $pair_folder=$input[7];
     my $cluster_root = $full_cluster;
     $cluster_root =~ s/.+\///; # removes the path
     $cluster_root = "$project_dir/$pair_folder/$cluster_root";
@@ -177,7 +175,7 @@ sub split_cluster {
 			$trs{$t[1]}++;
     	}
     }
-	#GF000001 Mmu ENSMUSG00000090353	Gm17555O	G0000001	O=0,R=0
+	#GF000001 Mmu ENSMUSG00000090353Gm17555OG0000001O=0,R=0
 	open (CL, "$full_cluster");
 	while (<CL>){
     	chomp($_);
@@ -187,7 +185,7 @@ sub split_cluster {
 	}
 	my @k=sort(keys(%cid));
 	my $el;
-	open (NALN, ">$project_dir/$pair_folder/Num_alns_by_cl_$sp1-$sp2.log");
+	open (NALN, ">$cluster_root/Num_alns_by_cl_$sp1-$sp2.log");
 	foreach $el (@k){
     	$naln=$nt{$el}{$sp1}*$nt{$el}{$sp2};
     	$taln+=$naln;

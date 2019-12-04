@@ -12,9 +12,10 @@ $i1=$folder."/score_proteins_";
 $o1=$folder."/h.txt";
 $tmp=$folder."/tmp.txt";
 $s1=$folder."/Aligned_proteins.txt";
-`cat $i1*_part* | head -1 > $o1"`; ##getting header
-`cat $i1*_part* | grep -v 'CID' | sort -k1n | uniq  > $tmp`; ##getting the rest of the file
-`cat $o1 $tmp > $s1`; ##getting file of aligned proteins
+system("cat $i1*_part* | head -1 > $o1"); ##getting header
+system("cat $i1*_part* | grep -v 'CID' | sort -k1n | uniq  > $tmp"); ##getting the rest of the file
+system("cat $o1 $tmp > $s1"); ##getting file of aligned proteins
+
 print OUT "2. Exon scores\n\n";
 $i2=$folder."/score_exons_";
 $i3=$folder."/realigned_exons_";
