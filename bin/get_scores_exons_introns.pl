@@ -88,8 +88,8 @@ while (<IN>){
 	chomp($_);
     	@line=split(/\t/,$_);
     	$line[3]=~s/I/i/;
-    	if ($line[3] ne "Intronless"){
-	    @k=split(/\-/,$line[4]);
+    	if ($line[3] ne "Intronless" ){
+	    @k=split(/\-/,$line[4] && $line[4]=~/\-/);
 	    $posint1=$k[0]+1; $posint2=$k[1]-1;
 	    $intpos{$line[0]."_".$line[3]}=$line[1].":".$posint1."-".$posint2.":".$line[2];
     	}
@@ -99,7 +99,7 @@ while (<IN>){
 	chomp($_);
 	@line=split(/\t/,$_);
     	$line[3]=~s/I/i/;
-    	if ($line[3] ne "Intronless"){
+    	if ($line[3] ne "Intronless" && $line[4]=~/\-/){
 	    @k=split(/\-/,$line[4]);
             $posint1=$k[0]+1; $posint2=$k[1]-1;
             $intpos{$line[0]."_".$line[3]}=$line[1].":".$posint1."-".$posint2.":".$line[2];
@@ -121,8 +121,8 @@ while (<IN>){
 	#Exon	ENSMUSP00000000028|ENSMUSG00000000028	exon_10	236-275	chr16	18795918-18796037	-	ENSP00000397434|ENSG00000093009	NO_EXON_ALN
 	#13	ENSDARP00000044293|ENSDARG00000056001	exon_28	1152-1188	chr10	33997813-33997923	+	1	ENSP00000261575|ENSG00000073910	1-3	2.70	5.41	34	91.89	ENSP00000261575|ENSG00000073910	exon_1	1-54	chr13	32768274-32768434	+	Dre	Hsa
 	if ($line[2]=~/exon/ && $line[7]==1){
-			$coords{$line[1]."#".$line[2]}=$line[4].":".$line[5].":".$line[6];	
-			$coords{$line[14]."#".$line[15]}=$line[17].":".$line[18].":".$line[19];
+		$coords{$line[1]."#".$line[2]}=$line[4].":".$line[5].":".$line[6];	
+		$coords{$line[14]."#".$line[15]}=$line[17].":".$line[18].":".$line[19];
 	        $sps{$line[1]}=$line[20];
 	        $sps{$line[8]}=$line[21];
 			$id=$line[1]."#".$line[2]."#".$line[8];		
