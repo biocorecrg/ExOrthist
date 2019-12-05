@@ -48,7 +48,6 @@ Minimum % of similarity between the pair of exons and
 their corresponding upstream and downstream exons. 
 maxsize                          : ${params.maxsize}
 % of maximum size ... 
-cluster (txt files)              : ${params.cluster}
 clusternum (number of clusters)  : ${params.clusternum}
 output (output folder)           : ${params.output}
 email for notification           : ${params.email}
