@@ -64,6 +64,7 @@ while (s/\%\s*(\S+).*\n([A-Za-z\-\n\s]+)(\n\%|\s*$)/$3/) {
     @{$S{$gene}} = split (//, $seq{$gene});
     foreach $intron ($introns{$gene} =~ /\d+\.\d/g) {
 	($pos, $phase) = $intron =~ /(\d+)\.(\d)/;
+	$pos--; #0-based aminoacid position for the alignment
 	$intpos{$gene}[$pos] = $phase;
     }
 }
