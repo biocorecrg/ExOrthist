@@ -2,11 +2,9 @@
 #use warnings;
 #use strict;
 
-my $f=$ARGV[0]; ##path to the folder with the score file parts
-
 
 ##Joining the parts
-`cat $f/PART_*/EXcls_* > pre_cluster_exons.txt`; 
+`cat EXcls_* > pre_cluster_exons.txt`; 
 
 #"GF000033|WHL22.236185|Scaffold196:625640-625797:+|Spu"11
 my ($id1, $sp1, $sp2, $l, $id2, $n);

@@ -114,7 +114,7 @@ process split_cluster_file_per_specie {
     file(clusterfile)
     
     output:
-    file("*.cls.tab") into cls_tab_files
+    file "*.cls.tab"  into cls_tab_files, cls_tab_file_4_clustering
     
 	script:
 	"""
@@ -326,18 +326,53 @@ process filter_redundant {
 
 /*
 * Split the file of exon pairs 
-
+*/
 process get_pre_cluster_exons {
-
     input:
-    file (score_exon_hits_pairs)
+    file(score_exon_hits_pairs)
+    file(cls_tab_file_4_clustering)
     
     output:
-    file("Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.idexons}.tab") into filtered_all_scores
-
+    file("PART_*/*.tab") into cluster_parts
+    
 	script:
 	"""
-    Get_Pre_cluster_exons.pl Consensus_cl_16sp-V5_2B.tab Best_score_exon_hits_liftover_pairs.txt 500 out.txt
+    Get_Pre_cluster_exons.pl ${cls_tab_file_4_clustering} ${score_exon_hits_pairs} 500 out.txt
+    """
+}
+
+/*
+* Split the file of exon pairs 
+*/
+process cluster_with_R {
+
+    input:
+    file(cluster_part) from cluster_parts.flatten()
+    
+    output:
+    file("EX${cluster_part}") into ex_clusters
+    
+	script:
+	"""
+    cluster.R ${cluster_part} EX${cluster_part}
+    """
+}
+
+/*
+* Final output
+*/
+process make_final_output {
+    publishDir "${params.output}/", mode: 'copy'	  
+
+    input:
+    file("*") from ex_clusters.collect()
+    
+    output:
+    file("Exon_Clusters.tab")
+    
+	script:
+	"""
+    Get_pre_table_clusters.pl 
     """
 }
 
