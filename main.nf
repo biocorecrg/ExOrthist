@@ -262,7 +262,7 @@ process get_all_scores_exon_introns {
     ${species[0]}/${species[0]}_protein_ids_intron_pos_CDS.txt ${species[1]}/${species[1]}_protein_ids_intron_pos_CDS.txt \
     ${comp_id}/Final_aln_scores_${comp_id}.txt; 
     get_score_by_exon.pl ${comp_id}/Final_aln_scores_${comp_id}.txt ${comp_id}
-    filter_exons_by_score.pl -b ${comp_id}/Best_score_hits_exons.txt -sps ${species[0]},${species[1]} -int ${params.intcons} -id ${params.idexons} -max_size ${params.maxsize}
+    #filter_exons_by_score.pl -b ${comp_id}/Best_score_hits_exons.txt -sps ${species[0]},${species[1]} -int ${params.intcons} -id ${params.idexons} -max_size ${params.maxsize}
     """
 }
 
