@@ -412,6 +412,7 @@ foreach $el (@keys){
 	    } ## closing INTALN file
 	    if (($sim1>=20 && $sim2>=20) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
 		##5) CALLING SUBROUTINE FOR SCORING INTRONS
+		print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n";
 		if ($is1 && $is2 && $ialn){
 		    my $tsp1=$spid{$inn1}; my $tsp2=$spid{$inn2};
 		    my $tmp1=score_introns($is1,$ialn,$is2,$inn1,$inn2,$tsp1,$tsp2,$Gclid);
