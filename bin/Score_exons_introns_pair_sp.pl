@@ -383,6 +383,7 @@ foreach $el (@keys){
 	    ## 4) CALLING SUBROUTINE FOR SCORING PROTEINS
 	    my ($sim1,$sim2,$id1,$glsc1)=(0,0,0,0);
 	    ($sim1,$sim2,$id1,$glsc1)=score_proteins($n1,$n2,$seq1,$seq2);
+	    print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; ##printing in the protein scoring file the scores of similarity
 	    ## 3) OPENING OUTPUT INTALN FILE
 	    open (INTALN, "$int_aln");
 	    my ($ialn, $inn1, $inn2, $iseq1, $iseq2, $is1, $is2);
