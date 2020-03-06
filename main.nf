@@ -49,6 +49,10 @@ their corresponding upstream and downstream exons.
 maxsize                          : ${params.maxsize}
 % of maximum size ... 
 clusternum (number of clusters)  : ${params.clusternum}
+extraexons (i.e. from vastb)     : ${params.extraexons}
+liftover                         : ${params.liftover}
+orthofolder                      : ${params.orthofolder}
+vastdb                           : ${params.vastb}
 output (output folder)           : ${params.output}
 email for notification           : ${params.email}
 
@@ -80,27 +84,57 @@ Channel
     .ifEmpty { error "Cannot find any annotation matching: ${params.annotations}" }
     .set {annotations}
 
-genomes.join(annotations).into{pipe_data; data_to_annotation}
 
+/*
+ * Create channels for optional extra exons
+ */
+if (params.extraexons) {
+	Channel
+   	 .fromFilePairs( params.extraexons, size: 1)                                             
+   	 .ifEmpty { print "Not using extra exons" }
+   	 .set {extraexons} 
+	genomes.join(annotations).into{data_to_annotation_raw; pipe_data}
+	data_to_annotation_raw.join(extraexons).set{data_to_annotation}
+} else {
+    genomes.join(annotations).into{pipe_data; data_to_annotation}
+}
 
 
 /*
  * Generate annotations
  */
-process generate_annotations {
-    tag { genomeid }
-    publishDir "${params.output}/", mode: 'copy'	  
-
-    input:
-    set genomeid, file(genome), file(annotation) from data_to_annotation
-    
-    output:
-    set val(genomeid), file (genomeid) into idfolders
+if (params.extraexons) {
+	process generate_annotations_with_extra_exons {
+		tag { genomeid }
+		publishDir "${params.output}/", mode: 'copy'	  
 	
-	script:
-	"""
-	generate_annotations_lc.pl -GTF ${annotation} -G ${genome} -sp ${genomeid} 
-	"""
+		input:
+		set genomeid, file(genome), file(annotation), file(extraexons) from data_to_annotation
+	
+		output:
+		set val(genomeid), file (genomeid) into idfolders
+	
+		script:
+		"""
+		generate_annotations_V3.pl -GTF ${annotation} -G ${genome} -sp ${genomeid} -add_exons ${extraexons}
+		"""
+	}
+} else {
+	process generate_annotations {
+		tag { genomeid }
+		publishDir "${params.output}/", mode: 'copy'	  
+	
+		input:
+		set genomeid, file(genome), file(annotation) from data_to_annotation
+	
+		output:
+		set val(genomeid), file (genomeid) into idfolders
+	
+		script:
+		"""
+		generate_annotations_V3.pl -GTF ${annotation} -G ${genome} -sp ${genomeid}
+		"""
+	}
 }
 
 /*
@@ -132,12 +166,12 @@ idfolders
   .toList().map{ [it, it] .combinations().findAll{ a, b -> a[0] < b[0]} }
   .flatMap()
   .map { ["${it[0][0]}-${it[1][0]}".toString(), it[0][1], it[1][1]] }
-  .into{cluster_2_split; anno_2_score_ex_int; limorte}
+  .into{cluster_2_split; anno_2_score_ex_int; species_to_recluster_genes}
 
 
 /*
  * split clusters
- */
+*/
  
 process split_clusters {
     tag { id_comb }
@@ -170,8 +204,9 @@ process score_exons_introns_pair {
     set file(sp1), file(sp2), file(cls_part_file) from cls_files_2_align_t
 
     output:
-    set file(sp1), file(sp2), file("${sp1}-${sp2}_*") into aligned_subclusters_4_realign
-    set val("${sp1}-${sp2}"), file("${sp1}-${sp2}_*") into aligned_subclusters_4_merge
+    set val("${sp1}-${sp2}"), file(sp1), file(sp2) into aligned_subclusters_4_realign_A
+   // set val("${sp1}-${sp2}"), file("${sp1}-${sp2}_*") into aligned_subclusters_4_merge
+    set val("${sp1}-${sp2}"), file("${sp1}-${sp2}_*") into aligned_subclusters_4_splitting
 
 	script:
     def cls_parts = "${cls_part_file}".split("_")
@@ -185,6 +220,29 @@ ${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${s
 }
 
 /*
+ * Split realn exons
+ */
+
+process split_realn_exons {
+    tag { "${comp_id}" }
+    
+    input:
+    set comp_id, file(folders) from aligned_subclusters_4_splitting
+
+    output:
+    set comp_id, file(folders) into aligned_subclusters_4_merge, aligned_subclusters_4_realign_B
+    //set comp_id, file(folders) from aligned_subclusters_4_realign_B
+
+
+	script:
+	"""
+		Split_realn_exons.pl ${folders} ${params.clusternum}
+	"""
+}
+
+
+
+/*
  * Realign target exons
  */
 
@@ -194,7 +252,7 @@ process realign_exons {
     
     input:
     file(blosumfile)
-    set file(sp1), file(sp2), file(aligned_output) from aligned_subclusters_4_realign
+    set comp_id, file(sp1), file(sp2), file(aligned_output) from aligned_subclusters_4_realign_A.join(aligned_subclusters_4_realign_B)
     
     output:
     set val("${sp1}-${sp2}"), file("realigned_exons_${sp1}_${sp2}_*.txt") into realigned_exons_4_merge
@@ -243,7 +301,7 @@ folder_jscores.join(anno_2_score_ex_int).map{
 
 /*
  * Score exon and introns together
- */ 
+ */
 process get_all_scores_exon_introns {
     tag { "${comp_id}" }
     
@@ -268,7 +326,7 @@ process get_all_scores_exon_introns {
 
 /*
  * Score exon and introns together
- */ 
+ */
 process filter_scores {
     tag { "${comp_id}" }
     
@@ -306,7 +364,7 @@ process join_best_filtered_scores {
 
 /*
  * Removing redundant hits
- */ 
+ */
 process filter_redundant {
     
     input:
@@ -316,10 +374,14 @@ process filter_redundant {
     file("Best_score_exon_hits_pairs.txt") into score_exon_hits_pairs
       
 	script:
+	liftcmd = ""
+	if (params.liftover != "") {
+		liftcmd = params.liftover
+	}
 	"""
-    get_count_exons.pl ${scores} Exon_count_hits_by_sp.tab
+    get_count_exons.pl ${scores} Exon_count_hits_by_sp.tab ${liftcmd}
     get_overlap_exons.pl -i Exon_count_hits_by_sp.tab -o Overlap_exons_by_sp.tab
-    Filter_final_exons_pair.pl Overlap_exons_by_sp.tab ${scores} Best_score_exon_hits_pairs.txt
+    Filter_final_exons_pair.pl Overlap_exons_by_sp.tab ${scores} Best_score_exon_hits_pairs.txt ${params.liftover}
     """
 }
 
@@ -358,6 +420,40 @@ process cluster_with_R {
 }
 
 /*
+* Re-clustering of genes 
+*/
+process recluster_genes_species {
+    publishDir "${params.output}/", mode: 'copy'	  
+    tag { "${combid}" }
+
+	when:
+	params.orthofolder != ""
+
+    input:
+    set combid, file(folderA), file(folderB) from species_to_recluster_genes
+    file(clusterfile)
+    
+    output:
+    set combid, file("Recluster_genes_*.tab") into recl_genes_for_rec_exons
+    file("Table_recl_exons_*.tab") optional true
+    
+	script:
+	def combid1 = combid.replace("-", "_")
+	def combid2 = combid.replace("-", ",")
+	def species_out_file = "Recluster_genes_${combid1}.tab" 
+	def table_out_file = "Table_recl_exons_${combid1}.tab" 
+	def vastbcmd = ""
+	if (params.vastb!= "") {
+		vastbcmd = "Add_vastids_excls.pl ${params.vastb} ${species_out_file} ${table_out_file}"
+	}
+	"""
+ 		Recluster_genes_sps_pair.pl --cl_file ${clusterfile} --sps ${combid2} --outfile ${species_out_file} --of_path ${params.orthofolder}
+    	${vastbcmd}
+    """
+}
+
+
+/*
 * Final output
 */
 process make_final_output {
@@ -367,11 +463,44 @@ process make_final_output {
     file("*") from ex_clusters.collect()
     
     output:
-    file("Exon_Clusters.tab")
+    file("Exon_Clusters.tab") into exon_cluster_for_reclustering
+    file("Table_exon_clusters.tab") optional true
     
 	script:
+	def vastbcmd = ""
+	if (params.vastb!= "") {
+		vastbcmd = "Add_vastids_excls.pl ${params.vastb} Exon_Clusters.tab Table_exon_clusters.tab"
+	}
 	"""
     Get_pre_table_clusters.pl 
+    ${vastbcmd}
+    """
+}
+
+/*
+* Re-clustering of exons 
+*/
+
+process recluster_exons_species {
+    publishDir "${params.output}/", mode: 'copy'	  
+    tag { "${combid}" }
+
+	when:
+	params.orthofolder != ""
+
+    input:
+    set combid, file(recl_genes) from recl_genes_for_rec_exons
+    file(exon_cluster_for_reclustering)
+    
+    output:
+    file("Recluster_exons_*.tab")
+    
+	script:
+	def combid1 = combid.replace("-", "_")
+	def species_out_file = "Recluster_exons_${combid1}.tab" 
+	
+	"""
+ 		Recluster_exons_sps_pair.pl ${recl_genes} ${exon_cluster_for_reclustering} ${species_out_file}	
     """
 }
 
