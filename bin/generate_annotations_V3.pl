@@ -272,8 +272,8 @@ if ($add_exons ne "NA"){##if added exons ne "NA" --> if additional exons are pro
 	$C1_ref{$ev}=$t[3];
 	$A_ref{$ev}=$t[2];
 	$C2_ref{$ev}=$t[4];
-	$C1_inc{$ev}=$t[6];
-	$C2_inc{$ev}=$t[7];
+	$C1_inc{$ev}=$t[3]; ##same as C1 reference
+	$C2_inc{$ev}=$t[4]; ##same as C2 reference 	
 	$co_ev{$t[2]}=$ev;
 	($chr,$i,$f)=$t[2]=~/(.+?)\:(.+?)\-(.+)/;
 	$coA="$chr:$i";
