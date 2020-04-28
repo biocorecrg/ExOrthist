@@ -23,6 +23,10 @@ $cpus=1 if !$cpus;
 
 my ($dir,$project_dir)=$outf=~/(.+)\/(.+?)\/.+?\//;
 my ($sp1,$sp2)=($s1,$s2);
+my $idex;
+my %onehit;
+my %miss;
+my (@tn1, @tn2, @ln);
 system "mkdir $outf"; 
 
 
@@ -39,9 +43,9 @@ open (MISS, ">$msf");
 #Header protein score file
 print PRSC "CID\tALN\tQuery\tSubject\t\%Sim_qry_sbj\t\%Sim_sbj_qry\t\%Identity\tGlobal_Score\tSp_query\tSp_subject\n";
 #Header exon score file
-print EXSC "CID\tProt_query\tExon_number_query\tAA_pos_exon_query\tChr_query\tExon_coords_query\tStrand\tExon_hits_subject\tProtein_subject\tAln_AA_pos_subject\t\%Identity_aln_qry_sbj\t\%Sim_aln_qry_sbj\tGap_number\t\%Gaps\tProtein_subject\tExon_number_subject\tAA_pos_exon_subject\tChr_subject\tExon_coords_subject\tStrand\tSp_query\tSp_subject\n";
+print EXSC "CID\tProt_query\tExon_number_query\tAA_pos_exon_query\tChr_query\tExon_coords_query\tStrand\tExon_hits_subject\tProtein_subject\tAln_AA_pos_subject\t\%Sim_aln_qry_sbj\t\%Id_aln_qry_sbj\tGap_number\t\%Gaps\tProtein_subject\tExon_number_subject\tAA_pos_exon_subject\tChr_subject\tExon_coords_subject\tStrand\tSp_query\tSp_subject\n";
 #Header exons to realign file
-print MISS "CID\tProt_query\tExon_number_query\tAA_pos_exon_query\tChr_query\tExon_coords_query\tStrand\tExon_hits_subject\tProtein_subject\tAln_AA_pos_subject\t\%Identity_aln_qry_sbj\t\%Sim_aln_qry_sbj\tGap_number\t\%Gaps\tProtein_subject\tExon_number_subject\tAA_pos_exon_subject\tChr_subject\tExon_coords_subject\tStrand\tSp_query\tSp_subject\n";
+print MISS "CID\tProt_query\tExon_number_query\tAA_pos_exon_query\tChr_query\tExon_coords_query\tStrand\tExon_hits_subject\tProtein_subject\tAln_AA_pos_subject\t\%Sim_aln_qry_sbj\t\%Id_aln_qry_sbj\tGap_number\t\%Gaps\tProtein_subject\tExon_number_subject\tAA_pos_exon_subject\tChr_subject\tExon_coords_subject\tStrand\tSp_query\tSp_subject\n";
 #Header intron score file
 print INSC "CID\tProt_query\tIntron_number_query\tAA_pos_intron_query\tIntron_phase_query\tProt_subject\tIntron_number_subject\tAA_pos_intron_subject\tIntron_phase_subject\tAln_dev\tAln_score\tIntron_score\tSp_query\tSp_subject\n";
 ################
@@ -880,7 +884,7 @@ sub score_exons {
     
     ##Opening temporal position file
     my (%check,%print, %cin);
-    my ($tex, $ex, $in1, $in2, $pr, $size, $ne, $x);
+    my ($tex, $ex, $in1, $in2, $pr, $size, $ne, $x, $tstr);
     my (@tmp, @nex);
     my $id_score=0;
     my $f_score=0;
@@ -950,8 +954,7 @@ sub score_exons {
 			if ($exon{$n2."_".$k}){
 			    $ex=$exon{$n2."_".$k};
 			    if (!$check{$ex}){
-				$check{$ex}=1;
-				    
+				$check{$ex}=1;				    
 				if (!$tex){
 				    $tex=$ex;
 				} 
@@ -963,21 +966,22 @@ sub score_exons {
 		    }
 		    if ($tex){
 			if ($rs1==0){ $rs1=1; }
-
 			if ($tex=~/\,/){ ##if the exon need to be realign is written in a special file for further processing
-
 			    @nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format
-
 			    for ($x=0; $x<scalar(@nex); $x++){
-
-				print MISS "$el\t$_\t$ne\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp1\t$sp2\n";
-
+				$tstr=$el."\t".$_."\t".$ne."\t".$n2."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp1."\t".$sp2;
+				$miss{$tstr}=1;
+				#print MISS "$el\t$_\t$ne\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp1\t$sp2\n";
 				print EXSC "$el\t$_\t$ne\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp1\t$sp2\n";
-
 			    }
 			}
 			else {
-			    print EXSC "$el\t$_\t1\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp1\t$sp2\n";
+			    	print EXSC "$el\t$_\t1\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp1\t$sp2\n";
+			    	@ln=split(/\t/,$_);
+				@tn1=split(/\|/,$ln[0]);
+				@tn2=split(/\|/,$n2);
+				$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
+				$onehit{$idex}=1;
 			}
 		    }
 		} 
@@ -1056,13 +1060,18 @@ sub score_exons {
 		    if ($tex=~/\,/){ ##If the exon needs to be realigned is written in an special file for its further processing
 			@nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format
 			for ($x=0; $x<scalar(@nex); $x++){
-			    
-			    print MISS "$el\t$_\t$ne\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp2\t$sp1\n";
-
-			    print EXSC "$el\t$_\t$ne\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp2\t$sp1\n";
+			    	#print MISS "$el\t$_\t$ne\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp2\t$sp1\n";
+				$tstr=$el."\t".$_."\t".$ne."\t".$n1."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp2."\t".$sp1;
+				$miss{$tstr}=1;
+			    	print EXSC "$el\t$_\t$ne\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp2\t$sp1\n";
 			}
 		    } else {
-			print EXSC "$el\t$_\t1\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp2\t$sp1\n";
+				print EXSC "$el\t$_\t1\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp2\t$sp1\n";
+				@ln=split(/\t/,$_);
+				@tn1=split(/\|/,$ln[0]);
+				@tn2=split(/\|/,$n2);
+				$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
+				$onehit{$idex}=1;
 		    }
 		} 
 		else { 
@@ -1072,6 +1081,18 @@ sub score_exons {
 	}##WHILE POS
     }#CLOSING IF
 } ##End of subroutine score_exons
+##printing file of exons to realign##
+my @ks=sort(keys(%miss));
+my $mex;
+foreach $mex(@ks){
+	@ln=split(/\t/,$mex);
+	@tn1=split(/\|/,$ln[1]);
+	@tn2=split(/\|/,$ln[8]);
+	$idex=$ln[0]."\t".$tn1[1]."\t".$ln[5]."\t".$tn2[1];
+	if (!$onehit{$idex}){
+		print MISS "$mex\n";
+	}
+}
 close (PRSC);
 close (EXSC);
 close (INSC);
