@@ -1,4 +1,6 @@
-# Please add a name for the pipeline
+# ![ExOrthist](https://raw.githubusercontent.com/biocorecrg/exon_intron_orthology_pipeline/master/docs/logo.jpeg) 
+
+
 
 ## License
 Please choose a license for this project!
