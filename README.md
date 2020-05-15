@@ -1,4 +1,4 @@
-# ![ExOrthist](https://raw.githubusercontent.com/biocorecrg/exon_intron_orthology_pipeline/master/docs/logo.jpeg) 
+# ![ExOrthist](https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/logo_s.png?raw=true) 
 
 
 
