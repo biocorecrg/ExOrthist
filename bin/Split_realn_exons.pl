@@ -7,14 +7,16 @@ my $dir=$ARGV[0];
 $p=$ARGV[1];
 
 $file=$dir."/tmp.txt";
-`cat $dir/exons_to_realign_part_* > $file`;
-`rm $dir/exons_to_realign_part_*`;
+`cat $dir/exons_to_split_part_* > $file`;
+#`rm $dir/exons_to_realign_part_*`;
 
 $h=0;
 $c=0;
 $t=1;
+$nrow = 0;
 open (FILE, "$file");
 while (<FILE>){
+    $nrow++;
 	chomp($_);
 	if ($_=~/CID/) { $h=$_; }
 	else { $c++; 
@@ -46,6 +48,10 @@ while (<FILE>){
 	}
 
 }
-
+if ($nrow == 1) {
+	$of=$dir."/exons_to_realign_part_".$t.".txt";
+	open (OUT, ">>$of");
+	print OUT "$h\n";
+}
 
 

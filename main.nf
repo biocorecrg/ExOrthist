@@ -52,7 +52,7 @@ clusternum (number of clusters)  : ${params.clusternum}
 extraexons (i.e. from vastb)     : ${params.extraexons}
 liftover                         : ${params.liftover}
 orthofolder                      : ${params.orthofolder}
-vastdb                           : ${params.vastb}
+vastdb                           : ${params.vastdb}
 output (output folder)           : ${params.output}
 email for notification           : ${params.email}
 
@@ -70,6 +70,7 @@ outputQC          = "${params.output}/QC"
 blosumfile        = file("${baseDir}/files/blosum62.txt")
 
 if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
+if ( !clusterfile.exists() ) exit 1, "Missing clusterfile file: ${clusterfile}!"
 
 /*
  * Create channels for sequences data
@@ -169,6 +170,7 @@ idfolders
   .into{cluster_2_split; anno_2_score_ex_int; species_to_recluster_genes}
 
 
+
 /*
  * split clusters
 */
@@ -191,6 +193,7 @@ process split_clusters {
 
 cls_files_2_align.transpose().set{cls_files_2_align_t}
 
+
 /*
  * Align pairs
  */
@@ -204,13 +207,15 @@ process score_exons_introns_pair {
     set file(sp1), file(sp2), file(cls_part_file) from cls_files_2_align_t
 
     output:
-    set val("${sp1}-${sp2}"), file(sp1), file(sp2) into aligned_subclusters_4_realign_A
+   // set val("${sp1}-${sp2}"), file(sp1), file(sp2), file("${sp1}-${sp2}_*/exons_to_realign_part_*.txt") into aligned_subclusters_4_realign_A
+   // set val("${sp1}-${sp2}"), file("${sp1}-${sp2}_*/exons_to_realign_part_*.txt") into file_4_realign_A
    // set val("${sp1}-${sp2}"), file("${sp1}-${sp2}_*") into aligned_subclusters_4_merge
-    set val("${sp1}-${sp2}"), file("${sp1}-${sp2}_*") into aligned_subclusters_4_splitting
+	set val("${sp1}-${sp2}"), file(sp1), file(sp2), file("${sp1}-${sp2}_*"), file("${sp1}-${sp2}_*/exons_to_split_part_*.txt") into aligned_subclusters_4_splitting
 
 	script:
     def cls_parts = "${cls_part_file}".split("_")
 	"""
+	echo ciao
 		Score_exons_introns_pair_sp.pl ${sp1} ${sp2} ${cls_part_file} \
 ${sp1}/${sp1}_annot_exons_prot_ids.txt ${sp2}/${sp2}_annot_exons_prot_ids.txt \
 ${sp1}/${sp1}_protein_ids_exons_pos.txt ${sp2}/${sp2}_protein_ids_exons_pos.txt \
@@ -219,19 +224,22 @@ ${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${s
 	"""
 }
 
+
+
 /*
  * Split realn exons
  */
 
 process split_realn_exons {
-    tag { "${comp_id}" }
+    tag { "${folders}" }
 
     input:
-    set comp_id, file(folders) from aligned_subclusters_4_splitting
-
+    set comp_id, file(sp1), file(sp2), file(folders), val(req_file) from aligned_subclusters_4_splitting
+	
     output:
-    set comp_id, file(folders) into aligned_subclusters_4_merge, aligned_subclusters_4_realign_B
-    //set comp_id, file(folders) from aligned_subclusters_4_realign_B
+    //set comp_id, file(folders) into aligned_subclusters_4_merge
+    set comp_id, file(sp1), file(sp2), file(folders), file("${folders}/exons_to_realign_part_*.txt") into aligned_subclusters_4_realign
+    //set comp_id, file(folders), file("${folders}/exons_to_realign_part_*.txt") into aligned_parts_4_realign
 
 
 	script:
@@ -242,34 +250,41 @@ process split_realn_exons {
 
 
 
+
 /*
  * Realign target exons
  */
 
 process realign_exons {
-    tag { "${aligned_output}" }
+    tag { "${aligned_folder}/${exons_to_realign.simpleName}" }
     label 'incr_time_cpus'
 
     input:
     file(blosumfile)
-    set comp_id, file(sp1), file(sp2), file(aligned_output) from aligned_subclusters_4_realign_A.join(aligned_subclusters_4_realign_B)
+    set val(comp_id), file(sp1), file(sp2), file(aligned_folder), val(exons_to_realign) from aligned_subclusters_4_realign.transpose()
 
     output:
-    set val("${sp1}-${sp2}"), file("realigned_exons_${sp1}_${sp2}_*.txt") into realigned_exons_4_merge
+    set val(comp_id), file(aligned_folder), file("${aligned_folder}/realigned_*") into realigned_exons_4_merge
 
 	script:
-    def cls_parts = "${aligned_output}".split("_")
+    def cls_parts = "${aligned_folder.simpleName}".split("_")
+    def infile = exons_to_realign.getFileName()
+    def realigned_file = "realigned_" + exons_to_realign.getBaseName() + "_${cls_parts[1]}.txt"
 	"""
-		Realign_target_exons_by_part.pl ${sp1} ${sp2} ${aligned_output}/exons_to_realign_part_${cls_parts[1]}.txt \
-${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} realigned_exons_${sp1}_${sp2}_${cls_parts[1]}.txt \
-${sp1}_${sp2} ${blosumfile} ${task.cpus}
+		Realign_target_exons_by_part.pl ${sp1} ${sp2} ${aligned_folder}/${infile} \
+		${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${aligned_folder}/${realigned_file} \
+		${sp1}_${sp2} ${blosumfile} ${task.cpus}
 	"""
 }
 
-aligned_subclusters_4_merge.groupTuple().join(realigned_exons_4_merge.groupTuple()).set{
+realigned_exons_4_merge.map{
+	[it[1].getFileName(), it[1]]
+}.groupTuple().map{
+    def pieces = "${it[0]}".split("_")
+	[pieces[0], it[1].first()]
+}.groupTuple().set{
 	data_4_merge
 }
-
 
 /*
  * Join scores
@@ -277,9 +292,10 @@ aligned_subclusters_4_merge.groupTuple().join(realigned_exons_4_merge.groupTuple
 
 process join_scores {
     tag { "${comp_id}" }
+	stageInMode = 'copy'
 
     input:
-    set comp_id, file(folders), file(aligned_output) from data_4_merge
+    set comp_id, file("FOLDERS_*") from data_4_merge
 
     output:
     set val(comp_id), file("${comp_id}/") into folder_jscores
@@ -287,9 +303,11 @@ process join_scores {
 	script:
 	"""
 	    mkdir ${comp_id}
-	    ln -s \$PWD/realigned_exons_* ${comp_id}
-	    ln -s \$PWD/${comp_id}_*/* ${comp_id}
-        join_score_files.pl ${comp_id}
+	    rm FOLDERS_*/exons_to_realign*
+	    rm FOLDERS_*/tmp.txt
+	    mv FOLDERS_*/* ${comp_id}
+
+    	join_score_files.pl ${comp_id}
         get_best_score_ex_pair.pl ${comp_id}/Score_all_exons.txt ${comp_id}/Best_scores_pair_exons.txt
 	"""
 }
@@ -302,6 +320,7 @@ folder_jscores.join(anno_2_score_ex_int).map{
 /*
  * Score exon and introns together
  */
+ 
 process get_all_scores_exon_introns {
     tag { "${comp_id}" }
 
@@ -376,12 +395,14 @@ process filter_redundant {
 	script:
 	liftcmd = ""
 	if (params.liftover != "") {
-		liftcmd = params.liftover
+		liftfile = file(params.liftover)
+		if ( !liftfile.exists() ) exit 1, "Missing liftover file: ${liftfile}!"
+
 	}
 	"""
-    get_count_exons.pl ${scores} Exon_count_hits_by_sp.tab ${liftcmd}
+    get_count_exons.pl ${scores} Exon_count_hits_by_sp.tab ${liftfile}
     get_overlap_exons.pl -i Exon_count_hits_by_sp.tab -o Overlap_exons_by_sp.tab
-    Filter_final_exons_pair.pl Overlap_exons_by_sp.tab ${scores} Best_score_exon_hits_pairs.txt ${params.liftover}
+    Filter_final_exons_pair.pl Overlap_exons_by_sp.tab ${scores} Best_score_exon_hits_pairs.txt ${liftfile}
     """
 }
 
@@ -443,8 +464,8 @@ process recluster_genes_species {
 	def species_out_file = "Recluster_genes_${combid1}.tab"
 	def table_out_file = "Table_recl_exons_${combid1}.tab"
 	def vastbcmd = ""
-	if (params.vastb!= "") {
-		vastbcmd = "Add_vastids_excls.pl ${params.vastb} ${species_out_file} ${table_out_file}"
+	if (params.vastdb!= "") {
+		vastbcmd = "Add_vastids_excls.pl ${params.vastdb} ${species_out_file} ${table_out_file}"
 	}
 	"""
  		Recluster_genes_sps_pair.pl --cl_file ${clusterfile} --sps ${combid2} --outfile ${species_out_file} --of_path ${params.orthofolder}
@@ -468,8 +489,8 @@ process make_final_output {
 
 	script:
 	def vastbcmd = ""
-	if (params.vastb!= "") {
-		vastbcmd = "Add_vastids_excls.pl ${params.vastb} Exon_Clusters.tab Table_exon_clusters.tab"
+	if (params.vastdb!= "") {
+		vastbcmd = "Add_vastids_excls.pl ${params.vastdb} Exon_Clusters.tab Table_exon_clusters.tab"
 	}
 	"""
     Get_pre_table_clusters.pl
@@ -557,3 +578,4 @@ workflow.onComplete {
     println "Time elapsed: $workflow.duration"
     println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
 }
+

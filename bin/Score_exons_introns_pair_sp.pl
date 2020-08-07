@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-#use warnings;
+use warnings;
 use strict;
 
 ##SCRIPT FOR SCORING EXONS BTW PAIR OF SPECIES##
@@ -33,7 +33,7 @@ system "mkdir $outf";
 my $exsc=$outf."/score_exons_".$s1."_".$s2."_part_".$part.".txt";##outputfile for exon scores
 my $insc=$outf."/score_introns_".$s1."_".$s2."_part_".$part.".txt";
 my $prsc=$outf."/score_proteins_".$s1."_".$s2."_part_".$part.".txt";##outputfile for scores of whole protein alignment
-my $msf=$outf."/exons_to_realign_part_".$part.".txt"; ##generating a file for those exons that need to be realigned
+my $msf=$outf."/exons_to_split_part_".$part.".txt"; ##generating a file for those exons that need to be realigned
 open (EXSC, ">$exsc");
 open (INSC, ">$insc");
 open (PRSC, ">$prsc");
@@ -382,6 +382,7 @@ foreach $el (@keys){
 	    $n2=$nkeys[1];
 	    $seq1=$seq{$n1};
 	    $seq2=$seq{$n2};
+            #print("\n".$seq2."\n");
 	    $sp1=$spid{$n1};
 	    $sp2=$spid{$n2};	        
 	    ## 4) CALLING SUBROUTINE FOR SCORING PROTEINS
@@ -495,10 +496,16 @@ sub score_proteins {
     
 	$id1=sprintf("%.2f",(($id_score/$l1)*100));
 	$id2=sprintf("%.2f",(($id_score/$l2)*100));
-    
-	$global_score1=($e_score+($g*-4)+($e*-1))/$m1;
-	$global_score2=($e_score+($g*-4)+($e*-1))/$m2;
-    
+        if ($m1 == 0) {
+		$global_score1 = 0;
+	} else {
+		$global_score1=($e_score+($g*-4)+($e*-1))/$m1;
+	}
+	if ($m2 == 0) {
+                $global_score2 = 0;
+        } else {
+		$global_score2=($e_score+($g*-4)+($e*-1))/$m2;
+    	}
 	$global_score1=sprintf("%.2f",$global_score1);
 	$global_score2=sprintf("%.2f",$global_score2);
     
