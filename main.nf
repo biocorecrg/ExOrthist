@@ -323,6 +323,7 @@ folder_jscores.join(anno_2_score_ex_int).map{
  
 process get_all_scores_exon_introns {
     tag { "${comp_id}" }
+    label('big_mem')
 
     input:
     set val(comp_id), file("*") from data_to_score
