@@ -30,11 +30,10 @@ params.resume          = false
 
 
 log.info """
-Biocore@CRG Yamile's pipeline - N F  ~  version ${version}
 
-╦ ╦╔═╗╔╦╗╦╦  ╔═╗╔═╗  ┌─┐┬┌─┐┌─┐┬  ┬┌┐┌┌─┐
-╚╦╝╠═╣║║║║║  ║╣ ╚═╗  ├─┘│├─┘├┤ │  ││││├┤
- ╩ ╩ ╩╩ ╩╩╩═╝╚═╝╚═╝  ┴  ┴┴  └─┘┴─┘┴┘└┘└─┘
+╔╦╗┬ ┬┌─┐  ╔═╗─┐ ┬╔═╗┬─┐┌┬┐┬ ┬┬┌─┐┌┬┐
+ ║ ├─┤├┤   ║╣ ┌┴┬┘║ ║├┬┘ │ ├─┤│└─┐ │ 
+ ╩ ┴ ┴└─┘  ╚═╝┴ └─╚═╝┴└─ ┴ ┴ ┴┴└─┘ ┴ 
 
 ==============================================================================
 annotations (GTF files)          : ${params.annotations}
@@ -573,7 +572,7 @@ else {
 }
 
 workflow.onComplete {
-    println "Pipeline BIOCORE@CRG YAMILE'S PIPELINE!"
+    println "--- Pipeline BIOCORE@CRG ExOrthist ---"
     println "Started at  $workflow.start"
     println "Finished at $workflow.complete"
     println "Time elapsed: $workflow.duration"
