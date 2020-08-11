@@ -1,0 +1,16 @@
+params {
+    cluster      = "$baseDir/test/Ame_Cdi_Dme_s.tab.gz"
+    genomes      = "$baseDir/test/GENOMES/*_gDNA.fasta.gz"
+    annotations  = "$baseDir/test/GTF/*_annot.gtf.gz"
+    clusternum   = 100
+    extraexons   = ""
+    liftover     = ""
+    orthofolder  = ""
+    vastdb       = ""
+    intcons      = 2
+    idexons      = 0.2
+    maxsize      = 0.65
+    output       = "$baseDir/output_small"
+    email        = "yourmail@yourdomain"
+}
+
