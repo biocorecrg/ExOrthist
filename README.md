@@ -67,7 +67,7 @@ Example:
      Bta.gtf.gz
 ```
 
-* Gene cluster file with the following format: ClusterID  Species  GeneID
+* Gene cluster file with the following format (tsv): ClusterID Species GeneID
 ```bash
 GF000001	Hsa	ENSG00000151690
 GF000001	Mmu	ENSMUSG00000041439
@@ -85,12 +85,8 @@ The Species identifier should match that of the other files. Moreover, the prefi
 Hsa_Mmu_Bta.tab.gz
 ```
 
-The pipeline can be launched in this way:
-```bash
-nextflow run main.nf --clusters "test/*.tab.gz" --genomes "test/GENOMES/*_gDNA.fasta.gz" --annotations "$baseDir/test/GTF/*_annot.gtf.gz" --output output -bg > log.txt
-```
 
-To provide additional non-annotated exons... The following format: XXXXX.
+To provide additional non-annotated exons... The following format (tsv): XXXXX.
 
 ```bash
 ???
@@ -115,4 +111,24 @@ ExOrthist includes a custom [script](https://github.com/biocorecrg/ExOrthist/blo
 ```bash
 perl GetLiftOverFile.pl -annot_sp1 test/Hsa.exons -annot_sp2 test/Mmu.exons -gene_clusters XXXX -chain_file hg38ToMm10.over.chain
 ```
+
+Basic cluster stats are provided with Get_stats_exon_cls.pl => DEVELOP FURTHER AND RUN AUTOMATICALLY AT THE END
+
+
+Pairwise species re-clustering
+------------
+
+XXXX
+
+
+Evolutionary comparison of exon lists
+------------
+
+XXXXXX
+
+
+Exon-intron gene plots
+------------
+
+XXXXXX
 
