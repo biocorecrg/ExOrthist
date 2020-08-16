@@ -1,12 +1,44 @@
 <img align="middle" href="https://github.com/biocorecrg/exon_intron_orthology_pipeline" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/logo_s.png?raw=true" />
 
 
+Summary
+-------
 
-## License
-Please choose a license for this project!
+ExOrthist is a Nextflow-based pipeline to obtain groups of exon orthologous at all evolutionary timescales.
 
-## Docker image
-Docker image was uploaded to [Docker Hub](https://cloud.docker.com/u/biocorecrg/repository/docker/biocorecrg/exon_intron_pipe). 
+Requirements
+------------
+
+ExOrthist requires the following software:
+ * [Nextflow](https://www.nextflow.io/)
+ * A linux container engine (either [Docker](https://www.docker.com/) or [Singularity](https://sylabs.io/guides/3.1/user-guide/cli/singularity_apps.html))
+ * R 3.5 or higher, with the [igraph](https://igraph.org/) package installed.
+ * Perl 5.10.1 or higher
+ * [Mafft](https://mafft.cbrc.jp/alignment/software/) for protein alignment.
+ 
+ Additionally, [liftOver](https://genome-store.ucsc.edu/) and [bedtools](https://bedtools.readthedocs.io/en/latest/) are required to run XXXX-getLif.
+
+
+Installation
+------------
+
+Install Nextflow (version 19.10.0):
+
+~~~~
+curl -s https://get.nextflow.io | bash`
+~~~~
+
+Clone the ExOrthist repository:
+~~~~
+git clone --depth 1 https://github.com/biocorecrg/ExOrthist.git
+~~~~
+
+Install Docker:
+
+* Docker: https://docs.docker.com/install/ (version 10.03 or later is required)
+* Singularity: https://sylabs.io/guides/2.6/user-guide/quick_start.html#quick-installation-steps (version 2.6.1 or 3.2.1 is required)
+
+A Docker image was uploaded to [Docker Hub](https://cloud.docker.com/u/biocorecrg/repository/docker/biocorecrg/exon_intron_pipe). 
 
 
 ## NextFlow pipeline
