@@ -16,7 +16,7 @@ ExOrthist requires the following software:
  * Perl 5.10.1 or higher
  * [Mafft](https://mafft.cbrc.jp/alignment/software/) for protein alignment.
  
- Additionally, [liftOver](https://genome-store.ucsc.edu/) and [bedtools](https://bedtools.readthedocs.io/en/latest/) are required to run XXXX-getLif.
+ Additionally, [liftOver](https://genome-store.ucsc.edu/), [bedtools](https://bedtools.readthedocs.io/en/latest/) as well as specific pairwise [liftOver files](http://hgdownload.soe.ucsc.edu/downloads.html#liftover) are required to run GetLiftOverFile.pl (see [below](#adding-manually-curated-exon-orthology-pairs)).
 
 
 Installation
@@ -41,36 +41,78 @@ Install Docker:
 A Docker image was uploaded to [Docker Hub](https://cloud.docker.com/u/biocorecrg/repository/docker/biocorecrg/exon_intron_pipe). 
 
 
-## NextFlow pipeline
+Running ExOrthist main module
+------------
+
+The pipeline can be launched in this way:
+```
+nextflow run main.nf --clusters "test/*.tab.gz" --genomes "test/GENOMES/*_gDNA.fasta.gz" --annotations "test/GTF/*_annot.gtf.gz" --output output -bg > log.txt
+```
+
 Test data are in the folder **test**. Input files are:
+
 * Genomic sequences in fasta files (can be gzipped). The prefix, i.e. the genome identifier, must match the corresponding annotation file:
+```bash
+     Hsa.fasta.gz
+     Mmu.fasta.gz
+     Bta.gtf.gz
+```
+
 * Annotation files in GTF format (can be gzipped). The prefix must match the corresponding GTF file:
 Example:
 
 ```bash
-     Ame.fasta.gz Ame.gtf.gz
-     Dme.fasta.gz Dme.gtf.gz 
+     Hsa.gtf.gz
+     Mmu.gtf.gz 
+     Bta.gtf.gz
 ```
-* Gene cluster file with this format:
-**PLEASE MANU OR YAMILE ADD SOME TEXT ON THIS FILE***
 
+* Gene cluster file with the following format: ClusterID  Species  GeneID
 ```bash
-GF000002.01	Dme	FBgn0000810	fs(1)K10
-GF000002.01	Ame	GB41489	fs(1)K10=Hypp632
-
-GF000006.01	Dme	FBgn0031540	CG3238
-GF000006.01	Ame	GB54729	CG3238=PIF1
-
-GF000007.01	Dme	FBgn0004828	His3.3B
-GF000007.01	Ame	GB54084	His3.3A=H3F3A
-GF000007.01	Ame	GB54085	His3.3A=H3F3A
+GF000001	Hsa	ENSG00000151690
+GF000001	Mmu	ENSMUSG00000041439
+GF000001	Bta	ENSBTAG00000007719
+GF000002	Hsa	ENSG00000091127
+GF000002	Mmu	ENSMUSG00000057541
+GF000002	Bta	ENSBTAG00000007743
+GF000003	Hsa	ENSG00000029534
+GF000003	Mmu	ENSMUSG00000031543
+GF000003	Bta	ENSBTAG00000003275
 ```
-The prefix of the file should match the combination of genome identifiers like:
+
+The Species identifier should match that of the other files. Moreover, the prefix of the file should match the combination of genome identifiers like:
 ```bash
-Ame_Dme.tab.gz
+Hsa_Mmu_Bta.tab.gz
 ```
 
 The pipeline can be launched in this way:
-```
+```bash
 nextflow run main.nf --clusters "test/*.tab.gz" --genomes "test/GENOMES/*_gDNA.fasta.gz" --annotations "$baseDir/test/GTF/*_annot.gtf.gz" --output output -bg > log.txt
 ```
+
+To provide additional non-annotated exons... The following format: XXXXX.
+
+```bash
+???
+```
+
+
+Adding manually curated exon orthology pairs
+------------
+
+To add pairs of manually curated or liftOver-based pairwise orthology associations...
+
+The file format is as follows (tsv):  GeneID_Sp1 Exon_Coord_Sp1 GeneID_Sp2 Exon_Coord_Sp2
+
+```bash
+ENSG00000171055	chr2:36552056-36552268:-	ENSMUSG00000056121	chr17:78377717-78377890:-
+ENSG00000171055	chr2:36578597-36578832:-	ENSMUSG00000056121	chr17:78400630-78400865:-
+ENSG00000171055	chr2:36558438-36558513:-	ENSMUSG00000056121	chr17:78384744-78384819:-
+```
+
+ExOrthist includes a custom [script](https://github.com/biocorecrg/ExOrthist/blob/master/bin/GetLiftOverFile.pl) to create lists of exon files using liftOver.
+
+```bash
+perl GetLiftOverFile.pl -annot_sp1 test/Hsa.exons -annot_sp2 test/Mmu.exons -gene_clusters XXXX -chain_file hg38ToMm10.over.chain
+```
+
