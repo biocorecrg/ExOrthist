@@ -7,14 +7,12 @@ use Cwd qw(abs_path cwd);
 my $gtf_file;
 my $genome_file;
 my $exons_db_folder="./";
-#my $species_string;
 my $species_id;
 my $verboseFlag=1;
 my $help;
 my $add_exons="NA";
 
 #Arguments
-
 Getopt::Long::Configure("no_auto_abbrev");
 GetOptions("GTF=s" => \$gtf_file,
 	   "G=s" => \$genome_file,
@@ -31,7 +29,7 @@ sub verbPrint {
     my $verbMsg = shift;
     unless ($verboseFlag == 0 || $verboseFlag eq "F" || $verboseFlag eq "FALSE") {
 	chomp($verbMsg);
-	print STDERR "[exorter annotation]: $verbMsg\n";
+	print STDERR "[ExOrthist annotation]: $verbMsg\n";
     }
 }
 if (!defined $genome_file || !defined $gtf_file || !defined $species_id || defined $help){
@@ -51,6 +49,8 @@ OPTIONAL
                            If it does not exit, it will create a EXONS_DB/ folder in the working directory
      -verbose T/F      Verbose (default TRUE) 
      -h/--help         This help message.
+
+
 ";    
 }
 
@@ -60,6 +60,8 @@ my $full_path_exons_db = abs_path($exons_db_folder);
 verbPrint("EXONS_DB path set to $full_path_exons_db\n");
 #my %VASTDB_files;
 my $species = $species_id;
+### Future GTF file with original + fake transcripts (if extra exons are provided)
+my $merged_GTF = $exons_db_folder."/".$species."/".$species."_annot_fake.gtf";
 
 ### loops for each species (Loop 1: previous get_ref_proteins.pl)
 #foreach my $species (@SPECIES){
@@ -946,19 +948,26 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
     close (EXINT_OUT);
     
 ###Joining 1. GTF files (Annot+Fake)
-    my $tmp="$exons_db_folder/$species/tmp.gtf";
-    `cat $gtf_file $fakeGTF > $tmp`;
-    my $ntmp=$exons_db_folder."/".$species."/".$species."_annot_fake.gtf";
-    `mv $tmp $ntmp`;
-
+    if ($gtf_file=~/\.gz$/){ # if GTF is compressed
+	`gunzip -c $gtf_file > $merged_GTF`;
+	`cat $fakeGTF >> $merged_GTF`;
+    }
+    else {
+	`cat $gtf_file $fakeGTF > $merged_GTF`;
+    }
+    
 ###Joining 2. Exint files
-    my $tmp="$exons_db_folder/$species/tmp.exint";
-    `cat $exint_output $tmp_exint_output > $tmp`;
-    `mv $tmp $exint_output`;
-
-
-}##if added exons ne "NA" --> if additional exons are provided by the user 
-
+    `cat $exint_output $tmp_exint_output >> $exint_output`;
+    `rm $tmp_exint_output`;
+}
+else { # if no extra exons added, it creates a copy of the original GTF
+    if ($gtf_file=~/\.gz$/){ # if GTF is compressed
+	`gunzip -c $gtf_file > $merged_GTF`;
+    }
+    else {
+	`cp $gtf_file $merged_GTF`;
+    }
+}
 
 
 ### loops for each species (loop 2: get_trs_gtf.pl)
@@ -971,12 +980,8 @@ my (%coords1, %coords2);
 my (%strand1, %strand2);
 my %intron;
 my (%chr1, %chr2);
-if ($gtf_file =~ /.gz$/) {
-    open(INFILEONE, "gunzip -c $gtf_file |") || die "cannot open pipe to $gtf_file";
-}
-else {
-    open(INFILEONE, $gtf_file) || die "t open $gtf_file";
-}    
+
+open(INFILEONE, $merged_GTF) || die "It cannot open $merged_GTF\n";
 while (<INFILEONE>){ 
     if($_){ 
 	chomp($_);
@@ -1430,7 +1435,7 @@ if ($add_exons ne "NA"){
 ### loops for each species (Loop 5: get_aa_pos_exon.pl)
 #   -i Hsa_annot_exons_prot_ids.#   -out Hsa_protein_ids_exons_pos.txt
 #foreach my $species (@SPECIES){  
-    #Declaration of variables
+#Declaration of variables
 my (%pid, %protein);
 my ($j,$tmp, $gid, $prot, $phase, $nuc, $aa, $pid, $tfile, $m, $ex);
 my (%header, %ntseq);
@@ -1440,7 +1445,6 @@ my (@l, @l1, @line, @l2, @l3, @s);
     # Declaration of input files
 my $p = "$exons_db_folder/$species/$species"."_annot_exons_prot_ids.txt";
 my $v = "$exons_db_folder/$species/$species"."_add_exons_prot_ids.txt" if (-e "$exons_db_folder/$species/$species"."_add_exons_prot_ids.txt");
-    #my $gtf_file = "$gtf_folder/$species"."_annot.gtf";
     
     # Declaration of output files
 my $outfile = "$exons_db_folder/$species/$species"."_protein_ids_exons_pos.txt";
@@ -1468,12 +1472,7 @@ if ($v){
 my %rseq;
 my ($res, $size, $new, $id, $e);
 my %fex; ##saving the phase of the first exon
-if ($gtf_file =~ /.gz$/) {
-    open(GTF, "gunzip -c $gtf_file |") || die "t open pipe to $gtf_file";
-}
-else {
-    open(GTF, $gtf_file) || die "t open $gtf_file";
-}
+open(GTF, $merged_GTF) ||die "It cannot open $merged_GTF\n";
 while (<GTF>){
     chomp($_); 
     @line=split(/\t/,$_);
@@ -1660,14 +1659,8 @@ open (OUT, ">$outfile") || die "Cannot create $outfile (loop 7)\n";
     
 verbPrint("Generating $species"."_annot_exon_sizes.txt\n");
 
-    ### Parsing GTF file
-    #my $gtf_file = "$gtf_folder/$species"."_annot.gtf";
-if ($gtf_file =~ /.gz$/) {
-    open(GTF, "gunzip -c $gtf_file |") || die "t open pipe to $gtf_file";
-}
-else {
-    open(GTF, $gtf_file) || die "t open $gtf_file";
-}
+### Parsing GTF file
+open(GTF, $merged_GTF) ||die "It cannot open $merged_GTF\n";
 while (<GTF>){
     chomp($_); 
     @line=split(/\t/,$_);
@@ -1912,7 +1905,7 @@ foreach $el(@k){
 }
 
 my $to="$exons_db_folder/$species/$species"."_multiexsk_trs.txt"; 
-print "$to\n";
+#print "$to\n";
 open (OUT, ">$to");
 open (INTWO,"$ti");
 while (<INTWO>){
@@ -1927,4 +1920,4 @@ verbPrint ("Number of transcripts to be removed: $nrm\n");
 verbPrint ("Replacing old file of transcripts for the filtered one\n");
 ##replacing old file of transcripts for the filtered one
 `mv $to $ti`;
-verbPrint ("Annotations for $species finished!!!..."); 
+verbPrint ("Annotations for $species finished!!!"); 
