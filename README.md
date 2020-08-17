@@ -55,7 +55,7 @@ Test data are in the folder **test**. Input files are:
 ```bash
      Hsa.fasta.gz
      Mmu.fasta.gz
-     Bta.gtf.gz
+     Bta.fasta.gz
 ```
 
 * Annotation files in GTF format (can be gzipped). The prefix must match the corresponding GTF file:
