@@ -16,14 +16,14 @@ my $add_exons="NA";
 #Arguments
 
 Getopt::Long::Configure("no_auto_abbrev");
-GetOptions(        "GTF=s" => \$gtf_file,
-		              "G=s" => \$genome_file,
-		              "EX_DB=s" => \$exons_db_folder,
-		              "sp=s" => \$species_id,
-		              "add_exons=s" => \$add_exons, #before $vastdb_refs
-		              "verbose=s" => \$verboseFlag,
-		              "h" => \$help,
-		              "help" => \$help
+GetOptions("GTF=s" => \$gtf_file,
+	   "G=s" => \$genome_file,
+	   "EX_DB=s" => \$exons_db_folder,
+	   "sp=s" => \$species_id,
+	   "add_exons=s" => \$add_exons, #before $vastdb_refs
+	   "verbose=s" => \$verboseFlag,
+	   "h" => \$help,
+	   "help" => \$help
     );
 
 
@@ -36,11 +36,14 @@ sub verbPrint {
 }
 if (!defined $genome_file || !defined $gtf_file || !defined $species_id || defined $help){
     die "\nUsage: generate_annotations.pl -GTF path_to_gtfs/ -G path_to_genomes/ -sp Sp1 [-EX_DB path_to_EXONS_DB/ -add_exons exon_file ]
+
 Script that creates all annotation files needed for the second module of the pipeline
+
 COMPULSORY
      -GTF              Path where GTFs are stored (they should be named Sp1_annot.gtf)
      -G                Path where gDNAs are stored (they should be named Sp1_gDNA.fasta)
      -sp Sp1           Species id.
+
 OPTIONAL
      -add_exons        File with additional exons to get their orthology
                            If a species is missing the reference file, \"NA\" should be provided
@@ -57,6 +60,7 @@ my $full_path_exons_db = abs_path($exons_db_folder);
 verbPrint("EXONS_DB path set to $full_path_exons_db\n");
 #my %VASTDB_files;
 my $species = $species_id;
+
 ### loops for each species (Loop 1: previous get_ref_proteins.pl)
 #foreach my $species (@SPECIES){
  # In this first loop, it checks if the folders for each species exist or create them
@@ -65,11 +69,11 @@ my (%seq);
 my $chr;
 my @g;
 if ($genome_file =~ /.gz$/) {
-    open(GENOME, "gunzip -c $genome_file |") || die "t open pipe to $genome_file";
+    open(GENOME, "gunzip -c $genome_file |") || die "It cannot open pipe to $genome_file";
 }
 else {
-    open(GENOME, $genome_file) || die "t open $genome_file";
-}    #open (GENOME, $genome_file) || die "Cannot open $genome_file for $species (loop 1)\n";
+    open(GENOME, $genome_file) || die "It cannot open $genome_file";
+}
 verbPrint("Parsing gDNA file for $species\n");
 while (<GENOME>){
     chomp($_);
@@ -77,6 +81,7 @@ while (<GENOME>){
     else { $seq{$chr}.=$_;  }    
 }
 close (GENOME);
+
 verbPrint("Generating exint file for $species\n");
 ##Opening GTF file##
 # Format GTF:
@@ -90,11 +95,12 @@ my (@l, @l1, @line, @l2, @l3, @s);
 my %rseq;
 my ($res, $size, $tmpseq);
 my %fex; ##saving the phase of the first exon
+
 if ($gtf_file =~ /.gz$/) {
-    open(GTF, "gunzip -c $gtf_file |") || die "t open pipe to $gtf_file";
+    open(GTF, "gunzip -c $gtf_file |") || die "It cannot open pipe to $gtf_file";
 }
 else {
-    open(GTF, $gtf_file) || die "t open $gtf_file";
+    open(GTF, $gtf_file) || die "It cannot open $gtf_file";
 }
 while (<GTF>){
     chomp($_); 
@@ -253,7 +259,7 @@ close L_E_OUTPUT;
 
 ###IntroduceEXON_to_GTF
 ##Introducing missing exons in GTF
-if ($add_exons ne "NA"){##if added exons ne "NA" --> if additional exons are provided by the user 
+if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are provided by the user 
     verbPrint("Introducing additional exons for $species\n");
 #ENSG00000029534HsaEX0004110chr8:41758036-41758137chr8:41797512-41797622chr8:41733971-41734069chr8:41797512,41758036-41758137,41734069:-
 #### Get the exons and their info
@@ -280,13 +286,13 @@ if ($add_exons ne "NA"){##if added exons ne "NA" --> if additional exons are pro
 	$coB="$chr:$f";
 	$coA_ev{$coA}=$ev;
 	$coB_ev{$coB}=$ev;
-   #print "$ev\t$t[2]\t$t[3]\t$t[4]\t$coA\t$coB\n";
     }
     close EXONS;
 
     my ($tr, $co,$exon_number,$g_2,$tr_2,);
     my (%gene_name,%annotated,%partial,%array_tr_co,%array_tr_coA,%array_tr_coB,%index_coA,%index_coB,%TR,%index_co,%tr_co,%tr_coA,%tr_coB,%str,%done);
     my (%cds_lines,%cds_ini,%cds_end,%offset,%start_lines,%stop_lines,%tr_lines);
+
 #### Starts checking for annotation
     open (GTF, $gtf_file) || die "*** DIE: Cannot open GTF\n";
     while (<GTF>){
@@ -316,7 +322,7 @@ if ($add_exons ne "NA"){##if added exons ne "NA" --> if additional exons are pro
 	    push(@{$array_tr_coB{$tr}},$coB); # for each tr, the whole array of exons
 	    $index_coB{$tr}{$coB}=$#{$array_tr_coB{$tr}}; # keeps the index of the exon; C1-C2 MUST be index+1 of the other
 	    #print "##$index_coA{$tr}{$coA}\t$index_coB{$tr}{$coB}\n";
-#push(@{$TR{$g}},$tr); # for each g, gets all tr
+            #push(@{$TR{$g}},$tr); # for each g, gets all tr
 	    $TR{$g}{$tr}=1;
 	    $tr_co{$tr}{$co}=1; # co exists in that tr
 	    $tr_coA{$tr}{$coA}=1; # coA exists in that tr
@@ -396,9 +402,9 @@ if ($add_exons ne "NA"){##if added exons ne "NA" --> if additional exons are pro
 	    
 	    ### exon coordinates
 	    ($Ai,$Af)=$A_ref{$ev}=~/\:(.+?)\-(.+)/;
-$coA_A="$chr:$Ai";
-$coB_A="$chr:$Af";
-#print "#$ev\t$C1_inc\t$C2_inc\t$C1_ref\t$C2_ref\t$C1_incA\t$C1_refA\t$C2_incA\t$C2_refA\t$coA_A\t$coB_A#\n";
+	    $coA_A="$chr:$Ai";
+	    $coB_A="$chr:$Af";
+
 	    foreach $tr (sort keys %{$TR{$g}}){
 		next if $tr_coA{$tr}{$coA_A} || $tr_coB{$tr}{$coB_A}; # if the transcript contains any junction of the A exon
 
@@ -472,10 +478,9 @@ $coB_A="$chr:$Af";
 		    $exons_tr=$#{$cds_lines{$tr}}+1;
 		    $t_C2=$array_tr_co{$tr}[$index_coA{$tr}{$C1_refA}+1]; # gets a proper C2, not an acceptor
 		    ($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
-$OK="";
+		    $OK="";
 		    $OK=1 if $i>$Af && $str{$g} eq "+";
 		    $OK=1 if $f<$Ai && $str{$g} eq "-";
-#print "$ev\t$A_ref{$ev}\t$t_C2\tOK\n";
 		    $selected_tr="8=$tr" unless ($selected_tr eq "8=$ref_tr" || $selected_tr=~/[1234567]\=/ || !$OK || $exons_sel>=$exons_tr);
 		    $C1_accepted_index{$ev}{$tr}=$index_coA{$tr}{$C1_refA};
 		}
@@ -485,7 +490,7 @@ $OK="";
 		    $exons_tr=$#{$cds_lines{$tr}}+1;
 		    $t_C1=$array_tr_co{$tr}[$index_co{$tr}{$C2_inc}-1];
 		    ($i,$f)=$t_C1=~/\:(.+?)\-(.+)/;
-$OK="";
+		    $OK="";
 		    $OK=1 if $f<$Ai && $str{$g} eq "+";
 		    $OK=1 if $i>$Af && $str{$g} eq "-";
 		    $selected_tr="9=$tr" unless ($selected_tr eq "9=$ref_tr" || $selected_tr=~/[12345678]\=/ || !$OK || $exons_sel>=$exons_tr);
@@ -509,7 +514,7 @@ $OK="";
 		($rescue_type,$final_tr)=$selected_tr=~/(.+?)\=(.+)/;
 		$tally_solutions{$rescue_type}++;
 
-		    ### creating fake transcripts:
+		### creating fake transcripts:
 		$exN=0;
 		$out_frame="";
 		$started="";
@@ -522,7 +527,7 @@ $OK="";
 
 		foreach $lineN (0..$#{$tr_lines{$final_tr}}){
 		    $exN++;
-
+		    
 ############### exon
 		    @t_line=split(/\t/,$tr_lines{$final_tr}[$lineN]);
 		    $t_line[8]="gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
@@ -532,11 +537,11 @@ $OK="";
 ############### CDS
 		    if ($cds_lines{$final_tr}[$lineN] && !$out_frame){ # if !out_frame is either in-frame OR before the exon
 			@t_line2=split(/\t/,$cds_lines{$final_tr}[$lineN]);
-			    $t_line2[8]="gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr"."fB$tally_non_annot_hit\"\;".
-				" gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+			$t_line2[8]="gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr"."fB$tally_non_annot_hit\"\;".
+			    " gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 			$full_line2=join("\t",@t_line2);
 			print O "$full_line2\n";
-
+			
 			if (!$started){
 			    $first_offset=$t_line2[7] if !$started;
 			    $CDS_seq="N" if $first_offset==2;
@@ -545,7 +550,7 @@ $OK="";
 			}
 			$started=1; # means the CDS has already begun
 
-			    #### prepare the translation:
+			#### prepare the translation:
 			$le_CDS_ex=$cds_end{$final_tr}[$lineN]-$cds_ini{$final_tr}[$lineN]+1;
 			$CDS_ini=$CDS_end+1;
 			$CDS_end=$CDS_ini+$le_CDS_ex-1;
@@ -569,29 +574,27 @@ $OK="";
 			$new_offset=1 if length($CDS_seq)%3==2;
 			$new_offset=2 if length($CDS_seq)%3==1;
 			    
-			print "$ev\t$t_line2[3]\t$new_offset\t$t_line2[7]\t$CDS_seq\n" if $ev eq "DreEX0000046";
-
 			@t_line=split(/\t/,$tr_lines{$final_tr}[$lineN]); # uses the exon line again
 			$Ai=$t_line[3]; # treated like a AS exon
 			$Af=$t_line[4];
 
-			    #### prepare the translation:
+			#### prepare the translation:
 			$le_CDS_ex=$Af-$Ai+1;
 			$CDS_ini=$CDS_end+1; # from upstream
 			$CDS_end=$CDS_ini+$le_CDS_ex-1;
 			$chr=$t_line[0]; # as it's feeding from exon line
 			$str=$t_line[6]; # as it's feeding from exon line
-			    
+			
 			if ($new_offset==0){
 			    $extra="";
 			}
 			elsif ($new_offset==1){
 			    ($extra)=$CDS_seq=~/.+(..)/;
-    }
+			}
 			elsif ($new_offset==2){
 			    ($extra)=$CDS_seq=~/.+(.)/;
-    }
-    
+			}
+			
 			if ($str eq "+"){
 			    $seq_bit=substr($seq{$chr},$Ai-1,$le_CDS_ex); # novel exon sequence
 			    $seq_bit_test="$extra$seq_bit";
@@ -606,18 +609,18 @@ $OK="";
 				  $co_Af_CDS=$stop_co_i-1;
 				        
 				  if ($loop>1){
-				        $new_line2="$t_line[0]\t$t_line[1]\tCDS\t$Ai\t$co_Af_CDS\t$t_line[5]\t$t_line[6]\t$new_offset\t".
-					          "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
-						  "fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
-					print O "$new_line2\n";
-					  $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$stop_co_i\t$stop_co_f\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
-					      "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
-					print O "$new_line3\n";
+				      $new_line2="$t_line[0]\t$t_line[1]\tCDS\t$Ai\t$co_Af_CDS\t$t_line[5]\t$t_line[6]\t$new_offset\t".
+					  "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
+					  "fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+				      print O "$new_line2\n";
+				      $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$stop_co_i\t$stop_co_f\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
+					  "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+				      print O "$new_line3\n";
 				  }
 				  elsif ($loop==1){
 				      $bit=$t_line[3]+2-length($extra);
-				        $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$t_line[3]\t$bit\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
-					    "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+				      $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$t_line[3]\t$bit\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
+					  "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 				      print O "$new_line3\n";
 				  }
 				  last LBL;
@@ -638,20 +641,20 @@ $OK="";
 				  $stop_co_i=$Ai+length($seq_bit_test); # as f has to be > i
 				  $stop_co_f=$stop_co_i+2;
 				  $co_Ai_CDS=$stop_co_f+1;
-
+				  
 				  if ($loop>1){
 				        $new_line2="$t_line[0]\t$t_line[1]\tCDS\t$co_Ai_CDS\t$Af\t$t_line[5]\t$t_line[6]\t$new_offset\t".
 					          "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
 						  "fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 					print O "$new_line2\n";
-					  $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$stop_co_i\t$stop_co_f\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
-					      "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+					$new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$stop_co_i\t$stop_co_f\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
+					    "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 					print O "$new_line3\n";
 				  }
 				  elsif ($loop==1){
 				      $bit=$t_line[4]-2+length($extra);
-				        $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$bit\t$t_line[4]\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
-					    "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+				      $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$bit\t$t_line[4]\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
+					  "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 				      print O "$new_line3\n";
 				  }
 				  last LBL;
@@ -661,8 +664,8 @@ $OK="";
 			if  (!$STOP_detected){
 			    $CDS_seq.=$seq_bit;    
 			    $new_line2="$t_line[0]\t$t_line[1]\tCDS\t$Ai\t$Af\t$t_line[5]\t$t_line[6]\t$new_offset\t".
-				    "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
-				    "fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+				"gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
+				"fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 			    print O "$new_line2\n";
 			    
 #if ($length_A%3==0){
@@ -677,31 +680,31 @@ $OK="";
 ############### start codon
 		    if ($start_lines{$final_tr}[$lineN] && !$out_frame){
 			@t_line3=split(/\t/,$start_lines{$final_tr}[$lineN]);
-			    $t_line3[8]="gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\;".
-				" gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+			$t_line3[8]="gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\;".
+			    " gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 			$full_line3=join("\t",@t_line3);
 			print O "$full_line3\n";
 		    }
 ############### stop codon
 		    if ($stop_lines{$final_tr}[$lineN] && !$out_frame){
 			@t_line4=split(/\t/,$stop_lines{$final_tr}[$lineN]);
-			    $t_line4[8]="gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\;".
-				" gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+			$t_line4[8]="gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\;".
+			    " gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 			$full_line4=join("\t",@t_line4);
 			print O "$full_line4\n";
 			$finished=1; # means the CDS has already finished
 		    }
-
+		    
 ############### Adding the exon
 		    if ($lineN==$C1_accepted_index{$ev}{$final_tr}){
 			$exN++;
-			    #### exon
+			#### exon
 			($Ai,$Af)=$A_ref{$ev}=~/\:(.+?)\-(.+)/;
 			$length_A=$Af-$Ai+1;
-			    $new_line="$t_line[0]\t$t_line[1]\texon\t$Ai\t$Af\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
-				"gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+			$new_line="$t_line[0]\t$t_line[1]\texon\t$Ai\t$Af\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
+			    "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 			print O "$new_line\n";
-			    #### evaluate effects:
+			#### evaluate effects:
 			if (!$started){ # it's in the 5' UTR and no problems downstream
 			    $comment="UTR_5";
 			}
@@ -732,34 +735,34 @@ $OK="";
 				$seq_bit=substr($seq{$chr},$Ai-1,$le_CDS_ex); # novel exon sequence
 				$seq_bit_test="$extra$seq_bit";
 				$loop=0;
-
+				
 			      LBL:while ($seq_bit_test=~s/(.{3})//){
 				  $codon=$1;
 				  $loop++; # 27/11/16 (stops in between EEJs)
-				        
+				  
 				  if ($codon eq "TGA" || $codon eq "TAG" || $codon eq "TAA"){
 				      $STOP_detected=1; # so it doesn't go to more CDS lines after
 				      $stop_co_f=$Af-length($seq_bit_test);
 				      $stop_co_i=$stop_co_f-2;
 				      $co_Af_CDS=$stop_co_i-1;
-
+				      
 				      if ($loop>1){
-					        $new_line2="$t_line[0]\t$t_line[1]\tCDS\t$Ai\t$co_Af_CDS\t$t_line[5]\t$t_line[6]\t$offset_A\t".
-						    "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
-						print O "$new_line2\n";
-						      $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$stop_co_i\t$stop_co_f\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
-							    "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
-							    "fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
-						print O "$new_line3\n";
+					  $new_line2="$t_line[0]\t$t_line[1]\tCDS\t$Ai\t$co_Af_CDS\t$t_line[5]\t$t_line[6]\t$offset_A\t".
+					      "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+					  print O "$new_line2\n";
+					  $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$stop_co_i\t$stop_co_f\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
+					      "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
+					      "fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+					  print O "$new_line3\n";
 				      }
 				      elsif ($loop==1){
 					  $bit=$t_line[3]+2-length($extra);
-					        $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$t_line[3]\t$bit\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
-						      "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
-						      "fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+					  $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$t_line[3]\t$bit\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
+					      "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
+					      "fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 					  print O "$new_line3\n";      
 				      }
-
+				      
 				      $comment="In_frame_STOP";
 				      $out_frame=1;
 				      last LBL;
@@ -773,42 +776,42 @@ $OK="";
 				$seq_bit_test="$extra$seq_bit";
 				$loop=0;
 			      LBL:while ($seq_bit_test=~s/(.{3})//){
-      $codon=$1;
-      $loop++; # 27/11/16 (stops in between EEJs)
-      if ($codon eq "TGA" || $codon eq "TAG" || $codon eq "TAA"){
-	  $STOP_detected=1; # so it doesn't go to more CDS lines after
-	  $stop_co_i=$Ai+length($seq_bit_test); # as f has to be > i
-	  $stop_co_f=$stop_co_i+2;
-	  $co_Ai_CDS=$stop_co_f+1;
-
-	  if ($loop>1){
-	            $new_line2="$t_line[0]\t$t_line[1]\tCDS\t$co_Ai_CDS\t$Af\t$t_line[5]\t$t_line[6]\t$offset_A\t".
-			  "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
-			  "fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
-		    print O "$new_line2\n";
-		          $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$stop_co_i\t$stop_co_f\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
-			      "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
-		    print O "$new_line3\n";
-	  }
-	  elsif ($loop==1){
-	      $bit=$t_line[4]-2+length($extra);
-	            $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$bit\t$t_line[4]\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
-			"gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
-	      print O "$new_line3\n";
-	  }
-	  $comment="In_frame_STOP";
-	  $out_frame=1;
-	  last LBL;
-      }
+				  $codon=$1;
+				  $loop++; # 27/11/16 (stops in between EEJs)
+				  if ($codon eq "TGA" || $codon eq "TAG" || $codon eq "TAA"){
+				      $STOP_detected=1; # so it doesn't go to more CDS lines after
+				      $stop_co_i=$Ai+length($seq_bit_test); # as f has to be > i
+				      $stop_co_f=$stop_co_i+2;
+				      $co_Ai_CDS=$stop_co_f+1;
+				      
+				      if ($loop>1){
+					  $new_line2="$t_line[0]\t$t_line[1]\tCDS\t$co_Ai_CDS\t$Af\t$t_line[5]\t$t_line[6]\t$offset_A\t".
+					      "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
+					      "fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+					  print O "$new_line2\n";
+					  $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$stop_co_i\t$stop_co_f\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
+					      "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+					  print O "$new_line3\n";
+				      }
+				      elsif ($loop==1){
+					  $bit=$t_line[4]-2+length($extra);
+					  $new_line3="$t_line[0]\t$t_line[1]\tstop_codon\t$bit\t$t_line[4]\t$t_line[5]\t$t_line[6]\t$t_line[7]\t".
+					      "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+					  print O "$new_line3\n";
+				      }
+				      $comment="In_frame_STOP";
+				      $out_frame=1;
+				      last LBL;
+				  }
 			      } 
 			    }
 			    if  (!$STOP_detected){
 				$CDS_seq.=$seq_bit;
-				    $new_line2="$t_line[0]\t$t_line[1]\tCDS\t$Ai\t$Af\t$t_line[5]\t$t_line[6]\t$offset_A\t".
-					"gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
-					"fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
+				$new_line2="$t_line[0]\t$t_line[1]\tCDS\t$Ai\t$Af\t$t_line[5]\t$t_line[6]\t$offset_A\t".
+				    "gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
+				    "fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 				print O "$new_line2\n";
-				    
+				
 				if ($length_A%3==0){
 				    $comment="Alt_prot"; # all set
 				}
@@ -827,27 +830,26 @@ $OK="";
 	    }
 	    else {
 		$tally_non_annot_no_hit++;
-#    print "$g\t$ev\t$A_ref{$ev}\n";
 	    }
 	}
     }
-
-print "Fully Annotated\t$tally_annotated\n".
-    "Rescued skipping\t$tally_non_annot_hit\n".
-    "Partially Annotated\t$tally_partial\n".
-    "Not rescued\t$tally_non_annot_no_hit\n";
-print LOG2 "Fully Annotated\t$tally_annotated\n".
-    "Rescued skipping\t$tally_non_annot_hit\n".
-    "Partially Annotated\t$tally_partial\n".
-    "Not rescued\t$tally_non_annot_no_hit\n";
-
+    
+    print "Fully Annotated\t$tally_annotated\n".
+	"Rescued skipping\t$tally_non_annot_hit\n".
+	"Partially Annotated\t$tally_partial\n".
+	"Not rescued\t$tally_non_annot_no_hit\n";
+    print LOG2 "Fully Annotated\t$tally_annotated\n".
+	"Rescued skipping\t$tally_non_annot_hit\n".
+	"Partially Annotated\t$tally_partial\n".
+	"Not rescued\t$tally_non_annot_no_hit\n";
+    
     print "\nSolutions:\n";
     print LOG2 "\nSolutions:\n";
     foreach $type (sort {$a<=>$b} keys %tally_solutions){
 	print "Type $type\t$tally_solutions{$type}\n";
 	print LOG2 "Type $type\t$tally_solutions{$type}\n";
     }
-
+    
 ##################################
 ###Finish IntroduceEXON_to_GTF####
 
@@ -942,7 +944,7 @@ print LOG2 "Fully Annotated\t$tally_annotated\n".
 	print EXINT_OUT ">$name\n$protein\n";
     }
     close (EXINT_OUT);
-
+    
 ###Joining 1. GTF files (Annot+Fake)
     my $tmp="$exons_db_folder/$species/tmp.gtf";
     `cat $gtf_file $fakeGTF > $tmp`;
@@ -956,6 +958,8 @@ print LOG2 "Fully Annotated\t$tally_annotated\n".
 
 
 }##if added exons ne "NA" --> if additional exons are provided by the user 
+
+
 
 ### loops for each species (loop 2: get_trs_gtf.pl)
 #foreach my $species (@SPECIES){
