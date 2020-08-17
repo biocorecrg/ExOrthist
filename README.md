@@ -25,12 +25,12 @@ Installation
 Install Nextflow (version 19.10.0):
 
 ~~~~
-curl -s https://get.nextflow.io | bash`
+curl -s https://get.nextflow.io | bash
 ~~~~
 
 Clone the ExOrthist repository:
 ~~~~
-git clone --depth 1 https://github.com/biocorecrg/ExOrthist.git
+git clone https://github.com/biocorecrg/ExOrthist.git
 ~~~~
 
 Install Docker:
@@ -45,7 +45,7 @@ Running ExOrthist main module
 ------------
 
 The pipeline can be launched in this way:
-```
+```bash
 nextflow run main.nf --clusters "test/*.tab.gz" --genomes "test/GENOMES/*_gDNA.fasta.gz" --annotations "test/GTF/*_annot.gtf.gz" --output output -bg > log.txt
 ```
 
@@ -113,6 +113,13 @@ perl GetLiftOverFile.pl -annot_sp1 test/Hsa.exons -annot_sp2 test/Mmu.exons -gen
 ```
 
 Basic cluster stats are provided with Get_stats_exon_cls.pl => DEVELOP FURTHER AND RUN AUTOMATICALLY AT THE END
+
+
+Basic cluster statistics
+------------
+
+XXXXXX
+
 
 
 Pairwise species re-clustering
