@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 use strict;
+use warnings;
 use Getopt::Long;
 use Cwd qw(abs_path cwd);
 
@@ -7,17 +8,18 @@ use Cwd qw(abs_path cwd);
 my $gtf_file;
 my $genome_file;
 my $exons_db_folder="./";
-my $species_id;
+my $species;
 my $verboseFlag=1;
 my $help;
-my $add_exons="NA";
+my $add_exons;
+my $do_all_steps=1;
 
 #Arguments
 Getopt::Long::Configure("no_auto_abbrev");
 GetOptions("GTF=s" => \$gtf_file,
 	   "G=s" => \$genome_file,
 	   "EX_DB=s" => \$exons_db_folder,
-	   "sp=s" => \$species_id,
+	   "sp=s" => \$species,
 	   "add_exons=s" => \$add_exons, #before $vastdb_refs
 	   "verbose=s" => \$verboseFlag,
 	   "h" => \$help,
@@ -32,12 +34,12 @@ sub verbPrint {
 	print STDERR "[ExOrthist annotation]: $verbMsg\n";
     }
 }
-if (!defined $genome_file || !defined $gtf_file || !defined $species_id || defined $help){
+if (!defined $genome_file || !defined $gtf_file || !defined $species || defined $help){
     die "\nUsage: generate_annotations.pl -GTF path_to_gtfs/ -G path_to_genomes/ -sp Sp1 [-EX_DB path_to_EXONS_DB/ -add_exons exon_file ]
 
 Script that creates all annotation files needed for the second module of the pipeline
 
-COMPULSORY
+OMPULSORY
      -GTF              Path where GTFs are stored (they should be named Sp1_annot.gtf)
      -G                Path where gDNAs are stored (they should be named Sp1_gDNA.fasta)
      -sp Sp1           Species id.
@@ -57,16 +59,13 @@ OPTIONAL
 ### setting EXONS_DB
 system "mkdir $exons_db_folder" unless (-e $exons_db_folder);
 my $full_path_exons_db = abs_path($exons_db_folder);
+system "mkdir $exons_db_folder/$species" unless (-e "$exons_db_folder/$species");
 verbPrint("EXONS_DB path set to $full_path_exons_db\n");
-#my %VASTDB_files;
-my $species = $species_id;
+
 ### Future GTF file with original + fake transcripts (if extra exons are provided)
 my $merged_GTF = $exons_db_folder."/".$species."/".$species."_annot_fake.gtf";
 
-### loops for each species (Loop 1: previous get_ref_proteins.pl)
-#foreach my $species (@SPECIES){
- # In this first loop, it checks if the folders for each species exist or create them
-system "mkdir $exons_db_folder/$species" unless (-e "$exons_db_folder/$species");
+### Loading sequence info
 my (%seq);
 my $chr;
 my @g;
@@ -84,24 +83,20 @@ while (<GENOME>){
 }
 close (GENOME);
 
+### PART 1: get_ref_proteins.pl and getting exint file
+if ($do_all_steps){
 verbPrint("Generating exint file for $species\n");
-##Opening GTF file##
-# Format GTF:
-#Scaffold1348protein_codingexFon162899162997.+.gene_id "WHL22.100348"; transcript_id "WHL22.100348.0"; exon_number "5";
-#Scaffold1348protein_codingCDS162899162997.+.gene_id "WHL22.100348"; transcript_id "WHL22.100348.0"; exon_number "5"; protein_id "WHL22.100348.0";
-
 my ($j,$tmp, $gid, $prot, $phase, $nuc, $aa, $pid, $tfile, $m);
 my (%pid, %header, %ntseq);
-#my $b;
 my (@l, @l1, @line, @l2, @l3, @s);
 my %rseq;
 my ($res, $size, $tmpseq);
 my %fex; ##saving the phase of the first exon
 
+#### Opening and reading GTF file
 if ($gtf_file =~ /.gz$/) {
     open(GTF, "gunzip -c $gtf_file |") || die "It cannot open pipe to $gtf_file";
-}
-else {
+}else {
     open(GTF, $gtf_file) || die "It cannot open $gtf_file";
 }
 while (<GTF>){
@@ -110,12 +105,11 @@ while (<GTF>){
     if ($seq{$line[0]}){
 	if ($line[2] eq "CDS"){
 	    @l1=split(/\"/,$line[8]);
-	    $gid=$l1[1]; ##change here
-	        #print "GID: $gid\n";
+	    $gid=$l1[1]; 
 	    if ($line[8]=~/protein_id/){
 		$tmp="protein_id";
 	    } 
-	    else { $tmp="transcript_id"; }
+	    else {$tmp="transcript_id"; }
 	    @l2=split(/$tmp/,$line[8]);
 	    @l3=split(/\"/,$l2[1]);
 	    $prot=$l3[1];
@@ -181,14 +175,13 @@ $codons{"GAT"}="D";    $codons{"GAC"}="D";    $codons{"GAA"}="E";    $codons{"GA
 $codons{"GGT"}="G";    $codons{"GGC"}="G";    $codons{"GGA"}="G";    $codons{"GGG"}="G";
 
 my @keys=keys(%ntseq);
-my $el;
 my $p;
 my ($l, $triplet, $protein, $nseq, $name);
 my $c=0;
 ### output files (former -F 1 run)
 my $exint_output = "$exons_db_folder/$species/$species.exint";
 open (EXINT_OUT, ">$exint_output") || die "Cannot open $exint_output (loop 1)\n";
-foreach $el(@keys){ 
+foreach my $el (@keys){ 
     $nseq=$ntseq{$el};
     $name=$header{$el};
     $p=$fex{$el}; ##checking phase of the first exon
@@ -201,7 +194,7 @@ foreach $el(@keys){
 		if ($l>=(length($nseq)-3) && $codons{$triplet} eq "stop"){
 		    $c=1;
 		}
-		elsif ($codons{$triplet} eq "stop"){ $c=1; } #$protein.=$codons{$triplet}; } #$c=1; }
+		elsif ($codons{$triplet} eq "stop"){ $c=1; } 
 		else {  $protein.=$codons{$triplet};   }
 	    }
 	    else {
@@ -212,6 +205,7 @@ foreach $el(@keys){
     print EXINT_OUT ">$name\n$protein\n";
 }
 close (EXINT_OUT);
+
 verbPrint("Generating size and references files for $species\n");
 ### output files (former -F 2 run) 
 my $size_output = "$exons_db_folder/$species/$species"."_prot_sizes.txt";
@@ -251,7 +245,7 @@ my $longest_prot_output = "$exons_db_folder/$species/$species"."_ref_proteins.tx
 my $longest_exint_output = "$exons_db_folder/$species/$species"."_ref_proteins.exint";
 open (L_P_OUTPUT, ">$longest_prot_output") || die "Cannot open $longest_prot_output (loop 1)\n";
 open (L_E_OUTPUT, ">$longest_exint_output") || die "Cannot open $longest_exint_output (loop 1)\n";
-#    print L_P_OUTPUT "GeneID\tProteinID\n"; # maintain without header, as the original
+#print L_P_OUTPUT "GeneID\tProteinID\n"; # maintain without header, as the original
 foreach my $temp_exint (sort keys %longest_prot){
     print L_P_OUTPUT "$temp_exint\t$longest_prot{$temp_exint}\n";
     print L_E_OUTPUT "$exint_data{$longest_prot{$temp_exint}}\n";
@@ -259,12 +253,10 @@ foreach my $temp_exint (sort keys %longest_prot){
 close L_P_OUTPUT;
 close L_E_OUTPUT;
 
-###IntroduceEXON_to_GTF
-##Introducing missing exons in GTF
-if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are provided by the user 
+##Introducing missing exons in GTF if extra exons are provided
+if (defined $add_exons){ 
     verbPrint("Introducing additional exons for $species\n");
-#ENSG00000029534HsaEX0004110chr8:41758036-41758137chr8:41797512-41797622chr8:41733971-41734069chr8:41797512,41758036-41758137,41734069:-
-#### Get the exons and their info
+    #ENSG00000029534  HsaEX0004110  chr8:41758036-41758137  chr8:41797512-41797622  chr8:41733971-41734069  chr8:41797512,41758036-41758137,41734069:-
     my (@t);
     my ($g, $ev,$i,$f,$coA,$coB);
     my (%Ev_Gene,%C1_ref,%A_ref,%C2_ref,%coA_ev,%co_ev,%coB_ev,%C1_inc,%C2_inc);
@@ -277,8 +269,8 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
 	$g=$t[0];
 	$ev=$t[1];
 	$Ev_Gene{$ev}=$g;
-	$C1_ref{$ev}=$t[3];
 	$A_ref{$ev}=$t[2];
+	$C1_ref{$ev}=$t[3];
 	$C2_ref{$ev}=$t[4];
 	$C1_inc{$ev}=$t[3]; ##same as C1 reference
 	$C2_inc{$ev}=$t[4]; ##same as C2 reference 	
@@ -296,7 +288,11 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
     my (%cds_lines,%cds_ini,%cds_end,%offset,%start_lines,%stop_lines,%tr_lines);
 
 #### Starts checking for annotation
-    open (GTF, $gtf_file) || die "*** DIE: Cannot open GTF\n";
+    if ($gtf_file =~ /.gz$/) {
+	open(GTF, "gunzip -c $gtf_file |") || die "It cannot open pipe to $gtf_file";
+    }else {
+	open(GTF, $gtf_file) || die "It cannot open $gtf_file";
+    }
     while (<GTF>){
 	chomp;
 	@t=split(/\t/);    
@@ -309,7 +305,6 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
 	    $co="$t[0]:$t[3]-$t[4]";
 	    $coA="$t[0]:$t[3]";
 	    $coB="$t[0]:$t[4]";
-	    #print "$co\t$coA\t$coB\n";
 	    $annotated{$co_ev{$co}}=1 if $co_ev{$co} && $Ev_Gene{$co_ev{$co}} eq $g; # keeps track of annotated events
 	    ## any event not here is a non-annotated event (although subversions may be in GTFs
 	    $partial{$coA_ev{$coA}}=1 if $coA_ev{$coA} && $Ev_Gene{$coA_ev{$coA}} eq $g;
@@ -323,8 +318,6 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
 	    $index_coA{$tr}{$coA}=$#{$array_tr_coA{$tr}}; # keeps the index of the exon; C1-C2 MUST be index+1 of the other
 	    push(@{$array_tr_coB{$tr}},$coB); # for each tr, the whole array of exons
 	    $index_coB{$tr}{$coB}=$#{$array_tr_coB{$tr}}; # keeps the index of the exon; C1-C2 MUST be index+1 of the other
-	    #print "##$index_coA{$tr}{$coA}\t$index_coB{$tr}{$coB}\n";
-            #push(@{$TR{$g}},$tr); # for each g, gets all tr
 	    $TR{$g}{$tr}=1;
 	    $tr_co{$tr}{$co}=1; # co exists in that tr
 	    $tr_coA{$tr}{$coA}=1; # coA exists in that tr
@@ -360,7 +353,6 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
     }
     close GTF;
 
-#
 ### v3 => vB to avoid confusions with Ensembl versions (10/02/17)
     open (O, ">$exons_db_folder/$species/FakeTranscripts-$species-vB.gtf");
     open (LOG, ">$exons_db_folder/$species/LOG_FakeTranscripts-$species-vB.tab");
@@ -372,9 +364,8 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
 # 1) if C1inc and C2inc are present OK.
 # ...
 # In some cases, the exact exon is wrongly annotated, but there is no skipping form
-    my ($tally_annotated,$selected_tr,$C1_inc,$C2_inc,$C1_ref,$C2_ref,$C1i,$C1r,$C1_incA,$C1_refA,$C1f,$C2f,$C2_incA,$C2_refA,$C2i,$C2r,$Ai,$Af,$coA_A,$coB_A,$temp_tr,$exons_tr,$selected_tr,$ref_tr,$OK,$t_C2,$exons_sel,$t_C1,$tally_non_annot_hit,$rescue_type,$final_tr,$exN,$out_frame,$started,$finished,$comment,$CDS_seq,$CDS_ini,$CDS_end);
-    my($CDS_end,$CDS_ini,$CDS_seq,$STOP_detected,$bit,$co_Af_CDS,$co_Ai_CDS,$codon,$comment,$exN,$extra,$final_tr,$finished,$first_offset,$full_line,$full_line2,$full_line3,$full_line4);
-    my ($le_CDS_ex,$length_A,$lineN,$loop,$new_line,$new_line2,$new_line3,$new_offset,$offset_A,$out_frame,$rescue_type,$seq_bit,$seq_bit_test,$started,$stop_co_f,$stop_co_i,$str,$tally_non_annot_hit,$tally_non_annot_no_hit,$tally_partial,$type);
+    # A lot variable declarations to avoid issues from merging scripts
+    my ($tally_annotated,$C1_inc,$C2_inc,$C1_ref,$C2_ref,$C1i,$C1r,$C1_incA,$C1_refA,$C1f,$C2f,$C2_incA,$C2_refA,$C2i,$C2r,$Ai,$Af,$coA_A,$coB_A,$temp_tr,$exons_tr,$selected_tr,$ref_tr,$OK,$t_C2,$exons_sel,$t_C1,$CDS_end,$CDS_ini,$CDS_seq,$STOP_detected,$bit,$co_Af_CDS,$co_Ai_CDS,$codon,$comment,$exN,$extra,$final_tr,$finished,$first_offset,$full_line,$full_line2,$full_line3,$full_line4,$le_CDS_ex,$length_A,$lineN,$loop,$new_line,$new_line2,$new_line3,$new_offset,$offset_A,$out_frame,$rescue_type,$seq_bit,$seq_bit_test,$started,$stop_co_f,$stop_co_i,$str,$tally_non_annot_hit,$tally_non_annot_no_hit,$tally_partial,$type);
     my (@t_line,@t_line2,@t_line3,@t_line4,@t_line_C2);
     my (%C1_accepted_index,%tally_solutions);
     foreach $ev (sort keys %A_ref){
@@ -412,110 +403,162 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
 
 		if ($tr_co{$tr}{$C1_inc} && $tr_co{$tr}{$C2_inc} && $index_co{$tr}{$C1_inc}==$index_co{$tr}{$C2_inc}-1){
 		    ($temp_tr)=$selected_tr=~/1\=(.+)/; # it may be empty
-		    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+		    if (defined $temp_tr){ 
+			$exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+		    }else {$exons_sel=1;}
 		    $exons_tr=$#{$cds_lines{$tr}}+1;
-		    $selected_tr="1=$tr" unless ($selected_tr eq "1=$ref_tr" || $exons_sel>=$exons_tr);
+		    if (defined $ref_tr){
+			$selected_tr="1=$tr" unless ($selected_tr eq "1=$ref_tr" || $exons_sel>=$exons_tr);
+		    } else {$selected_tr="1=$tr" unless ($exons_sel>=$exons_tr);}
 		    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_inc};
 		}
 		elsif ($tr_co{$tr}{$C1_inc} && $tr_co{$tr}{$C2_ref} && $index_co{$tr}{$C1_inc}==$index_co{$tr}{$C2_ref}-1){
 		    ($temp_tr)=$selected_tr=~/[12]\=(.+)/; # it may be empty
-		    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+		    if (defined $temp_tr){ 
+			$exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+		    }else {$exons_sel=1;}
 		    $exons_tr=$#{$cds_lines{$tr}}+1;
-		    $selected_tr="2=$tr" unless ($selected_tr eq "2=$ref_tr" || $selected_tr=~/1\=/ || $exons_sel>=$exons_tr);
+		    if (defined $ref_tr){
+			$selected_tr="2=$tr" unless ($selected_tr eq "2=$ref_tr" || $selected_tr=~/1\=/ || $exons_sel>=$exons_tr);
+		    } else {$selected_tr="2=$tr" unless ($selected_tr=~/1\=/ || $exons_sel>=$exons_tr);}
 		    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_inc};
 		}
 		elsif ($tr_co{$tr}{$C1_ref} && $tr_co{$tr}{$C2_inc} && $index_co{$tr}{$C1_ref}==$index_co{$tr}{$C2_inc}-1){
 		    ($temp_tr)=$selected_tr=~/[123]\=(.+)/; # it may be empty
-		    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+		    if (defined $temp_tr){
+                        $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+                    }else {$exons_sel=1;}
 		    $exons_tr=$#{$cds_lines{$tr}}+1;
-		    $selected_tr="3=$tr" unless ($selected_tr eq "3=$ref_tr" || $selected_tr=~/[12]\=/ || $exons_sel>=$exons_tr);
+		    if (defined $ref_tr){
+			$selected_tr="3=$tr" unless ($selected_tr eq "3=$ref_tr" || $selected_tr=~/[12]\=/ || $exons_sel>=$exons_tr);
+		    } else {$selected_tr="3=$tr" unless ($selected_tr=~/[12]\=/ || $exons_sel>=$exons_tr);}
 		    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_ref};
 		}
 		elsif ($tr_co{$tr}{$C1_ref} && $tr_co{$tr}{$C2_ref} && $index_co{$tr}{$C1_ref}==$index_co{$tr}{$C2_ref}-1){
 		    ($temp_tr)=$selected_tr=~/[1234]\=(.+)/; # it may be empty
-		    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+		    if (defined $temp_tr){
+                        $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+                    }else {$exons_sel=1;}
 		    $exons_tr=$#{$cds_lines{$tr}}+1;
-		    $selected_tr="4=$tr" unless ($selected_tr eq "4=$ref_tr" || $selected_tr=~/[123]\=/ || $exons_sel>=$exons_tr);
+		    if (defined $ref_tr){
+			$selected_tr="4=$tr" unless ($selected_tr eq "4=$ref_tr" || $selected_tr=~/[123]\=/ || $exons_sel>=$exons_tr);
+		    } else {$selected_tr="4=$tr" unless ($selected_tr=~/[123]\=/ || $exons_sel>=$exons_tr);}
 		    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_ref};
 		}
 		elsif ($tr_co{$tr}{$C1_inc}){
 		    ($temp_tr)=$selected_tr=~/[12345]\=(.+)/; # it may be empty
-		    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+		    if (defined $temp_tr){
+                        $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+                    }else {$exons_sel=1;}
 		    $exons_tr=$#{$cds_lines{$tr}}+1;
-		    $t_C2=$array_tr_co{$tr}[$index_co{$tr}{$C1_inc}+1];
-		    ($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
-		    $OK="";
-		    $OK=1 if $i>$Af && $str{$g} eq "+";
-		    $OK=1 if $f<$Ai && $str{$g} eq "-";
-		    $selected_tr="5=$tr" unless ($selected_tr eq "5=$ref_tr" || $selected_tr=~/[1234]\=/ || $exons_sel>=$exons_tr || !$OK);
-		    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_inc};
+		    if (defined $index_co{$tr}{$C1_inc}){
+			$t_C2=$array_tr_co{$tr}[$index_co{$tr}{$C1_inc}+1];
+			($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
+			$OK="";
+			$OK=1 if $i>$Af && $str{$g} eq "+";
+			$OK=1 if $f<$Ai && $str{$g} eq "-";
+			if (defined $ref_tr){
+			    $selected_tr="5=$tr" unless ($selected_tr eq "5=$ref_tr" || $selected_tr=~/[1234]\=/ || $exons_sel>=$exons_tr || !$OK);
+			} else {$selected_tr="5=$tr" unless ($selected_tr=~/[1234]\=/ || $exons_sel>=$exons_tr || !$OK);}
+			$C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_inc};
+		    }
 		}
 		elsif ($tr_co{$tr}{$C1_ref}){
 		    ($temp_tr)=$selected_tr=~/[123456]\=(.+)/; # it may be empty
-		    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+		    if (defined $temp_tr){
+                        $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+                    }else {$exons_sel=1;}
 		    $exons_tr=$#{$cds_lines{$tr}}+1;
-		    $t_C2=$array_tr_co{$tr}[$index_co{$tr}{$C1_ref}+1];
-		    ($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
-		    $OK="";
-		    $OK=1 if $i>$Af && $str{$g} eq "+";
-		    $OK=1 if $f<$Ai && $str{$g} eq "-";
-		    $selected_tr="6=$tr" unless ($selected_tr eq "6=$ref_tr" || $selected_tr=~/[12345]\=/ || $exons_sel>=$exons_tr || !$OK);
-		    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_ref};
+		    if (defined $index_co{$tr}{$C1_ref}){
+			$t_C2=$array_tr_co{$tr}[$index_co{$tr}{$C1_ref}+1];
+			($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
+			$OK="";
+			$OK=1 if $i>$Af && $str{$g} eq "+";
+			$OK=1 if $f<$Ai && $str{$g} eq "-";
+			if (defined $ref_tr){
+			    $selected_tr="6=$tr" unless ($selected_tr eq "6=$ref_tr" || $selected_tr=~/[12345]\=/ || $exons_sel>=$exons_tr || !$OK);
+			} else {$selected_tr="6=$tr" unless ($selected_tr=~/[12345]\=/ || $exons_sel>=$exons_tr || !$OK);}
+			$C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_ref};
+		    }
 		}
 		elsif (($tr_coA{$tr}{$C1_incA} && $str{$g} eq "-") || ($tr_coB{$tr}{$C1_incA} && $str{$g} eq "+") ){ # C1do exists in transcript
 		    ($temp_tr)=$selected_tr=~/[1234567]\=(.+)/; # it may be empty
-		    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+		    if (defined $temp_tr){
+                        $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+                    }else {$exons_sel=1;}
 		    $exons_tr=$#{$cds_lines{$tr}}+1;
-		    $t_C2=$array_tr_co{$tr}[$index_coA{$tr}{$C1_incA}+1]; # gets a proper C2, not an acceptor
-		    ($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
-		    $OK="";
-		    $OK=1 if $i>$Af && $str{$g} eq "+";
-		    $OK=1 if $f<$Ai && $str{$g} eq "-";
-		    $selected_tr="7=$tr" unless ($selected_tr eq "7=$ref_tr" || $selected_tr=~/[123456]\=/ || !$OK || $exons_sel>=$exons_tr);
-		    $C1_accepted_index{$ev}{$tr}=$index_coA{$tr}{$C1_incA};
+		    if (defined $index_coA{$tr}{$C1_incA}){
+			$t_C2=$array_tr_co{$tr}[$index_coA{$tr}{$C1_incA}+1]; # gets a proper C2, not an acceptor
+			($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
+			$OK="";
+			$OK=1 if $i>$Af && $str{$g} eq "+";
+			$OK=1 if $f<$Ai && $str{$g} eq "-";
+			if (defined $ref_tr){
+			    $selected_tr="7=$tr" unless ($selected_tr eq "7=$ref_tr" || $selected_tr=~/[123456]\=/ || !$OK || $exons_sel>=$exons_tr);
+			} else {$selected_tr="7=$tr" unless ($selected_tr=~/[123456]\=/ || !$OK || $exons_sel>=$exons_tr);}
+			$C1_accepted_index{$ev}{$tr}=$index_coA{$tr}{$C1_incA};
+		    }
 		}
 		elsif (($tr_coA{$tr}{$C1_refA} && $str{$g} eq "-") || ($tr_coB{$tr}{$C1_refA} && $str{$g} eq "+")){ # C1do exists in transcript
 		    ($temp_tr)=$selected_tr=~/[12345678]\=(.+)/; # it may be empty
-		    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+		    if (defined $temp_tr){
+                        $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+                    }else {$exons_sel=1;}
 		    $exons_tr=$#{$cds_lines{$tr}}+1;
-		    $t_C2=$array_tr_co{$tr}[$index_coA{$tr}{$C1_refA}+1]; # gets a proper C2, not an acceptor
-		    ($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
-		    $OK="";
-		    $OK=1 if $i>$Af && $str{$g} eq "+";
-		    $OK=1 if $f<$Ai && $str{$g} eq "-";
-		    $selected_tr="8=$tr" unless ($selected_tr eq "8=$ref_tr" || $selected_tr=~/[1234567]\=/ || !$OK || $exons_sel>=$exons_tr);
-		    $C1_accepted_index{$ev}{$tr}=$index_coA{$tr}{$C1_refA};
+		    if (defined $index_coA{$tr}{$C1_refA}){
+			$t_C2=$array_tr_co{$tr}[$index_coA{$tr}{$C1_refA}+1]; # gets a proper C2, not an acceptor
+			($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
+			$OK="";
+			$OK=1 if $i>$Af && $str{$g} eq "+";
+			$OK=1 if $f<$Ai && $str{$g} eq "-";
+			if (defined $ref_tr){
+			    $selected_tr="8=$tr" unless ($selected_tr eq "8=$ref_tr" || $selected_tr=~/[1234567]\=/ || !$OK || $exons_sel>=$exons_tr);
+			} else {$selected_tr="8=$tr" unless ($selected_tr=~/[1234567]\=/ || !$OK || $exons_sel>=$exons_tr);}
+			$C1_accepted_index{$ev}{$tr}=$index_coA{$tr}{$C1_refA};
+		    }
 		}
 		elsif ($tr_co{$tr}{$C2_inc}){
 		    ($temp_tr)=$selected_tr=~/[123456789]\=(.+)/; # it may be empty
-		    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+		    if (defined $temp_tr){
+                        $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+                    }else {$exons_sel=1;}
 		    $exons_tr=$#{$cds_lines{$tr}}+1;
-		    $t_C1=$array_tr_co{$tr}[$index_co{$tr}{$C2_inc}-1];
-		    ($i,$f)=$t_C1=~/\:(.+?)\-(.+)/;
-		    $OK="";
-		    $OK=1 if $f<$Ai && $str{$g} eq "+";
-		    $OK=1 if $i>$Af && $str{$g} eq "-";
-		    $selected_tr="9=$tr" unless ($selected_tr eq "9=$ref_tr" || $selected_tr=~/[12345678]\=/ || !$OK || $exons_sel>=$exons_tr);
-		    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C2_inc}-1;
+		    if (defined $index_co{$tr}{$C2_inc}){
+			$t_C1=$array_tr_co{$tr}[$index_co{$tr}{$C2_inc}-1];
+			($i,$f)=$t_C1=~/\:(.+?)\-(.+)/;
+			$OK="";
+			$OK=1 if $f<$Ai && $str{$g} eq "+";
+			$OK=1 if $i>$Af && $str{$g} eq "-";
+			if (defined $ref_tr){
+			    $selected_tr="9=$tr" unless ($selected_tr eq "9=$ref_tr" || $selected_tr=~/[12345678]\=/ || !$OK || $exons_sel>=$exons_tr);
+			} else {$selected_tr="9=$tr" unless ($selected_tr=~/[12345678]\=/ || !$OK || $exons_sel>=$exons_tr);}
+			$C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C2_inc}-1;
+		    }
 		}
 		elsif ($tr_co{$tr}{$C2_ref}){
 		    ($temp_tr)=$selected_tr=~/[1234567890]\=(.+)/; # it may be empty
-		    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+		    if (defined $temp_tr){
+                        $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+                    }else {$exons_sel=1;}
 		    $exons_tr=$#{$cds_lines{$tr}}+1;
-		    $t_C1=$array_tr_co{$tr}[$index_co{$tr}{$C2_ref}-1];
-		    ($i,$f)=$t_C1=~/\:(.+?)\-(.+)/;
-		    $OK="";
-		    $OK=1 if $f<$Ai && $str{$g} eq "+";
-		    $OK=1 if $i>$Af && $str{$g} eq "-";
-		    $selected_tr="10=$tr" unless ($selected_tr eq "10=$ref_tr" || $selected_tr=~/[123456789]\=/ || !$OK || $exons_sel>=$exons_tr);
-		    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C2_ref}-1;
+		    if (defined $index_co{$tr}{$C2_ref}){
+			$t_C1=$array_tr_co{$tr}[$index_co{$tr}{$C2_ref}-1];
+			($i,$f)=$t_C1=~/\:(.+?)\-(.+)/;
+			$OK="";
+			$OK=1 if $f<$Ai && $str{$g} eq "+";
+			$OK=1 if $i>$Af && $str{$g} eq "-";
+			if (defined $ref_tr){
+			    $selected_tr="10=$tr" unless ($selected_tr eq "10=$ref_tr" || $selected_tr=~/[123456789]\=/ || !$OK || $exons_sel>=$exons_tr);
+			} else {$selected_tr="10=$tr" unless ($selected_tr=~/[123456789]\=/ || !$OK || $exons_sel>=$exons_tr);}
+			$C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C2_ref}-1;
+		    }
 		}
 	    }
 	    if ($selected_tr){
 		$tally_non_annot_hit++;
 		($rescue_type,$final_tr)=$selected_tr=~/(.+?)\=(.+)/;
 		$tally_solutions{$rescue_type}++;
-
+		
 		### creating fake transcripts:
 		$exN=0;
 		$out_frame="";
@@ -529,13 +572,11 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
 
 		foreach $lineN (0..$#{$tr_lines{$final_tr}}){
 		    $exN++;
-		    
 ############### exon
 		    @t_line=split(/\t/,$tr_lines{$final_tr}[$lineN]);
 		    $t_line[8]="gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 		    $full_line=join("\t",@t_line);
 		    print O "$full_line\n";
-
 ############### CDS
 		    if ($cds_lines{$final_tr}[$lineN] && !$out_frame){ # if !out_frame is either in-frame OR before the exon
 			@t_line2=split(/\t/,$cds_lines{$final_tr}[$lineN]);
@@ -669,13 +710,6 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
 				"gene_id \"$g\"\; transcript_id \"$final_tr"."fB$tally_non_annot_hit\"\; protein_id \"$final_tr".
 				"fB$tally_non_annot_hit\"\; gene_name \"$gene_name{$g}\"\; exon_number \"$exN\"\;";
 			    print O "$new_line2\n";
-			    
-#if ($length_A%3==0){
-#    $comment="Alt_prot"; # all set
-#}
-#else {
-#    $out_frame=1; # and moves the problem to the "next" CDS
-#}
 			}
 		    }
 		    
@@ -727,17 +761,18 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
 				$extra="";
 			    }
 			    elsif ($offset_A==1){
-				($extra)=$CDS_seq=~/.+(..)/;
+				($extra)=$CDS_seq=~/(..)$/;
+				$extra="NN" if !defined $extra;
 			    }
 			    elsif ($offset_A==2){
-				($extra)=$CDS_seq=~/.+(.)/;
+				($extra)=$CDS_seq=~/(.)$/;
+				$extra="N" if !defined $extra;
 			    }
 			    
 			    if ($str eq "+"){
 				$seq_bit=substr($seq{$chr},$Ai-1,$le_CDS_ex); # novel exon sequence
 				$seq_bit_test="$extra$seq_bit";
-				$loop=0;
-				
+				$loop=0;				
 			      LBL:while ($seq_bit_test=~s/(.{3})//){
 				  $codon=$1;
 				  $loop++; # 27/11/16 (stops in between EEJs)
@@ -835,20 +870,19 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
 	    }
 	}
     }
-    
-    print "Fully Annotated\t$tally_annotated\n".
-	"Rescued skipping\t$tally_non_annot_hit\n".
-	"Partially Annotated\t$tally_partial\n".
-	"Not rescued\t$tally_non_annot_no_hit\n";
+    verbPrint("   Fully Annotated\t$tally_annotated\n");
+    verbPrint("   Rescued skipping\t$tally_non_annot_hit\n");
+    verbPrint("   Partially Annotated\t$tally_partial\n");
+    verbPrint("   Not rescued\t$tally_non_annot_no_hit\n");
     print LOG2 "Fully Annotated\t$tally_annotated\n".
 	"Rescued skipping\t$tally_non_annot_hit\n".
 	"Partially Annotated\t$tally_partial\n".
 	"Not rescued\t$tally_non_annot_no_hit\n";
     
-    print "\nSolutions:\n";
+    verbPrint("   Solutions:\n");
     print LOG2 "\nSolutions:\n";
     foreach $type (sort {$a<=>$b} keys %tally_solutions){
-	print "Type $type\t$tally_solutions{$type}\n";
+	verbPrint("   Type $type\t$tally_solutions{$type}\n");
 	print LOG2 "Type $type\t$tally_solutions{$type}\n";
     }
     
@@ -922,7 +956,7 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
     my @keys2=keys(%ntseq2);
     verbPrint("Generating exint files with added exons for $species\n");
     open (EXINT_OUT, ">$tmp_exint_output") || die "Cannot open $exint_output (loop 1)\n";
-    foreach $el(@keys2){ 
+    foreach my $el(@keys2){ 
 	$nseq=$ntseq2{$el};
 	$name=$header{$el};
 	$p=$fex{$el}; ##checking phase of the first exon
@@ -957,7 +991,7 @@ if ($add_exons ne "NA"){ ##if added exons ne "NA" --> if additional exons are pr
     }
     
 ###Joining 2. Exint files
-    `cat $exint_output $tmp_exint_output >> $exint_output`;
+    `cat $tmp_exint_output >> $exint_output`;
     `rm $tmp_exint_output`;
 }
 else { # if no extra exons added, it creates a copy of the original GTF
@@ -968,10 +1002,10 @@ else { # if no extra exons added, it creates a copy of the original GTF
 	`cp $gtf_file $merged_GTF`;
     }
 }
+}
 
-
-### loops for each species (loop 2: get_trs_gtf.pl)
-#foreach my $species (@SPECIES){
+### PART 2: get_trs_gtf.pl
+if ($do_all_steps){ # done to re-declare variables
 my (@line, @coords1, @coords2, @gene, @l1, @l2, @l3);
 my ($l, $grep, $gid, $int, $r, $prot, $tmp, $trid, $n);
 my (%tr1, %tr2, %tpid);
@@ -1110,349 +1144,28 @@ foreach $tp (@keys3){
     print OUTFILE3 "$tp\n";
 }
 close OUTFILE3;
-### Only if VASTDB files provided
-if ($add_exons ne "NA"){
-    ### loops for each species (Loop 3: get_prot_isof_exon_2.pl)
-    #    foreach my $species (@SPECIES){  
-        # Declaration of variables
-    my (@line);
-    my %pid;
-    my %lprot;
-    my ($ex, $l, $intron, $ex2);
-    my (@t1,@t2, @c);
-    my %psize;
-    my $pr;   
-    # Skips the step for the species if NA was provided
-    next if $add_exons eq "NA";    
-    # Declaration of input files
-    my $i1 = "$exons_db_folder/$species/$species"."_prot_sizes.txt";
-    my $i2 = "$exons_db_folder/$species/$species"."_tr_coords_CDS.txt";
-    my $i3 = $add_exons;    
-    # Declaration of output files
-    my $out = "$exons_db_folder/$species/Ref_protein_exons_".$species."_1.txt";
-    my $out2 = "$exons_db_folder/$species/missing_exons.txt";
-    open (OUT,">$out") || die "Cannot open $out (loop 3)\n";
-    open (MISS,">$out2") || die "Cannot open $out2 (loop 3)\n";    
-    verbPrint("Generating Ref_protein_exons_".$species."_1.txt and missing_exons.txt from $add_exons file\n");
-    open (INONE, $i1) || die "Cannot open $i1 (loop 3)\n";
-    # Format: BL21561_evm0BL21561476
-    while (<INONE>){ 
-	chomp($_);
-	@line=split(/\t/,$_);
-	$pr=$line[0]."|".$line[1];
-	$psize{$pr}=$line[2];
-    }
-    close (INONE);    
-    my ($tmp, $k, $r, $s);
-    my %coords;
-    open (INTWO, $i2) || die "Cannot open $i2 (loop 3)\n"; 
-    #Format: BL20899_cuf1|BL20899Sc0000317-255783,255866-258240,258374-259202,259294
-    while (<INTWO>){ 
-	chomp($_);
-	@line=split(/\t/,$_);
-	$s=$line[3]; $s=~s/\,/\|/g; $s=~s/\-/\,/g; $s=~s/\|/\-/g;
-	$coords{$line[0]}=$line[1].":".$line[3].":".$line[2];    
-	if ($line[3]=~/\-/){
-	    @c=split(/\-/,$_);
-	    for ($l=1; $l<scalar(@c)-1; $l++){
-		my $r=$l-1; my $k=$l+1;
-		@t1=split(/\,/,$c[$r]); @t2=split(/\,/,$c[$k]);
-		$tmp=$c[$l];
-		$tmp=~s/\,/\-/;
-		$ex2=$line[1].":".$tmp;
-		if ($line[2] eq "+"){ 
-		        # WARNING :This line emited a nasty warning, but it's probably OK (the + value is ignored)
-		    $t1[1]= "NA" if !defined $t1[1];
-		    $ex=$line[1].":".$t1[1].",".$tmp.",".$t2[0].":".$line[2];
-		}
-		else {
-		        # WARNING :This line emited a nasty warning, but it's probably OK (the + value is ignored)
-		    $t1[1]= "NA" if !defined $t1[1];
-		    $ex=$line[1].":".$t2[0].",".$tmp.",".$t1[1].":".$line[2]; 
-		}
-
-		if (!$pid{$ex}){
-		    $pid{$ex}=$line[0];
-		    $pid{$ex2}=$line[0];
-		    $lprot{$ex}=$psize{$line[0]};
-		    $lprot{$ex2}=$psize{$line[0]};
-		}
-		else {  
-		    if ($psize{$line[0]} > $lprot{$ex}){
-			$pid{$ex}=$line[0];
-			$pid{$ex2}=$line[0];
-			$lprot{$ex}=$psize{$line[0]};
-			$lprot{$ex2}=$psize{$line[0]};
-		    }
-		}
-	    }
-	    @c=split(/\,/,$_);
-	    for ($l=1; $l<scalar(@c)-1; $l++){
-		@t1=split(/\-/,$c[$l]);
-		if ($line[2] eq "+"){
-		    $intron=$line[1].":".$t1[0].",".$t1[1].":".$line[2];
-		}
-		else {  
-		    $intron=$line[1].":".$t1[1].",".$t1[0].":".$line[2]; 
-		}
-		if (!$pid{$intron}){
-		    $pid{$intron}=$line[0];
-		    $lprot{$intron}=$psize{$line[0]};
-		}
-		else {  
-		    if ($psize{$line[0]} > $lprot{$intron}){
-			$pid{$intron}=$line[0];
-			$lprot{$intron}=$psize{$line[0]};
-		    }
-		}
-	    }
-	}
-    }
-    close (INTWO);    
-    my ($id,$id4, $trcoords);
-    my @ex;
-    open (INTHREE, $i3) || die "Cannot open $i3 (loop 3)\n"; 
-# Format: FAM13ABlaEX0015343Sc0000095:756974-75707299Sc0000095:757428,756974-757072,756243S
-#         Sc0000095:757428,756974-757072,756243:-99
-#         Sc0000095:757428-757560Sc0000095:756974-757072Sc0000095:756125-756243
-#Format: GeneID/GeneNameExonIDExon_coordsExon_coords:C1,A,C2:strand
-#BL005147BlaEX0015343Sc0000095:756974-75707299 Sc0000095:757428,756974-757072,756243:- 
-#ENSG00000029534HsaEX0004110chr8:41758036-41758137chr8:41797512-41797622chr8:41733971-41734069chr8:41797512,41758036-41758137,41734069:-
-#From VastDB: Columns 1,2,3 & 7.
-    while (<INTHREE>){ 
-	chomp($_);
-	@line=split(/\t/,$_);
-	if ($pid{$line[3]}){
-	    $trcoords=$coords{$pid{$line[5]}};
-	    print OUT "$line[0]\t$line[1]\t$line[2]\t$pid{$line[5]}\tAnnotated_exon_C1,A,C2\t$trcoords\n";
-	}
-	elsif ($pid{$line[2]}) {
-	    $trcoords=$coords{$pid{$line[2]}};
-	    print OUT "$line[0]\t$line[1]\t$line[2]\t$pid{$line[5]}\tAnnotated_exon_A\t$trcoords\n";
-	}
-	else {
-	    @t1=split(/\,/,$line[5]);
-	    $id=$t1[0].",".$t1[2]; ##searching then only the intron, the exon might be not annotated
-	    if ($pid{$id}){
-		$trcoords=$coords{$pid{$id}};
-		print OUT "$line[0]\t$line[1]\t$line[2]\t$pid{$id}\tNot_annotated_exon|intron:$id\t$trcoords\n"; 
-	    }
-	    else { print MISS "$_\n"; }
-	}
-    }
-    close (INTHREE);
-    close OUT;
-    close MISS;
-### loops for each species (Loop 4: get_prot_isof_exon_3.pl) only if VASTDB refs
-#   -sp Hsa 
-#   -i1 Hsa_prot_sizes.txt -i2 Hsa_trid_protid.txt -i3 Hsa_tr_coords.txt -i4 Ref_protein_exons_Hsa_1.txt -i5 missing_exons.txt 
-#   -o1 Ref_protein_exons_Hsa_2.txt -o2 missing_exons_2.txt -o3 Final_exons_ref_proteins_Hsa.txt -o4 Hsa_vast_exons_prot_ids.txt
-#    foreach my $species (@SPECIES){
-    # Declaration of variables
-    my (@line);
-    my %pid;
-    my %lprot;
-    my ($ex, $l, $intron);
-    my (@t1,@t2, @c);
-    my %gene;
-    my %psize;
-    my $pr;
-# Skips the step for the species if NA was provided
-    next if $add_exons eq "NA";
-    # Declaration of input files
-    my $i1 = "$exons_db_folder/$species/$species"."_prot_sizes.txt";
-    my $i2 = "$exons_db_folder/$species/$species"."_trid_protid.txt";
-    my $i3 = "$exons_db_folder/$species/$species"."_tr_coords.txt";
-    my $i4 = "$exons_db_folder/$species/Ref_protein_exons_$species"."_1.txt";
-    my $i5 = "$exons_db_folder/$species/missing_exons.txt";
-    die "Cannot find $i4 (loop4)\n" unless (-e $i4); # sanity check
-    
-    # Declaration of output
-    #   -o1 Ref_protein_exons_Hsa_2.txt -o2 missing_exons_2.txt -o3 Final_exons_ref_proteins_Hsa.txt -o4 Hsa_vast_exons_prot_ids.txt
-    
-    my $out = "$exons_db_folder/$species/Ref_protein_exons_$species"."_2.txt";
-    my $out2 = "$exons_db_folder/$species/missing_exons_2.txt";
-    my $out3 = "$exons_db_folder/$species/Final_exons_ref_proteins_$species.txt";
-    my $out4 = "$exons_db_folder/$species/$species"."_add_exons_prot_ids.txt"; ##add_exons file prot ids
-    my $mex = "$exons_db_folder/$species/$species"."_not_annotated_exons.txt";
-    
-    open (OUT,">$out") || die "Cannot open $out (loop4)\n";
-    open (MISS,">$out2") || die "Cannot open $out2 (loop4)\n";
-    open (OUTF,">$out4") || die "Cannot open $out4 (loop 4)\n"; # out3 is done by a cat
-    open (MEX, ">$mex") || die "Cannot open $mex (loop 4)\n";
-    
-    ### Parsing first input
-    open (INONE, $i1) || die "Cannot open $i1 (loop 4)\n";
-    # Format: BL21561_evm0BL21561476
-    while (<INONE>){ 
-	chomp($_);
-	@line=split(/\t/,$_);
-	$pr=$line[0];
-	$psize{$pr}=$line[2];
-	$gene{$pr}=$line[1];
-    }
-    close (INONE);
-    
-    ### Parsing second input
-    open (INTWO, $i2) || die "Cannot open $i2 (loop 4)\n";
-    my %trid;
-    while (<INTWO>){ 
-	chomp($_);
-	@line=split(/\t/,$_);
-	$trid{$line[0]}=$line[1];
-    }
-    close (INTWO);
-    
-    ### Parsing third input
-    my ($tmp, $k, $r, $s);
-    my @n;
-    my %coords;
-    open (INTHR, $i3) || die "Cannot open $i3 (loop 4)\n";
-    # Format: BL20899_cuf1|BL20899Sc0000317-255783,255866-258240,258374-259202,259294
-    while (<INTHR>){ 
-	chomp($_);
-	@line=split(/\t/,$_);
-	$s=$line[3]; $s=~s/\,/\|/g; $s=~s/\-/\,/g; $s=~s/\|/\-/g;
-	@n=split(/\|/,$line[0]);
-	    ### This gave WARNINGS: basically, nc transcripts do not have prot?
-#    $trid{$n[0]}="NA" if (!$trid{$n[0]}); # this solution adds lines in the output for nc exons
-	$coords{$trid{$n[0]}}=$line[1].":".$line[3].":".$line[2] if (defined $trid{$n[0]});
-	if ($line[3]=~/\-/){
-	    @c=split(/\-/,$_);
-	    for ($l=1; $l<scalar(@c)-1; $l++){
-		my $r=$l-1; my $k=$l+1;
-		@t1=split(/\,/,$c[$r]); @t2=split(/\,/,$c[$k]);
-		$tmp=$c[$l];
-		$tmp=~s/\,/\-/;
-		if ($line[2] eq "+"){
-		        # WARNINGS: same issues as above
-		    $t1[1]= "NA" if (!defined $t1[1]);
-		    $ex=$line[1].":".$t1[1].",".$tmp.",".$t2[0].":".$line[2];
-		}
-		else {  
-		        # WARNINGS: same issues as above
-		    $t1[1]= "NA" if (!defined $t1[1]);
-		    $ex=$line[1].":".$t2[0].",".$tmp.",".$t1[1].":".$line[2]; 
-		}
-		if (!$pid{$ex}){
-		    $pid{$ex}=$trid{$n[0]};
-		        # This gave warnings (likely for nc transcripts)
-		    $lprot{$ex}=$psize{$trid{$n[0]}} if (defined $trid{$n[0]});
-		}
-		else {  
-		    if (defined $trid{$n[0]}){
-			if ($psize{$trid{$n[0]}} > $lprot{$ex}){
-			    $pid{$ex}=$trid{$n[0]};
-			    $lprot{$ex}=$psize{$trid{$n[0]}};
-			}
-		    }
-		}
-	    }
-	    @c=split(/\,/,$_);
-	    for ($l=1; $l<scalar(@c)-1; $l++){
-		@t1=split(/\-/,$c[$l]);
-		if ($line[2] eq "+"){
-		        # WARNINGS: same issues as above
-		    $t1[1]= "NA" if (!defined $t1[1]);
-		    $intron=$line[1].":".$t1[0].",".$t1[1].":".$line[2];
-		}
-		else { 
-		        # WARNINGS: same issues as above
-		    $t1[1]= "NA" if (!defined $t1[1]);
-		    $intron=$line[1].":".$t1[1].",".$t1[0].":".$line[2]; 
-		}
-		if (!$pid{$intron}){
-		    $pid{$intron}=$trid{$n[0]};
-		        # This gave warnings (likely for nc transcripts)
-		    $lprot{$intron}=$psize{$trid{$n[0]}} if (defined $trid{$n[0]});
-		}
-		else {  
-		    if (defined $trid{$n[0]}){ # This gave warnings (likely for nc transcripts) 
-			if ($psize{$trid{$n[0]}} > $lprot{$intron}){
-			    $pid{$intron}=$trid{$n[0]};
-			    $lprot{$intron}=$psize{$trid{$n[0]}} if (defined $trid{$n[0]});
-			}
-		    }
-		}
-	    }
-	}
-    }
-    close (INTHR);
-    
-### Parsing fifth input
-    verbPrint("Generating Ref_protein_exons_$species"."_2.txt\n");
-    verbPrint("Generating missing_exons_2.txt from $add_exons file");
-    my ($id,$g, $trcoords);
-    my @ex;
-    open (INFIVE, $i5) || die "Cannot open $i5 (loop 4)\n";
-# Format: FAM13ABlaEX0015343Sc0000095:756974-75707299Sc0000095:757428,756974-757072,756243S
-#         Sc0000095:757428,756974-757072,756243:-99
-#         Sc0000095:757428-757560Sc0000095:756974-757072Sc0000095:756125-756243
-##BL005147BlaEX0015343Sc0000095:756974-75707299 Sc0000095:757428,756974-757072,756243:-
-    while (<INFIVE>){ 
-	chomp($_);
-	@line=split(/\t/,$_);
-	if ($pid{$line[3]}){
-	    $g=$gene{$pid{$line[3]}};
-	    $trcoords=$coords{$pid{$line[3]}};
-	    print OUT "$line[0]\t$line[1]\t$line[2]\t$pid{$line[5]}|$g\tAnnotated_exon_C1,A,C2*\t$trcoords\n";
-	}
-	else {
-	    print MISS "$_\n";
-	}
-    }
-    close (INFIVE);
-    close OUT;
-    close MISS;
-
-        ##Getting final file of exons
-    verbPrint("Generating Final_exons_ref_proteins_$species.txt");
-    system ("cat $out $i4 > $out3"); # uses forth input here
-    
-        ##Getting file with vast exons and protein ids
-    verbPrint("Generating $species"."_add_exons_prot_ids.txt");
-    verbPrint("Generating $species"."_not_annotated_exons.txt");
-    
-    my %print;
-    open (IN, $out3) || die "Cannot open $out3 (loop 4)\n";
-    while (<IN>){ 
-	chomp($_);
-	@line=split(/\t/,$_);
-	if (!$print{$line[3]}){
-	    print OUTF "$line[3]\n";
-	    $print{$line[3]}=1;
-	}
-	if ($line[4]=~/Not_annotated_exon/){
-	    print MEX "$line[0]\t$line[1]\t$line[2]\t$line[3]\n";
-	}
-    }
-    close (MEX);
-    close (OUTF);
-    close IN;
 }
 
-
-### loops for each species (Loop 5: get_aa_pos_exon.pl)
+### PART 3: get_aa_pos_exon.pl
+if ($do_all_steps){ # done to re-declare variables
 #   -i Hsa_annot_exons_prot_ids.#   -out Hsa_protein_ids_exons_pos.txt
-#foreach my $species (@SPECIES){  
 #Declaration of variables
 my (%pid, %protein);
 my ($j,$tmp, $gid, $prot, $phase, $nuc, $aa, $pid, $tfile, $m, $ex);
 my (%header, %ntseq);
-#my $b;
 my (@l, @l1, @line, @l2, @l3, @s);
     
-    # Declaration of input files
+# Declaration of input files
 my $p = "$exons_db_folder/$species/$species"."_annot_exons_prot_ids.txt";
 my $v = "$exons_db_folder/$species/$species"."_add_exons_prot_ids.txt" if (-e "$exons_db_folder/$species/$species"."_add_exons_prot_ids.txt");
     
-    # Declaration of output files
+# Declaration of output files
 my $outfile = "$exons_db_folder/$species/$species"."_protein_ids_exons_pos.txt";
 open (OUT, ">$outfile") || die "Cannot open $outfile (loop 5)\n";
-    
+
 verbPrint("Generating $species"."_protein_ids_exons_pos.txt\n");
-    
-    ### open main input file
+
+### open main input file
 open (PROTS, "$p") || die "Cannot open $p (loop 5)\n";
 while (<PROTS>){
     chomp($_);
@@ -1526,16 +1239,16 @@ while (<GTF>){
 }
 close (GTF);
 close OUT;
-#}
-### loops for each species (Loop 6: get_genomic_coords_intron.pl
+}
+
+### PART 4: get_genomic_coaords_intron.pl
+if ($do_all_steps){ # done to re-declare variables
 #   -p Hsa_annot_exons_prot_ids.txt -v Hsa_vast_exons_prot_ids.txt -t Hsa_trid_protid.txt 
 #   -c1 Hsa_tr_coords.txt -c2 Hsa_tr_coords_CDS.txt 
 #   -o1 Hsa_protein_ids_intron_pos.txt -o2 Hsa_protein_ids_intron_pos_CDS.txt
-#foreach my $species (@SPECIES){  
-    # Declaration of variables
+# Declaration of variables
 my ($j,$tmp, $gid, $prot, $phase, $nuc, $aa, $pid, $tfile, $m);
 my (%pid, %tid, %ntseq);
-#my $b=0;
 my (@l, @l1, @line, @l2, @l3, @coords);
 my ($l, $size, $tmpseq, $c);
 # Declaration of input files
@@ -1641,14 +1354,14 @@ while (<FILE2>){
 }
 close (FILE2);
 close (TWO);
-#}
-### loops for each species (Loop 7: get_ex_size_phase.pl) => try to intergrate in exint?
+}
+
+### PART 5: get_ex_size_phase.pl
+if ($do_all_steps){
 # -GTF Hsa_annot.gtf -out Hsa_annot_exon_sizes.txt
-#foreach my $species (@SPECIES){  
-    # Declaration of variables (same as loop 1)
+# Declaration of variables (same as loop 1)
 my ($j,$tmp, $gid, $prot, $phase, $nuc, $aa, $pid, $tfile, $m);
 my (%pid, %header, %ntseq);
-#my $b=0;
 my (@l, @l1, @line, @l2, @l3, @s);
 my %rseq;
 my ($res, $size, $tmpseq);
@@ -1658,9 +1371,8 @@ my $outfile = "$exons_db_folder/$species/$species"."_annot_exon_sizes.txt";
 open (OUT, ">$outfile") || die "Cannot create $outfile (loop 7)\n";
     
 verbPrint("Generating $species"."_annot_exon_sizes.txt\n");
-
 ### Parsing GTF file
-open(GTF, $merged_GTF) ||die "It cannot open $merged_GTF\n";
+open(GTF, $merged_GTF) || die "It cannot open $merged_GTF\n";
 while (<GTF>){
     chomp($_); 
     @line=split(/\t/,$_);
@@ -1701,18 +1413,20 @@ while (<GTF>){
     }
 }
 close (GTF);
+
 my @keys=keys(%header);
-my $el;
 my $p;
 my ($l, $triplet, $protein, $nseq, $name);
 my $c=0;
-foreach $el(@keys){ 
+foreach my $el (@keys){ 
     $name=$header{$el};
     print OUT "$name\n";
 }
 close (OUT);
-verbPrint ">>> All annotation files generated for $species\n";
-#A. Removing multi-skipping exon transcripts
+}
+
+### PART 7: Removing multi-skipping exon transcripts
+if ($do_all_steps){
 my $tint = "$exons_db_folder/$species/$species"."_protein_ids_intron_pos_CDS.txt";
 my $oint = "$exons_db_folder/$species/$species"."_CDS_introns.txt";
 open (TMP, "$tint");
@@ -1733,13 +1447,13 @@ foreach $mi (@ki){
     print TOUT "$mi\n";
 }
 close (TOUT);
-#`cat $tint | grep -v Intronless | perl -n -e '$_=~s/\|/\t/; print "$_";' | cut -f2,6 | sort -k1 | uniq > $oint`;
+
 my $ovint= "$exons_db_folder/$species/$species"."_overlap_CDS_introns.txt";
 ##A.1 Getting overlapping introns
 verbPrint ("Getting overlapping introns\n"); 
 open (OUT, ">$ovint");
 open (INFILE, $oint);
-my (@pos);
+my (@pos,@line);
 my (%junctions,%ov_juncs);
 my ($sum_junc,$flag,$pos5p,$pos3p,$count,$bandera)=(0,0,0,0,0,0);
 my ($gene,$id);
@@ -1791,11 +1505,16 @@ while (<INFILE>){ #AT1G010103913,3996196intronic_reads
 close (INFILE);
 print OUT "$ov_juncs{$id}\n";
 close (OUT);
+}
+
+### PART 8:
 ##A.2 Getting multi-exon introns
+if ($do_all_steps){
 verbPrint ("Getting multi-exon introns\n"); 
-my (@l,@k,@ints,@i1,@i2);
+my (@l,@ints,@i1,@i2);
 my (%g,%cov, %ov,%ovint);
-my ($el, $r, $s,$id);
+my ($r, $s,$id);
+my $ovint= "$exons_db_folder/$species/$species"."_overlap_CDS_introns.txt";
 open (INONE,"$ovint");
 while (<INONE>){
     chomp($_);
@@ -1810,7 +1529,7 @@ while (<INONE>){
     }
 }
 my @k=keys(%cov);
-foreach $el (@k){
+foreach my $el (@k){
     if ($cov{$el}>=4){
 	@ints=split(/\,/,$ov{$el});
 	for ($r=0; $r<scalar(@ints); $r++){
@@ -1825,25 +1544,30 @@ foreach $el (@k){
 		}
 	    }
 	}
-
+	
     }
 }
 my $omul="$exons_db_folder/$species/$species"."_multex_introns.tab";
 open (OUT, ">$omul");
-my @k=sort(keys(%ovint));
-foreach $el (@k){
+
+my @k2=sort(keys(%ovint));
+foreach my $el (@k2){
     if ($ovint{$el}>=3){
 	print OUT "$el\t$ovint{$el}\n";
     }
 }
-
+}
+ 
+### PART 9: 
 ##A.3 Removing multiexon skipping transcripts
+if ($do_all_steps){
 verbPrint ("Removing multiexon skipping transcripts\n"); 
 my (%ints);
+my $omul="$exons_db_folder/$species/$species"."_multex_introns.tab";
 open (INONE,"$omul");
 while (<INONE>){
     chomp($_);
-    @l=split(/\t/,$_);
+    my @l=split(/\t/,$_);
     if (!$ints{$l[1]}){
 	$ints{$l[1]}=$l[2];
     }else {
@@ -1851,14 +1575,14 @@ while (<INONE>){
     }
 }
 my $ti="$exons_db_folder/$species/$species"."_tr_coords_CDS.txt";
-my (@n,@in,@ex,@e1,@i1);
+my (@in,@ex,@e1,@i1);
 my (%trs,%mex);
 my ($s,$idint,$cex,$r);
 open (INTWO,"$ti");
 while (<INTWO>){
     chomp($_);
-    @l=split(/\t/,$_);
-    @n=split(/\|/,$l[0]);
+    my @l=split(/\t/,$_);
+    my @n=split(/\|/,$l[0]);
     @in=();
     if ($ints{$n[1]}){
 	if ($l[3]=~/\-/){
@@ -1892,25 +1616,23 @@ while (<INTWO>){
 my %rmtr;
 my @k=keys(%mex);
 my @t;
-foreach $el(@k){
+foreach my $el(@k){
     if ($trs{$el}){
-	#print "#$el#\t$trs{$el}\n"; 
 	if ($trs{$el}=~/\,/){
 	    @t=split(/\,/,$trs{$el});
-	    foreach $m(@t){
-		$rmtr{$t[$m]}=1;
+	    foreach my $tmp_m (@t){
+		$rmtr{$t[$tmp_m]}=1;
 	    }
 	}else { $rmtr{$trs{$el}}=1;  }
     }
 }
 
 my $to="$exons_db_folder/$species/$species"."_multiexsk_trs.txt"; 
-#print "$to\n";
 open (OUT, ">$to");
 open (INTWO,"$ti");
 while (<INTWO>){
     chomp($_);
-    @l=split(/\t/,$_);
+    my @l=split(/\t/,$_);
     if(!$rmtr{$l[0]}){
 	print OUT "$_\n";
     }
@@ -1918,6 +1640,7 @@ while (<INTWO>){
 my $nrm=scalar(keys(%rmtr));
 verbPrint ("Number of transcripts to be removed: $nrm\n");
 verbPrint ("Replacing old file of transcripts for the filtered one\n");
-##replacing old file of transcripts for the filtered one
 `mv $to $ti`;
+}
+
 verbPrint ("Annotations for $species finished!!!"); 
