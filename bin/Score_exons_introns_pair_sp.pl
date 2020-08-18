@@ -29,7 +29,6 @@ my %miss;
 my (@tn1, @tn2, @ln);
 system "mkdir $outf"; 
 
-
 my $exsc=$outf."/score_exons_".$s1."_".$s2."_part_".$part.".txt";##outputfile for exon scores
 my $insc=$outf."/score_introns_".$s1."_".$s2."_part_".$part.".txt";
 my $prsc=$outf."/score_proteins_".$s1."_".$s2."_part_".$part.".txt";##outputfile for scores of whole protein alignment
@@ -104,7 +103,7 @@ close (BL);
 ### First to get the valid species
 my (%c1,%c2); 
 my (@l);
-open (IN,"$i1") || die "Missing gene cluster file"; ##Gene cluster files
+open (IN,"$i1") || die "It cannot open gene cluster file"; ##Gene cluster files
 while (<IN>){
     chomp($_);
     @l=split(/\t/,$_);
@@ -115,8 +114,10 @@ while (<IN>){
 	$c2{$l[0]}=1;
     }
 }
+close IN;
+
 my (%gn, %cl1, %cl2);
-open (IN,"$i1") || die "Missing gene cluster file"; ##Gene cluster files
+open (IN,"$i1") || die "It cannot open gene cluster file (second time)"; ##Gene cluster files
 while (<IN>){
     chomp($_);
     @l=split(/\t/,$_);    
@@ -141,10 +142,11 @@ while (<IN>){
 	}
     }
 }
+close IN;
 
 ### protein ids exons species 1
 ### ENSP00000000412|ENSG00000003056
-open (IN,"$i2") || die "Missing protein ids exon file species 1"; 
+open (IN,"$i2") || die "It cannot open protein ids exon file species 1\n"; 
 my (%pid1, %pid2,%spid,%chpr); 
 my $cid;
 my (%p1, %p2);
@@ -167,10 +169,11 @@ while (<IN>){
 	}
     }
 }
+close IN;
 
 ### protein ids exons species 2
 ### ENSP00000000412|ENSG00000003056
-open (IN,"$i3") || die "Missing protein ids exon file species 2";
+open (IN,"$i3") || die "It cannot open protein ids exon file species 2";
 while (<IN>){
     chomp($_);
     @l=split(/\|/,$_);    
@@ -190,11 +193,13 @@ while (<IN>){
 	}
     }
 }
+close IN;
+
 my %exon;
 my $rs1;
 my %pos;
 my @n;
-open (IN,"$i4")|| die "Missing exon position files species 1";
+open (IN,"$i4")|| die "It cannot open exon position files species 1\n";
 while (<IN>){
     chomp($_);
     @line=split(/\t/,$_);
@@ -207,7 +212,9 @@ while (<IN>){
 	}
     } 
 }
-open (IN,"$i5") || die "Missing exon position files species 2"; 
+close IN;
+
+open (IN,"$i5") || die "It cannot open exon position files species 2\n"; 
 while (<IN>){
     chomp($_);
     @line=split(/\t/,$_);
@@ -222,6 +229,8 @@ while (<IN>){
 
     }
 }
+close IN;
+
 ### Intron position files for each species
 ### Format: BL10724_cuf1|BL10724Sc0000009+Intron_13599249-3601287
 my (%intron_aa,%intron_gg);
