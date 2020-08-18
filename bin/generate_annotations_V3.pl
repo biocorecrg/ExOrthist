@@ -1574,11 +1574,11 @@ while (<INONE>){
 	$ints{$l[1]}.="|".$l[2];
     }
 }
-my $ti="$exons_db_folder/$species/$species"."_tr_coords_CDS.txt";
+my $f_transc_coords_CDS = "$exons_db_folder/$species/$species"."_tr_coords_CDS.txt"; # for $ti
 my (@in,@ex,@e1,@i1);
 my (%trs,%mex);
 my ($s,$idint,$cex,$r);
-open (INTWO,"$ti");
+open (INTWO, $f_transc_coords_CDS) || die "It cannot open file with tr_coords_CDS ($f_transc_coords_CDS)\n";
 while (<INTWO>){
     chomp($_);
     my @l=split(/\t/,$_);
@@ -1604,7 +1604,6 @@ while (<INTWO>){
 			$cex++;
 		    }
 		}
-		#print "$idint\t#$cex#\n";
 		if ($cex>=3){
 		    $mex{$idint}=1;
 		}
@@ -1612,35 +1611,40 @@ while (<INTWO>){
 	}
     }
 }
+close (INTWO);
 
 my %rmtr;
 my @k=keys(%mex);
 my @t;
-foreach my $el(@k){
+foreach my $el (@k){
+    # $el => FBgn0003429  24698269-24703021
+    # $trs{$el} => FBpp0100093|FBgn0003429
     if ($trs{$el}){
-	if ($trs{$el}=~/\,/){
+	if ($trs{$el}=~/\,/){ # not needed...
 	    @t=split(/\,/,$trs{$el});
 	    foreach my $tmp_m (@t){
-		$rmtr{$t[$tmp_m]}=1;
+		$rmtr{$tmp_m}=1;
 	    }
-	}else { $rmtr{$trs{$el}}=1;  }
+	}
+	else { 
+	    $rmtr{$trs{$el}}=1;  
+	}
     }
 }
 
-my $to="$exons_db_folder/$species/$species"."_multiexsk_trs.txt"; 
-open (OUT, ">$to");
-open (INTWO,"$ti");
+my $temp_output = "$exons_db_folder/$species/$species"."_multiexsk_trs.txt"; 
+open (OUT, ">$temp_output") || die "It cannot open the temporary output without multi-sk transcripts\n";
+open (INTWO, $f_transc_coords_CDS) || die "It cannot open file with tr_coords_CDS ($f_transc_coords_CDS)\n";
 while (<INTWO>){
     chomp($_);
     my @l=split(/\t/,$_);
-    if(!$rmtr{$l[0]}){
+    if (!defined $rmtr{$l[0]}){
 	print OUT "$_\n";
     }
 }
-my $nrm=scalar(keys(%rmtr));
-verbPrint ("Number of transcripts to be removed: $nrm\n");
-verbPrint ("Replacing old file of transcripts for the filtered one\n");
-`mv $to $ti`;
+my $number_rm_tr = scalar(keys(%rmtr));
+verbPrint ("Number of transcripts with multiexon skipping removed: $number_rm_tr\n");
+`mv $temp_output $f_transc_coords_CDS`;
 }
 
-verbPrint ("Annotations for $species finished!!!"); 
+verbPrint ("Annotations for $species finished!"); 
