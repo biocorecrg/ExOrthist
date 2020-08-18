@@ -1,20 +1,20 @@
 #!/usr/bin/env perl
 use warnings;
 use strict;
-my $s1=$ARGV[0];
-my $s2=$ARGV[1];
-my $i1=$ARGV[2]; ##Exons to realign file
-my $e1=$ARGV[3];
-my $e2=$ARGV[4];
-my $part=$ARGV[5];
-my $outf=$ARGV[6];
-my $odir=$ARGV[7];
+my $s1=$ARGV[0]; # species 1
+my $s2=$ARGV[1]; # species 2
+my $i1=$ARGV[2]; # Exons to realign file ( infile = exons_to_realign.getFileName())
+my $e1=$ARGV[3]; # exint sp1
+my $e2=$ARGV[4]; # exint sp2
+my $part=$ARGV[5]; # ${cls_parts[1]}
+my $outf=$ARGV[6]; # realigned_file = "realigned_" + exons_to_realign.getBaseName() + "_${cls_parts[1]}.txt"
+my $odir=$ARGV[7]; # ${sp1}_${sp2}
 my $bl=$ARGV[8]; #path to blossum 62 matrix  
 my $cpus=$ARGV[9]; #cpus
 $cpus=1 if !$cpus;
 
 my  %sim; ##AA similarity
-mkdir $odir;
+mkdir $odir; # is this correct?!?!
 $odir.="/";
 my $texf=$odir."tex_part_".$part.".exint";
 my $tmpgde=$odir."tex_part_".$part.".gde";
