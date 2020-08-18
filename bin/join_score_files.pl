@@ -44,8 +44,3 @@ print OUT "3. Intron scores\n\n";
 `cat $o2  $tmp > $s3`;  ##getting file of intron scores 
 `rm $o2 $tmp $tex`; ##removing temporal files
 print OUT  "Done!!!\n\n";
-
-
-
-
-
