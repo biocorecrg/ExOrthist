@@ -112,33 +112,32 @@ my $gcl=0;
 
 print "\n$f_gene_cluster parts: $N_parts{$f_gene_cluster}\n" if defined ($verbose);
 
+
+### ALL THIS COULD BE DELETED IN NEXTFLOW IMPLEMENTATION
 ### Prepares submissions
 ### here it could read the file with ALL previous aln to weight the hours in job submission
-	    
-### Prepares submissions
-### here it could read the file with ALL previous aln to weight the hours in job submission
-	    
+
 my $temp_cl_file = $f_gene_cluster; # used by default
 for my $part (1..$N_parts{$temp_cl_file}){
-		$temp_cl_file=~s/.+\///;
-		$temp_cl_file="$project_dir/$pair_folder/$temp_cl_file";
-		my $cl_part = $temp_cl_file."-part_".$part;
-		my $tb="";
-		$tb=~s/bin/files/;		
-		my $bl62 = "$tb/blosum62.txt";
-		my $of=$project_dir."/".$pair_folder;
-		### Submits for exons and introns
-		if (defined ($verbose)){
-		    print "\nsubmitjob long -l h_rt=50:00:00,virtual_free=30G ".
-			"perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ".
-			"$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part  $bl62 $of\n";
-		}
-		
-		system "submitjob long -l h_rt=50:00:00,virtual_free=30G ". # job conditions
-		    "perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
-		    "$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part  $bl62 $of\n" if $submit_aln; # input files and outputs
-
+    $temp_cl_file=~s/.+\///;
+    $temp_cl_file="$project_dir/$pair_folder/$temp_cl_file";
+    my $cl_part = $temp_cl_file."-part_".$part;
+    my $tb="";
+    $tb=~s/bin/files/;		
+    my $bl62 = "$tb/blosum62.txt";
+    my $of=$project_dir."/".$pair_folder;
+    ### Submits for exons and introns
+    if (defined ($verbose)){
+	print "\nsubmitjob long -l h_rt=50:00:00,virtual_free=30G ".
+	    "perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ".
+	    "$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part  $bl62 $of\n";
+    }
+    
+    system "submitjob long -l h_rt=50:00:00,virtual_free=30G ". # job conditions
+	"perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
+	"$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part  $bl62 $of\n" if $submit_aln; # input files and outputs
 }
+
     
 #### SUBROUTINES
 
@@ -160,94 +159,94 @@ sub split_cluster {
     my %cid;
     my $n=0;
     open (ONE, "$ex1");
-	while (<ONE>){
+    while (<ONE>){
     	chomp($_);
     	if ($_=~/\>/){
-			@l=split(/\s+/,$_);
-			@t=split(/\|/,$l[0]);
-			$trs{$t[1]}++;
+	    @l=split(/\s+/,$_);
+	    @t=split(/\|/,$l[0]);
+	    $trs{$t[1]}++;
     	}
     }
-	open (TW0, "$ex2");
-	while (<TW0>){
-   	 	chomp($_);
+    open (TW0, "$ex2");
+    while (<TW0>){
+	chomp($_);
     	if ($_=~/\>/){
-			@l=split(/\s+/,$_);
-			@t=split(/\|/,$l[0]);
-			$trs{$t[1]}++;
+	    @l=split(/\s+/,$_);
+	    @t=split(/\|/,$l[0]);
+	    $trs{$t[1]}++;
     	}
     }
-	#GF000001 Mmu ENSMUSG00000090353	Gm17555O	G0000001	O=0,R=0
-	open (CL, "$full_cluster");
-	while (<CL>){
+    #GF000001 Mmu ENSMUSG00000090353	Gm17555O	G0000001	O=0,R=0
+    open (CL, "$full_cluster");
+    while (<CL>){
     	chomp($_);
     	@l=split(/\t/,$_);
     	$nt{$l[0]}{$l[1]}+=$trs{$l[2]};
     	$cid{$l[0]}=1;
-	}
-	my @k=sort(keys(%cid));
-	my $el;
-	open (NALN, ">$project_dir/$pair_folder/Num_alns_by_cl_$sp1-$sp2.log");
-	foreach $el (@k){
+    }
+    my @k=sort(keys(%cid));
+    my $el;
+    open (NALN, ">$project_dir/$pair_folder/Num_alns_by_cl_$sp1-$sp2.log");
+    foreach $el (@k){
     	$naln=$nt{$el}{$sp1}*$nt{$el}{$sp2};
     	$taln+=$naln;
     	if ($naln>$N){  
-			print NALN "$el\t$naln\tThis cluster exceed $N alignments: Reduce number of total transcripts in exint file for this cluster or increase number of alignments!!!\n";
-			$warn{$el}=1;
-			$w++;
+	    print NALN "$el\t$naln\tThis cluster exceed $N alignments: Reduce number of total transcripts in exint file for this cluster or increase number of alignments!!!\n";
+	    $warn{$el}=1;
+	    $w++;
     	}
     	else { print NALN "$el\t$naln\n"; }
     	$nalns{$el}=$naln;
     	if (!$max){ $max=$naln; }
     	elsif ($naln>$max){ $max=$naln; }
-	}
-	print NALN "\nTotal alignments\t$taln\t$max\nNumber of clusters with warnings\t$w\n";
-	if ($w){ 
-		print STDERR "\n\nWARNING!!! $w clusters exceed the maximum number of alignments: $N  !!!!\n\n"; 
-    		#print STDERR "WARNING!!! Skipping $w clusters in the splitted files !!!\n\n"; 
-    	}	
-    	$sum=0;
-    	$part=1;
-    	open (CL, "$full_cluster");
-    	while (<CL>){
-		chomp($_);
-		@l=split(/\t/,$_);
-		if (!$warn{$l[0]}){
-	    		open (OUT, ">>$cluster_root-part_"."$part"); # first part already defined
-	    		if ($sum<$N){
-				if (!exists($prcid{$l[0]})){
-		    			$sum+=$nalns{$l[0]};
-		    			$prcid{$l[0]}=1;
-		 		}
-		  		print OUT "$_\n";
-			}				
-			else {       
-				if ($prcid{$l[0]}){
-		    			print OUT "$_\n";
-				}
-				elsif (!exists($prcid{$l[0]})){
-		    			$sum=$nalns{$l[0]};
-		    			$part++;
-		    			open (OUT, ">>$cluster_root-part_"."$part");
-		    			print OUT "$_\n";
-		    			$prcid{$l[0]}=1;
-				}
-	    		}
-	    	}
-	}
-	##printing files of clusters with > N alignments
-	open (CL, "$full_cluster");
-	while (<CL>){
-		chomp($_);
-		@l=split(/\t/,$_);
-		if ($warn{$l[0]}){
-			if (!$print{$l[0]}){
-				$part++;
-				$print{$l[0]}=1
-			}
-	    		open (OUT, ">>$cluster_root-part_"."$part"); # first part already defined
-		    	print OUT "$_\n";
+    }
+    print NALN "\nTotal alignments\t$taln\t$max\nNumber of clusters with warnings\t$w\n";
+    if ($w){ 
+	print STDERR "\n\nWARNING!!! $w clusters exceed the maximum number of alignments: $N  !!!!\n\n"; 
+	#print STDERR "WARNING!!! Skipping $w clusters in the splitted files !!!\n\n"; 
+    }	
+    $sum=0;
+    $part=1;
+    open (CL, "$full_cluster");
+    while (<CL>){
+	chomp($_);
+	@l=split(/\t/,$_);
+	if (!$warn{$l[0]}){
+	    open (OUT, ">>$cluster_root-part_"."$part"); # first part already defined
+	    if ($sum<$N){
+		if (!exists($prcid{$l[0]})){
+		    $sum+=$nalns{$l[0]};
+		    $prcid{$l[0]}=1;
 		}
-	}		
-	$N_parts{$full_cluster}=$part;
+		print OUT "$_\n";
+	    }				
+	    else {       
+		if ($prcid{$l[0]}){
+		    print OUT "$_\n";
+		}
+		elsif (!exists($prcid{$l[0]})){
+		    $sum=$nalns{$l[0]};
+		    $part++;
+		    open (OUT, ">>$cluster_root-part_"."$part");
+		    print OUT "$_\n";
+		    $prcid{$l[0]}=1;
+		}
+	    }
+	}
+    }
+    ##printing files of clusters with > N alignments
+    open (CL, "$full_cluster");
+    while (<CL>){
+	chomp($_);
+	@l=split(/\t/,$_);
+	if ($warn{$l[0]}){
+	    if (!$print{$l[0]}){
+		$part++;
+		$print{$l[0]}=1
+	    }
+	    open (OUT, ">>$cluster_root-part_"."$part"); # first part already defined
+	    print OUT "$_\n";
+	}
+    }		
+    $N_parts{$full_cluster}=$part;
 }
