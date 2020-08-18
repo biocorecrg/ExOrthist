@@ -97,8 +97,8 @@ die "Cannot find intron pos file for $sp2\n" unless (-e $f_intron_pos{$sp2});
 my $pair_folder=$sp1."_".$sp2;
 
 if (defined ($verbose)){
-	print "\nrm -r $project_dir/$pair_folder\n" if $clean && (-e "$project_dir/$pair_folder"); #Forces full deletion of data
-	print "\nmkdir $project_dir/$pair_folder\n" unless (-e "$project_dir/$pair_folder");
+    print "\nrm -r $project_dir/$pair_folder\n" if $clean && (-e "$project_dir/$pair_folder"); #Forces full deletion of data
+    print "\nmkdir $project_dir/$pair_folder\n" unless (-e "$project_dir/$pair_folder");
 }
 system "rm -rf $project_dir/$pair_folder" if $clean && (-e "$project_dir/$pair_folder"); #Forces full deletion of data
 system "mkdir $project_dir/$pair_folder" unless (-e "$project_dir/$pair_folder");
