@@ -109,43 +109,15 @@ my $gcl=0;
 ### Splitting clusters
 
 &split_cluster($f_gene_cluster,$f_exint{$sp1},$f_exint{$sp2},$N,$sp1,$sp2,$project_dir,$pair_folder) if ($gcl==0); 
-
 print "\n$f_gene_cluster parts: $N_parts{$f_gene_cluster}\n" if defined ($verbose);
 
-
-### ALL THIS COULD BE DELETED IN NEXTFLOW IMPLEMENTATION
-### Prepares submissions
-### here it could read the file with ALL previous aln to weight the hours in job submission
-
-my $temp_cl_file = $f_gene_cluster; # used by default
-for my $part (1..$N_parts{$temp_cl_file}){
-    $temp_cl_file=~s/.+\///;
-    $temp_cl_file="$project_dir/$pair_folder/$temp_cl_file";
-    my $cl_part = $temp_cl_file."-part_".$part;
-    my $tb="";
-    $tb=~s/bin/files/;		
-    my $bl62 = "$tb/blosum62.txt";
-    my $of=$project_dir."/".$pair_folder;
-    ### Submits for exons and introns
-    if (defined ($verbose)){
-	print "\nsubmitjob long -l h_rt=50:00:00,virtual_free=30G ".
-	    "perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ".
-	    "$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part  $bl62 $of\n";
-    }
-    
-    system "submitjob long -l h_rt=50:00:00,virtual_free=30G ". # job conditions
-	"perl /Score_exons_introns_pair_sp.pl $sp1 $sp2 $cl_part ". # species and gene_cluster
-	"$f_protIDs{$sp1} $f_protIDs{$sp2} $f_exon_pos{$sp1} $f_exon_pos{$sp2} $f_intron_pos{$sp1} $f_intron_pos{$sp2} $f_exint{$sp1} $f_exint{$sp2} $part  $bl62 $of\n" if $submit_aln; # input files and outputs
-}
-
-    
 #### SUBROUTINES
 
 sub split_cluster {
     my @input = @_;
     my $full_cluster = $input[0];
-    my $ex1=$input[1];
-    my $ex2=$input[2];
+    my $ex1=$input[1]; # exint sp1
+    my $ex2=$input[2]; # exint sp2
     my $N=$input[3];
     my $sp1=$input[4];
     my $sp2=$input[5];
@@ -158,16 +130,17 @@ sub split_cluster {
     my $part=1;
     my %cid;
     my $n=0;
-    open (ONE, "$ex1");
+    open (ONE, "$ex1") || die "It cannot open the exint file for $sp1 ($ex1)\n";
     while (<ONE>){
     	chomp($_);
     	if ($_=~/\>/){
 	    @l=split(/\s+/,$_);
 	    @t=split(/\|/,$l[0]);
-	    $trs{$t[1]}++;
+	    $trs{$t[1]}++; # the exint file is the one that decides what to align/how to split
     	}
     }
-    open (TW0, "$ex2");
+    close ONE;
+    open (TW0, "$ex2") || die "It cannot open the exint file for $sp2 ($ex2)\n";
     while (<TW0>){
 	chomp($_);
     	if ($_=~/\>/){
@@ -176,14 +149,17 @@ sub split_cluster {
 	    $trs{$t[1]}++;
     	}
     }
+    close TWO;
+
     #GF000001 Mmu ENSMUSG00000090353	Gm17555O	G0000001	O=0,R=0
-    open (CL, "$full_cluster");
+    open (CL, "$full_cluster") || die "It cannot open full clusters\n";
     while (<CL>){
     	chomp($_);
     	@l=split(/\t/,$_);
     	$nt{$l[0]}{$l[1]}+=$trs{$l[2]};
     	$cid{$l[0]}=1;
     }
+    close CL;
     my @k=sort(keys(%cid));
     my $el;
     open (NALN, ">$project_dir/$pair_folder/Num_alns_by_cl_$sp1-$sp2.log");
@@ -207,7 +183,7 @@ sub split_cluster {
     }	
     $sum=0;
     $part=1;
-    open (CL, "$full_cluster");
+    open (CL, "$full_cluster") || die "It cannot open clusters file\n";
     while (<CL>){
 	chomp($_);
 	@l=split(/\t/,$_);
@@ -234,8 +210,10 @@ sub split_cluster {
 	    }
 	}
     }
+    close CL;
+
     ##printing files of clusters with > N alignments
-    open (CL, "$full_cluster");
+    open (CL, "$full_cluster") || die "It cannot open clusters file\n";
     while (<CL>){
 	chomp($_);
 	@l=split(/\t/,$_);
@@ -248,5 +226,6 @@ sub split_cluster {
 	    print OUT "$_\n";
 	}
     }		
+    close CL;
     $N_parts{$full_cluster}=$part;
 }
