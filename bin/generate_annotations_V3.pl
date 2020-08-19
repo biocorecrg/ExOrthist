@@ -374,6 +374,7 @@ if ($do_all_steps){
 	    }
 	    else {
 		$selected_tr="";
+# 		my $ref_tr; # not provided 
 		$C1_inc=$C1_inc{$ev};
 		$C2_inc=$C2_inc{$ev};
 		$C1_ref=$C1_ref{$ev};
