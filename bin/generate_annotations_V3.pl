@@ -241,17 +241,19 @@ if ($do_all_steps){
     }
     close EXINT_IN;
     close SIZE_OUT;
+
+    ### Creates files with the longest protein per gene (exint not maintained, just list)
     my $longest_prot_output = "$exons_db_folder/$species/$species"."_ref_proteins.txt";
-    my $longest_exint_output = "$exons_db_folder/$species/$species"."_ref_proteins.exint";
+#    my $longest_exint_output = "$exons_db_folder/$species/$species"."_ref_proteins.exint";
     open (L_P_OUTPUT, ">$longest_prot_output") || die "Cannot open $longest_prot_output (loop 1)\n";
-    open (L_E_OUTPUT, ">$longest_exint_output") || die "Cannot open $longest_exint_output (loop 1)\n";
-    #print L_P_OUTPUT "GeneID\tProteinID\n"; # maintain without header, as the original
+#    print L_P_OUTPUT "GeneID\tProteinID\n"; # maintain without header, as the original
+#    open (L_E_OUTPUT, ">$longest_exint_output") || die "Cannot open $longest_exint_output (loop 1)\n";
     foreach my $temp_exint (sort keys %longest_prot){
 	print L_P_OUTPUT "$temp_exint\t$longest_prot{$temp_exint}\n";
-	print L_E_OUTPUT "$exint_data{$longest_prot{$temp_exint}}\n";
+#	print L_E_OUTPUT "$exint_data{$longest_prot{$temp_exint}}\n";
     }
     close L_P_OUTPUT;
-    close L_E_OUTPUT;
+#    close L_E_OUTPUT;
     
 ##### Introducing missing exons in GTF if extra exons are provided
     if (defined $add_exons){ 
