@@ -27,11 +27,11 @@ $s2=$folder."/Score_all_exons.txt";
 open (FILE, "$tex");
 open (TMP, ">$tmp");
 while (<FILE>){
-	chomp($_);
-	@l=split(/\t/,$_);
-	if ($l[7]==1){
-		print TMP "$_\n";
-	}
+    chomp($_);
+    @l=split(/\t/,$_);
+    if ($l[7]==1){
+	print TMP "$_\n";
+    }
 }
 close (FILE);
 close (TMP);
