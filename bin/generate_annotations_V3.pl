@@ -1642,21 +1642,92 @@ if ($do_all_steps){
 	}
     }
     
-    ### Removes transcripts from files
+    ##### Removes multi-skipping transcripts from files
+    # Sp_multiexsk_trs.txt
     my $temp_output = "$exons_db_folder/$species/$species"."_multiexsk_trs.txt"; 
     open (OUT, ">$temp_output") || die "It cannot open the temporary output without multi-sk transcripts\n";
-    open (INTWO, $f_transc_coords_CDS) || die "It cannot open file with tr_coords_CDS ($f_transc_coords_CDS)\n";
-    while (<INTWO>){
+    open (IN, $f_transc_coords_CDS) || die "It cannot open file with tr_coords_CDS ($f_transc_coords_CDS)\n";
+    while (<IN>){
 	chomp($_);
 	my @l=split(/\t/,$_);
 	if (!defined $rmtr{$l[0]}){
 	    print OUT "$_\n";
 	}
     }
-    close INTWO;
+    close IN;
     close OUT;
-    `mv $temp_output $f_transc_coords_CDS`;
-    # Other files needed: Sp_annot_exons_prot_ids.txt, Sp_protein_ids_exons_pos.txt, Sp_protein_ids_intron_pos_CDS.txt
+    system "mv $temp_output $f_transc_coords_CDS";
+    # Sp_annot_exons_prot_ids.txt
+    my $input_file = "$exons_db_folder/$species/$species"."_annot_exons_prot_ids.txt";
+    open (OUT, ">$input_file-temp") || die "It cannot open the temporary output without multi-sk transcripts\n";
+    open (IN, $input_file) || die "It cannot open file with annot_exons_prot_ids ($input_file)\n";
+    while (<IN>){ #Format: FBpp0309061|FBgn0025836
+	chomp($_);
+	my @l=split(/\t/,$_);
+	if (!defined $rmtr{$l[0]}){
+	    print OUT "$_\n";
+	}
+    }
+    close IN;
+    close OUT;
+    system "mv $input_file-temp $input_file";
+    # Sp_protein_ids_exons_pos.txt
+    $input_file = "$exons_db_folder/$species/$species"."_protein_ids_exons_pos.txt";
+    open (OUT, ">$input_file-temp") || die "It cannot open the temporary output without multi-sk transcripts\n";
+    open (IN, $input_file) || die "It cannot open file with annot_exons_prot_ids ($input_file)\n";
+    while (<IN>){ #Fomat: FBpp0309061|FBgn0025836  exon_11-113  chrX  129082-129417  +
+	chomp($_);
+	my @l=split(/\t/,$_);
+	if (!defined $rmtr{$l[0]}){
+	    print OUT "$_\n";
+	}
+    }
+    close IN;
+    close OUT;
+    system "mv $input_file-temp $input_file";
+    # Sp_protein_ids_intron_pos_CDS.txt
+    $input_file = "$exons_db_folder/$species/$species"."_protein_ids_intron_pos_CDS.txt";
+    open (OUT, ">$input_file-temp") || die "It cannot open the temporary output without multi-sk transcripts\n";
+    open (IN, $input_file) || die "It cannot open file with annot_exons_prot_ids ($input_file)\n";
+    while (<IN>){ #Fomat: FBpp0309167|FBgn0004456  chrX  -   Intron_1  13225111-13256617
+	chomp($_);
+	my @l=split(/\t/,$_);
+	if (!defined $rmtr{$l[0]}){
+	    print OUT "$_\n";
+	}
+    }
+    close IN;
+    close OUT;
+    system "mv $input_file-temp $input_file";
+    # Sp.exint
+    $input_file = "$exons_db_folder/$species/$species.exint";
+    open (OUT, ">$input_file-temp") || die "It cannot open the temporary output without multi-sk transcripts\n";
+    open (IN, $input_file) || die "It cannot open file with annot_exons_prot_ids ($input_file)\n";
+    my $header;
+    while (<IN>){ # Fomat: >FBpp0088149|FBgn0039911 X*?\nSEQ
+	chomp($_);
+	if ($_=~/\>(.+)/){
+	    $header = $1;
+	}
+	else {
+	    my $seq = $_;
+	    if (defined $header){
+		my ($protein) = $header =~/(\S+)/;
+		if (defined $protein){
+		    print OUT ">$header\n$seq\n" if (!defined $rmtr{$protein});
+		}
+		else {
+		    print "ISSUE: $header\n";
+		}
+	    }
+	    else {
+		print "ISSUE: $seq\n";
+	    }
+	}
+    }
+    close IN;
+    close OUT;
+    system "mv $input_file-temp $input_file";
     
     my $number_rm_tr = scalar(keys(%rmtr));
     verbPrint ("Number of transcripts with multiexon skipping removed: $number_rm_tr\n");
