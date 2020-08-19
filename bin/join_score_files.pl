@@ -42,5 +42,5 @@ print OUT "3. Intron scores\n\n";
 `cat $i4*_part_1.txt | head -1 > $o2`; ##getting header
 `cat $i4*_part_* | grep -v 'CID' | sort -k1 | uniq  > $tmp`;
 `cat $o2  $tmp > $s3`;  ##getting file of intron scores 
-`rm $o2 $tmp $tex`; ##removing temporal files
+`rm $o1 $o2 $tmp $tex`; ##removing temporal files
 print OUT  "Done!!!\n\n";
