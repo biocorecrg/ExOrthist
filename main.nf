@@ -140,7 +140,7 @@ if (params.extraexons) {
 /*
  * split cluster file
  */
-process split_cluster_file_per_specie {
+process split_cluster_file_per_species {
     tag { clusterfile }
 
     input:
