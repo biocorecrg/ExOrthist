@@ -18,10 +18,7 @@ open (OUT, ">$outfile") || die "It cannot open the output file ($outfile)\n";
 
 my %junctions;
 my %ov_juncs;
-my $sum_junc=0;
-my $flag=0;
 my ($pos5p,$pos3p)=0;
-my $bandera=0;
 my $count=0;
 my $id;
 
@@ -47,8 +44,6 @@ while (<INFILE>){
 	    $id="OV_EX_".$sp."_".$count; # defined above since it's kept defind for the next loop
 	    $ov_juncs{$id}=$id."\t".$_;
 	    $junctions{$line[0]} = $line[1];
-	    $sum_junc=1; # acts as flag
-	    $flag=1;     # acts as flag
 	    $pos5p=$pos[0];
 	    $pos3p=$pos[1]; 
 	}	
@@ -58,17 +53,11 @@ while (<INFILE>){
 		if ($pos[1]>$pos3p){
 		    $pos3p=$pos[1];
 		}
-		$sum_junc++;
-		$flag=0;
 		$ov_juncs{$id}.="\n".$id."\t".$_;
 	    }
 	    else { ### the junction does not overlap, print all the information from previous junctions
-		$sum_junc=0;
 		$pos5p=$pos[0];
 		$pos3p=$pos[1];
-		$sum_junc=1;				
-		$flag=0;
-		$bandera=0;
 		print OUT "$ov_juncs{$id}\n";
 		$count++;
 		$id="OV_EX_".$sp."_".$count;
