@@ -1743,7 +1743,7 @@ my $exposfile=$exons_db_folder."/".$species."/".$species."_protein_ids_exons_pos
 my $outexfile=$exons_db_folder."/".$species."/".$species."_prot_exons.txt";
 my $finalout=$exons_db_folder."/".$species."/".$species."_prot_exons_overlap.txt";
 
-verbPrint ("Generating $finalout\n");
+verbPrint ("Generating $species"."_prot_exons_overlap.txt\n");
 
 ##sorting exons by gene and position
 #`cat $exposfile  | perl -n -e '$_=~s/\|/\t/; print "$_";' | cut -f2,6 |  sort -k1 | uniq > $outexfile`;
@@ -1763,7 +1763,8 @@ close TEMP_I;
 my %done_ex;
 open (TEMP_O, ">$outexfile") || die "It cannot open the temporary exon file\n";
 foreach my $gene (sort keys %temp_coords){
-    foreach my $coord (sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]} (@{$temp_coords{$gene}})){
+#    foreach my $coord (sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]} (@{$temp_coords{$gene}})){
+    foreach my $coord (sort @{$temp_coords{$gene}}){
 	my $temp_ex = "$gene:$coord";
 	print TEMP_O "$gene\t$coord\t$species\n" unless $done_ex{$temp_ex};
 	$done_ex{$temp_ex}=1;
@@ -1774,17 +1775,17 @@ close TEMP_O;
 
 my %junctions;
 my %ov_juncs;
-my $sum_junc=0;
-my $flag=0;
+#my $sum_junc=0;
+#my $flag=0;
 my ($pos5p,$pos3p)=0;
-my $bandera=0;
+#my $bandera=0;
 my $count=0;
 my $id;
 
 open (EXFILE, ">$finalout"); ##Final output of overlapping exons
 open (INFILE, $outexfile) || die "It cannot open $outexfile\n";
 while (<INFILE>){ #Format: GeneID  start-stop
-    if($_){
+    if ($_){
 	chomp($_);
 	my @line=split(/\t/,$_);
 	$line[0]=~s/\s+//; ###saving_gene_id
@@ -1802,27 +1803,27 @@ while (<INFILE>){ #Format: GeneID  start-stop
 	    $id="OV_EX_".$species."_".$count;
 	    $ov_juncs{$id}=$id."\t".$_;
 	    $junctions{$line[0]} = $line[1];
-	    $sum_junc=1;
-	    $flag=1;
+#	    $sum_junc=1;
+#	    $flag=1;
 	    $pos5p=$pos[0];
-	    $pos3p=$pos[1]; 
+	    $pos3p=$pos[1];
 	}	
 	else {
 	    if ($pos[0]>=$pos5p && $pos[0]<=$pos3p){ ##the junction overlaps
 		if ($pos[1]>$pos3p){
 		    $pos3p=$pos[1];
 		}
-		$sum_junc++;
-		$flag=0;
+#		$sum_junc++;
+#		$flag=0;
 		$ov_juncs{$id}.="\n".$id."\t".$_;
 	    }
 	    else { ### the junction does not overlap, print all the information from previous junctions
 		$sum_junc=0;
 		$pos5p=$pos[0];
 		$pos3p=$pos[1];
-		$sum_junc=1;				
-		$flag=0;
-		$bandera=0;
+#		$sum_junc=1;				
+#		$flag=0;
+#		$bandera=0;
 		print EXFILE "$ov_juncs{$id}\n" if (defined $ov_juncs{$id});
 		$count++;
 		$id="OV_EX_".$species."_".$count;
