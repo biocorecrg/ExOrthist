@@ -164,7 +164,7 @@ while (<INTERSECTS>){
 	    $t[1]++;
 	    my $exon2 = "$t[0]:$t[1]-$t[2]:$t[5]";
 
-	    print O "$gene1\t$exon1\t$gene2\t$exon2\n";
+	    print O "$gene1\t$exon1\t$gene2\t$exon2\t$sp1\t$sp2\n";
 	}
     }
 }
