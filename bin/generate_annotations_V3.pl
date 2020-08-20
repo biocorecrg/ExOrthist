@@ -1736,4 +1736,83 @@ if ($do_all_steps){
 my $GTF_to_compress = "$exons_db_folder/$species/$species"."_annot_fake.gtf";
 system "gzip $GTF_to_compress";
 
+###########################################################################################
+###Getting overlapping exons by species####
+
+my $exposfile=$exons_db_folder."/".$species."/".$species."_protein_ids_exons_pos.txt";
+my $outexfile=$exons_db_folder."/".$species."/".$species."_prot_exons.txt";
+my $finalout=$exons_db_folder."/".$species."/".$species."_prot_exons.txt";
+my @line;
+my %junctions;
+my @pos;
+my $sum_junc=0;
+my $flag=0;
+my ($pos5p,$pos3p)=0;
+my $gene;
+my $bandera=0;
+my $count=0;
+my $id;
+my %ov_juncs;
+##sorting exons by gene and position
+`cat ${s}  | perl -n -e '$_=~s/\|/\t/; print "$_";' | cut -f2,6 |  sort -k1 | uniq > $outexfile`;
+open (EXFILE, ">$finalout"); ##Final output of overlapping exons
+open (INFILE, $outexfile);
+while (<INFILE>){ #BL00113	Sc0000002:5027516-5027714:+	Bla	18
+	if($_){
+		chomp($_);
+		@line=split(/\t/,$_);
+		$line[0]=~s/\s+//; ###saving_gene_id
+		$line[1]=~s/\s+//;
+		@crs=split(/\:/,$line[1]);
+		@pos=split(/\-/,$crs[1]);
+		$species=$line[2];
+		if(!$junctions{$line[0]}){
+			if ($pos5p!=0) {
+				print EXFILE "$ov_juncs{$id}\n";
+			}
+			$count++;
+			$id="OV_EX_".$species."_".$count;
+			$ov_juncs{$id}=$id."\t".$_;
+			$gene=$line[0];
+			$junctions{$line[0]} = $line[1];
+			$sum_junc=1;
+			$flag=1;
+			$pos5p=$pos[0];
+			$pos3p=$pos[1]; 
+		}	
+		else {
+			if ($pos[0]>=$pos5p && $pos[0]<=$pos3p){ ##the junction overlaps
+				if ($pos[1]>$pos3p){
+					$pos3p=$pos[1];
+				}
+				$sum_junc++;
+				$flag=0;
+				$ov_juncs{$id}.="\n".$id."\t".$_;
+			}
+			else{ ### the junction does not overlap, print all the information from previous junctions
+				$sum_junc=0;
+				$pos5p=$pos[0];
+				$pos3p=$pos[1];
+				$sum_junc=1;				
+				$flag=0;
+				$bandera=0;
+				print EXFILE "$ov_juncs{$id}\n";
+				$count++;
+				$id="OV_EX_".$species."_".$count;
+				$ov_juncs{$id}=$id."\t".$_;
+			}
+		}
+	}
+}
+close (INFILE);
+print EXFILE "$ov_juncs{$id}\n";
+
 verbPrint ("Annotations for $species finished!"); 
+
+##END OF SCRIPT##
+
+
+
+
+
+
