@@ -1771,7 +1771,7 @@ foreach my $gene (sort keys %temp_coords){
     }
 }
 close TEMP_O;
-#system "rm $outexfile";
+system "rm $outexfile";
 
 my %junctions;
 my %ov_juncs;
