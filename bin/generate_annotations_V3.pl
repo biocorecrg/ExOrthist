@@ -1766,7 +1766,7 @@ foreach my $gene (sort keys %temp_coords){
 #    foreach my $coord (sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]} (@{$temp_coords{$gene}})){
     foreach my $coord (sort @{$temp_coords{$gene}}){
 	my $temp_ex = "$gene:$coord";
-	print TEMP_O "$gene\t$coord\t$species\n" unless $done_ex{$temp_ex};
+	print TEMP_O "$gene\t$coord\n" unless $done_ex{$temp_ex};
 	$done_ex{$temp_ex}=1;
     }
 }
