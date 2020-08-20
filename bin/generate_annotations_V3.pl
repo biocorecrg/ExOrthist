@@ -1741,7 +1741,37 @@ system "gzip $GTF_to_compress";
 
 my $exposfile=$exons_db_folder."/".$species."/".$species."_protein_ids_exons_pos.txt";
 my $outexfile=$exons_db_folder."/".$species."/".$species."_prot_exons.txt";
-my $finalout=$exons_db_folder."/".$species."/".$species."_prot_exons.txt";
+my $finalout=$exons_db_folder."/".$species."/".$species."_prot_exons_overlap.txt";
+
+verbPrint ("Generating $finalout\n");
+
+##sorting exons by gene and position
+#`cat $exposfile  | perl -n -e '$_=~s/\|/\t/; print "$_";' | cut -f2,6 |  sort -k1 | uniq > $outexfile`;
+open (TEMP_I, $exposfile) || die "It cannot open the exons file ($exposfile)\n";
+# Format: FBpp0111833|FBgn0025836 exon_8 696-1030 chrX 137256-138260 +
+my %temp_coords;
+while (<TEMP_I>){
+    chomp($_);
+    my @t=split(/\t/);
+    my ($gene)=$t[0]=~/\|(.+)/;
+    if (defined $gene){
+	push(@{$temp_coords{$gene}},$t[4]);
+    }
+}
+close TEMP_I;
+
+my %done_ex;
+open (TEMP_O, ">$outexfile") || die "It cannot open the temporary exon file\n";
+foreach my $gene (sort keys %temp_coords){
+    foreach my $coord (sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]} (@{$temp_coords{$gene}})){
+	my $temp_ex = "$gene:$coord";
+	print TEMP_O "$gene\t$coord\t$species\n" unless $done_ex{$temp_ex};
+	$done_ex{$temp_ex}=1;
+    }
+}
+close TEMP_O;
+#system "rm $outexfile";
+
 my %junctions;
 my %ov_juncs;
 my $sum_junc=0;
@@ -1751,22 +1781,19 @@ my $bandera=0;
 my $count=0;
 my $id;
 
-##sorting exons by gene and position
-`cat ${s}  | perl -n -e '$_=~s/\|/\t/; print "$_";' | cut -f2,6 |  sort -k1 | uniq > $outexfile`;
 open (EXFILE, ">$finalout"); ##Final output of overlapping exons
 open (INFILE, $outexfile) || die "It cannot open $outexfile\n";
-while (<INFILE>){ #BL00113	Sc0000002:5027516-5027714:+	Bla	18
+while (<INFILE>){ #Format: GeneID  start-stop
     if($_){
 	chomp($_);
 	my @line=split(/\t/,$_);
 	$line[0]=~s/\s+//; ###saving_gene_id
 	$line[1]=~s/\s+//;
-	my @crs=split(/\:/,$line[1]);
-	my @pos=split(/\-/,$crs[1]);
+	my @pos=split(/\-/,$line[1]);
 	my $species=$line[2];
 
 	if (!$junctions{$line[0]}){
-	    if ($pos5p!=0) {
+	    if ($pos5p != 0) {
 		if (defined $id){
 		    print EXFILE "$ov_juncs{$id}\n" if (defined $ov_juncs{$id});
 		}
@@ -1789,7 +1816,7 @@ while (<INFILE>){ #BL00113	Sc0000002:5027516-5027714:+	Bla	18
 		$flag=0;
 		$ov_juncs{$id}.="\n".$id."\t".$_;
 	    }
-	    else{ ### the junction does not overlap, print all the information from previous junctions
+	    else { ### the junction does not overlap, print all the information from previous junctions
 		$sum_junc=0;
 		$pos5p=$pos[0];
 		$pos3p=$pos[1];
