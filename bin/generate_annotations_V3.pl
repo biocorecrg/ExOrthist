@@ -1775,10 +1775,7 @@ close TEMP_O;
 
 my %junctions;
 my %ov_juncs;
-#my $sum_junc=0;
-#my $flag=0;
 my ($pos5p,$pos3p)=0;
-#my $bandera=0;
 my $count=0;
 my $id;
 
@@ -1793,18 +1790,16 @@ while (<INFILE>){ #Format: GeneID  start-stop
 	my @pos=split(/\-/,$line[1]);
 	my $species=$line[2];
 
-	if (!$junctions{$line[0]}){
+	if (!$junctions{$line[0]}){ # new gene
 	    if ($pos5p != 0) {
 		if (defined $id){
 		    print EXFILE "$ov_juncs{$id}\n" if (defined $ov_juncs{$id});
 		}
 	    }
-	    $count++;
+	    $count=1;
 	    $id="OV_EX_".$species."_".$count;
 	    $ov_juncs{$id}=$id."\t".$_;
 	    $junctions{$line[0]} = $line[1];
-#	    $sum_junc=1;
-#	    $flag=1;
 	    $pos5p=$pos[0];
 	    $pos3p=$pos[1];
 	}	
@@ -1813,17 +1808,11 @@ while (<INFILE>){ #Format: GeneID  start-stop
 		if ($pos[1]>$pos3p){
 		    $pos3p=$pos[1];
 		}
-#		$sum_junc++;
-#		$flag=0;
-		$ov_juncs{$id}.="\n".$id."\t".$_;
+#		$ov_juncs{$id}.="\n".$id."\t".$_;
 	    }
 	    else { ### the junction does not overlap, print all the information from previous junctions
-		$sum_junc=0;
 		$pos5p=$pos[0];
 		$pos3p=$pos[1];
-#		$sum_junc=1;				
-#		$flag=0;
-#		$bandera=0;
 		print EXFILE "$ov_juncs{$id}\n" if (defined $ov_juncs{$id});
 		$count++;
 		$id="OV_EX_".$species."_".$count;
