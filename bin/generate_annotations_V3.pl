@@ -1494,7 +1494,7 @@ if ($do_all_steps){
 		    }
 		    $sum_junc++;
 		    $flag=0;
-		    $ov_juncs{$id}.="\n".$id."\t".$_;
+#		    $ov_juncs{$id}.="\n".$id."\t".$_; # correct?
 		}
 		else{ ### the junction does not overlap, print all the information from previous junctions
 		    $sum_junc=0;
@@ -1771,7 +1771,6 @@ foreach my $gene (sort keys %temp_coords){
     }
 }
 close TEMP_O;
-system "rm $outexfile";
 
 my %junctions;
 my %ov_juncs;
@@ -1796,7 +1795,7 @@ while (<INFILE>){ #Format: GeneID  start-stop
 		    print EXFILE "$ov_juncs{$id}\n" if (defined $ov_juncs{$id});
 		}
 	    }
-	    $count=1;
+	    $count++;
 	    $id="OV_EX_".$species."_".$count;
 	    $ov_juncs{$id}=$id."\t".$_;
 	    $junctions{$line[0]} = $line[1];
@@ -1823,6 +1822,7 @@ while (<INFILE>){ #Format: GeneID  start-stop
 close (INFILE);
 print EXFILE "$ov_juncs{$id}\n" if (defined $ov_juncs{$id});
 close EXFILE;
+system "rm $outexfile";
 
 verbPrint ("Annotations for $species finished!"); 
 
