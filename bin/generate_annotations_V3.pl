@@ -1732,5 +1732,8 @@ if ($do_all_steps){
     my $number_rm_tr = scalar(keys(%rmtr));
     verbPrint ("Number of transcripts with multiexon skipping removed: $number_rm_tr\n");
 }
+# Handles intermediate files
+my $GTF_to_compress = "$exons_db_folder/$species/$species"."_annot_fake.gtf";
+system "gzip $GTF_to_compress";
 
 verbPrint ("Annotations for $species finished!"); 
