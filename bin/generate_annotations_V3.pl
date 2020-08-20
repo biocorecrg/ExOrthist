@@ -1494,7 +1494,7 @@ if ($do_all_steps){
 		    }
 		    $sum_junc++;
 		    $flag=0;
-#		    $ov_juncs{$id}.="\n".$id."\t".$_; # correct?
+		    $ov_juncs{$id}.="\n".$id."\t".$_; # correct?
 		}
 		else{ ### the junction does not overlap, print all the information from previous junctions
 		    $sum_junc=0;
@@ -1807,6 +1807,7 @@ while (<INFILE>){ #Format: GeneID  start-stop
 		if ($pos[1]>$pos3p){
 		    $pos3p=$pos[1];
 		}
+		$ov_juncs{$id}.="\n".$id."\t".$_; # correct
 	    }
 	    else { ### the junction does not overlap, print all the information from previous junctions
 		$pos5p=$pos[0];
