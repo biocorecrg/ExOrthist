@@ -1763,7 +1763,6 @@ close TEMP_I;
 my %done_ex;
 open (TEMP_O, ">$outexfile") || die "It cannot open the temporary exon file\n";
 foreach my $gene (sort keys %temp_coords){
-#    foreach my $coord (sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]} (@{$temp_coords{$gene}})){
     foreach my $coord (sort @{$temp_coords{$gene}}){
 	my $temp_ex = "$gene:$coord";
 	print TEMP_O "$gene\t$coord\n" unless $done_ex{$temp_ex};
@@ -1787,7 +1786,6 @@ while (<INFILE>){ #Format: GeneID  start-stop
 	$line[0]=~s/\s+//; ###saving_gene_id
 	$line[1]=~s/\s+//;
 	my @pos=split(/\-/,$line[1]);
-	my $species=$line[2];
 
 	if (!$junctions{$line[0]}){ # new gene
 	    if ($pos5p != 0) {
