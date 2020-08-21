@@ -358,7 +358,6 @@ if ($do_all_steps){
 	open (O, ">$exons_db_folder/$species/FakeTranscripts-$species-vB.gtf");
 	open (LOG, ">$exons_db_folder/$species/LOG_FakeTranscripts-$species-vB.tab");
 	print LOG "EVENT\tGENE_ID\tEXON\tFAKE_TR\tTYPE\tSOLUTION\n";
-	open (LOG2, ">$exons_db_folder/$species/STATS_FakeTranscripts-$species-vB.tab");
 	
 #### Now loops through every exon, and focuses on the non-annotated
 # Rules:
@@ -878,18 +877,10 @@ if ($do_all_steps){
 	verbPrint("   Rescued skipping\t$tally_non_annot_hit\n");
 	verbPrint("   Partially Annotated\t$tally_partial\n");
 	verbPrint("   Not rescued\t$tally_non_annot_no_hit\n");
-	print LOG2 "Fully Annotated\t$tally_annotated\n".
-	    "Rescued skipping\t$tally_non_annot_hit\n".
-	    "Partially Annotated\t$tally_partial\n".
-	    "Not rescued\t$tally_non_annot_no_hit\n";
-	
 	verbPrint("   Solutions:\n");
-	print LOG2 "\nSolutions:\n";
 	foreach $type (sort {$a<=>$b} keys %tally_solutions){
 	    verbPrint("   Type $type\t$tally_solutions{$type}\n");
-	    print LOG2 "Type $type\t$tally_solutions{$type}\n";
 	}
-	close LOG2;
 	close LOG;
 	close O;
 	
