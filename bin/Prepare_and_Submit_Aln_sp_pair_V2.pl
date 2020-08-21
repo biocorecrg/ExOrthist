@@ -18,7 +18,7 @@ my $f_gene_cluster; # file with the gene clusters for the give species pair => i
 my $f_extra_cluster; # a different cluster file for some species (hard to generalize); eventually allow it to be comma separated
 my $sp1; ##species1 
 my $sp2; ##species2
-my $EX_DB = "./EXONS_DB"; # default where the EXONS_DB/ folder is
+my $EX_DB = "./"; # default where the species folders are
 my $project_dir  = "./"; ##output folder
 my $verbose; # prints steps
 my $N=10000;
@@ -48,7 +48,7 @@ OPTIONS
     --N_split int      Number of alignments in subfile [def 10000]
     --sp1	       Species 1
     --sp2	       Species 2
-    --expath PATH      EXONS_DB folder with the output obtained in Module I for each species (def = EXONS_DB/)
+    --expath PATH      Folder with the output obtained in Module I for each species (def = ./)
     --project_dir PATH Output folder: the species pair folder will be created here (def = ./)
     --verbose          Prints commands in screen [def OFF]
     
@@ -59,7 +59,7 @@ my @species=($sp1,$sp2);
 @species=sort(@species); # sort alphanumerically
 $sp1=$species[0];
 $sp2=$species[1];
-### Stores the relevant files from EXONS_DB/Sp
+### Stores the relevant files from ./Sp
 my %f_exint;
 my %f_protIDs;
 my %f_exon_pos;

@@ -2,7 +2,7 @@
 use warnings;
 use strict;
 
-my $exons_db_folder=$ARGV[0]; #EXONS_DB folder
+my $exons_db_folder=$ARGV[0]; # EXONS_DB folder (i.e. where species folders are)
 my $infile1=$ARGV[1]; ##Best exon hits filtered
 my $infile2=$ARGV[2]; ##Exon clusters
 my $outfile=$ARGV[3]; ##Exon clusters with membership score
