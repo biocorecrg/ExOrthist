@@ -22,7 +22,7 @@ my $i3=$folder."/realigned_exons_";
 my $o2=$folder."/h.txt";
 my $tex=$folder."/tex.txt";
 my $s2=$folder."/Score_all_exons.txt";
-`head -1 $i2*part_1.txt > $o2.txt`; ##getting header
+`head -1 $i2*part_1.txt > $o2`; ##getting header
 `cat $i2*_part_* $i3* | grep -v 'CID' | sort -k1 | uniq  > $tex`;
 open (FILE, "$tex");
 open (TMP, ">$tmp");
