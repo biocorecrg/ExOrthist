@@ -41,6 +41,7 @@ while (<IN2>){
     my $ovid2=$exid{$id2};
     my $bh2=$bh{$ovid2};
     
+    # does it exclude the reciprocal?
     if (!$pair{$bh1."\t".$bh2} && !$pair{$bh2."\t".$bh1}){
 	print OUT "$bh1\t$bh2\t$l[4]\t$l[5]\n";
 	$pair{$bh1."\t".$bh2}=1;
