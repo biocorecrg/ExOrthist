@@ -49,8 +49,7 @@ OMPULSORY
 OPTIONAL
      -add_exons        File with additional exons to get their orthology
                            If a species is missing the reference file, \"NA\" should be provided
-     -EX_DB            Path to EXONS_DB/ folder (default ./; i.e. working directory)
-                           If it does not exit, it will create a EXONS_DB/ folder in the working directory
+     -EX_DB            Path to where the folder with the species annotation files is created.
      -verbose T/F      Verbose (default TRUE) 
      -h/--help         This help message.
 
