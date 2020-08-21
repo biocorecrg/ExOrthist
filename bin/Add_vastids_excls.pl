@@ -48,7 +48,7 @@ close (INFILE);
 my ($eid,$gn,$s, $tmp, $size, $cr, $t1);
 my (@ts,@c);
 open (OUT, ">$out");
-print OUT "ExCID\tSps\tGeneID\tGene_name\tExon_coords\tExon_size\tVastID\n";
+print OUT "ExCID\tSps\tGeneID\tGene_name\tExon_coords\tExon_length\tVastID\n";x
 open (INONE,"$in1");
 # Format: 7	ENSDARG00000057688	chr6:12656155-12656227:-	Dre ???
 $t1="";
