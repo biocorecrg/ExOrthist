@@ -3,6 +3,12 @@ use warnings;
 use strict;
 use Getopt::Long;
 
+# thoughts: 
+# - upload exons_overlap to have ALL exons.
+# - upload the file with the best hits? 
+#     - check 1) where the best is and how far it falls from the targt
+#     - If it’s the best or close: overlapping/orth seq.
+
 my $f_gene_cluster;
 my $f_exon_cluster;
 my $f_exon_list_sp1;

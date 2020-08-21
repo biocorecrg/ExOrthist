@@ -27,8 +27,8 @@ for ($l=0; $l<scalar(@files1); $l++){
 	chomp($_); 
 	@line=split(/\t/,$_);
 	if ($line[1]=~/EX/){
-	    $vid{$line[2]}=$line[1];
-	    $vid{$line[9]}=$line[1];	
+	    $vid{$line[2]}=$line[1]; # This should be stored by SPECIES!
+	    $vid{$line[9]}=$line[1]; # This should be stored by SPECIES!
 	}
     }
 }
@@ -48,7 +48,7 @@ close (INFILE);
 my ($eid,$gn,$s, $tmp, $size, $cr, $t1);
 my (@ts,@c);
 open (OUT, ">$out");
-print OUT "ExCID\tSps\tGeneID\tGene_name\tExon_coords\tExon_length\tVastID\n";x
+print OUT "ExCID\tSps\tGeneID\tGene_name\tExon_coords\tExon_length\tVastID\n";
 open (INONE,"$in1");
 # Format: 7	ENSDARG00000057688	chr6:12656155-12656227:-	Dre ???
 $t1="";
