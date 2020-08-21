@@ -39,7 +39,7 @@ for ($i=0; $i<=$#ARGV; $i++){
 
 if (!$m){ $m=0.65}
 if (!$int){ $int=2; }
-if (!$id){ $id=0.2; $A=0.18*0.2; $C=0.16*0.2; } else { $A=0.18*$id; $C=0.16*$id; }
+if (!$id){ $id = 0.2; $A = 0.20*0.2; $C = 0.15*0.2; } else { $A=0.20*$id; $C=0.15*$id; } # prev weights: A = 0.18 and C = 0.16
 if (!$out){ $out="Best_score_exon_hits_filtered_$m-$int-$id".".tab"; }
 my (@line);
 my $c=0;
