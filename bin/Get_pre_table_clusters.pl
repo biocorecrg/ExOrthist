@@ -2,11 +2,10 @@
 #use warnings;
 #use strict;
 
-
 ##Joining the parts
 `cat EXcls_* > pre_cluster_exons.txt`; 
 
-#"GF000033|WHL22.236185|Scaffold196:625640-625797:+|Spu"11
+# Format: "GF000033|WHL22.236185|Scaffold196:625640-625797:+|Spu"11
 my ($id1, $sp1, $sp2, $l, $id2, $n);
 open (TMP, ">tmp_excls.tab");
 open (INFILE,"pre_cluster_exons.txt");
@@ -21,5 +20,6 @@ while (<INFILE>){
     }   
 }
 close (TMP);
-system ("cat tmp_excls.tab | sort -k1 > Exon_Clusters.tab");
 
+system ("cat tmp_excls.tab | sort -k1 > Exon_Clusters.tab");
+system "rm pre_cluster_exons.txt";
