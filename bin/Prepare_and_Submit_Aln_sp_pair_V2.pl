@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 use warnings;
-#use strict;
+use strict;
 use Getopt::Long;
 use Data::Dumper;
 
@@ -18,9 +18,8 @@ my $f_gene_cluster; # file with the gene clusters for the give species pair => i
 my $f_extra_cluster; # a different cluster file for some species (hard to generalize); eventually allow it to be comma separated
 my $sp1; ##species1 
 my $sp2; ##species2
-my $submit_aln; # whether to submit the jobs
-my $expath;
-my $project_dir; ##output folder
+my $EX_DB = "./EXONS_DB"; # default
+my $project_dir  = "./"; ##output folder
 my $verbose; # prints steps
 my $N=10000;
 my $w=0;
@@ -29,30 +28,28 @@ my $help;
 ### Get options:
 Getopt::Long::Configure("no_auto_abbrev");
 GetOptions( "gene_cluster=s" => \$f_gene_cluster, ##gene clusters for sp1 and sp2
-	     "sp1=s" => \$sp1,
-	     "sp2=s" => \$sp2,
-	     "clean" => \$clean,
-	     "N_split=i" => \$N,
-	     "submit_aln" => \$submit_aln,
-	     "expath=s" => \$expath,
-	     "project_dir=s" => \$project_dir,
-	     "verbose" => \$verbose,
-	     "help" => \$help
+	    "sp1=s" => \$sp1,
+	    "sp2=s" => \$sp2,
+	    "clean" => \$clean,
+	    "N_split=i" => \$N,
+	    "expath=s" => \$EX_DB,
+	    "project_dir=s" => \$project_dir,
+	    "verbose" => \$verbose,
+	    "help" => \$help
     );
 
 ### Help
-if (!defined ($f_gene_cluster) || !defined($expath) || !defined($project_dir) || !defined($sp1) || !defined($sp2)|| defined ($help)){
+if (!defined ($f_gene_cluster) || !defined($project_dir) || !defined($sp1) || !defined($sp2)|| defined ($help)){
     die "
 Usage: Prepare_and_Submit_Aln_sp_pair.pl -s1 sp1 -s2 sp2 --gene_cluster FILE --expath Exons_DB_folder  --project_dir Output_folder [options]
 
 OPTIONS
     --clean            Force removal of previous data [def OFF]
-    --submit_aln       Submit the jobs of for scoring ex/introns [def OFF]
     --N_split int      Number of alignments in subfile [def 10000]
-    --sp1		       Species 1
-    --sp2		       Species 2
-    --expath PATH      EXONS_DB folder with the output obtained in Module I for each species.
-    --project_dir PATH Output folder: the species pair folder will be created here
+    --sp1	       Species 1
+    --sp2	       Species 2
+    --expath PATH      EXONS_DB folder with the output obtained in Module I for each species (def = EXONS_DB/)
+    --project_dir PATH Output folder: the species pair folder will be created here (def = ./)
     --verbose          Prints commands in screen [def OFF]
     
 ";
@@ -70,10 +67,10 @@ my %f_intron_pos;
 
 ##Files Sp1
 
-$f_exint{$sp1}="$expath/$sp1/$sp1".".exint";
-$f_protIDs{$sp1}="$expath/$sp1/$sp1"."_annot_exons_prot_ids.txt"; # before _annot_fake_protein_ids_exons.txt"
-$f_exon_pos{$sp1}="$expath/$sp1/$sp1"."_protein_ids_exons_pos.txt";
-$f_intron_pos{$sp1}="$expath/$sp1/$sp1"."_protein_ids_intron_pos_CDS.txt";
+$f_exint{$sp1}="$EX_DB/$sp1/$sp1".".exint";
+$f_protIDs{$sp1}="$EX_DB/$sp1/$sp1"."_annot_exons_prot_ids.txt"; # before _annot_fake_protein_ids_exons.txt"
+$f_exon_pos{$sp1}="$EX_DB/$sp1/$sp1"."_protein_ids_exons_pos.txt";
+$f_intron_pos{$sp1}="$EX_DB/$sp1/$sp1"."_protein_ids_intron_pos_CDS.txt";
 
 die "Cannot find exint file for $sp1\n" unless (-e $f_exint{$sp1});
 die "Cannot find prot IDs file for $sp1\n" unless (-e $f_protIDs{$sp1});
@@ -82,10 +79,10 @@ die "Cannot find intron pos file for $sp1\n" unless (-e $f_intron_pos{$sp1});
 
 ##Files Sp2
 
-$f_exint{$sp2}="$expath/$sp2/$sp2".".exint";
-$f_protIDs{$sp2}="$expath/$sp2/$sp2"."_annot_exons_prot_ids.txt"; # before _annot_fake_protein_ids_exons.txt"
-$f_exon_pos{$sp2}="$expath/$sp2/$sp2"."_protein_ids_exons_pos.txt";
-$f_intron_pos{$sp2}="$expath/$sp2/$sp2"."_protein_ids_intron_pos_CDS.txt";
+$f_exint{$sp2}="$EX_DB/$sp2/$sp2".".exint";
+$f_protIDs{$sp2}="$EX_DB/$sp2/$sp2"."_annot_exons_prot_ids.txt"; # before _annot_fake_protein_ids_exons.txt"
+$f_exon_pos{$sp2}="$EX_DB/$sp2/$sp2"."_protein_ids_exons_pos.txt";
+$f_intron_pos{$sp2}="$EX_DB/$sp2/$sp2"."_protein_ids_intron_pos_CDS.txt";
 
 die "Cannot find exint file for $sp2\n" unless (-e $f_exint{$sp2});
 die "Cannot find prot IDs file for $sp2\n" unless (-e $f_protIDs{$sp2});
@@ -124,6 +121,7 @@ sub split_cluster {
     my $project_dir=$input[6];
     my $pair_folder=$input[7];
     my $cluster_root = $full_cluster;
+    my (%trs, %nt, %warn, %nalns);
     $cluster_root =~ s/.+\///; # removes the path
     $cluster_root = "$project_dir/$pair_folder/$cluster_root";
     my %size;
@@ -134,18 +132,18 @@ sub split_cluster {
     while (<ONE>){
     	chomp($_);
     	if ($_=~/\>/){
-	    @l=split(/\s+/,$_);
-	    @t=split(/\|/,$l[0]);
+	    my @l=split(/\s+/,$_);
+	    my @t=split(/\|/,$l[0]);
 	    $trs{$t[1]}++; # the exint file is the one that decides what to align/how to split
     	}
     }
     close ONE;
-    open (TW0, "$ex2") || die "It cannot open the exint file for $sp2 ($ex2)\n";
-    while (<TW0>){
+    open (TWO, "$ex2") || die "It cannot open the exint file for $sp2 ($ex2)\n";
+    while (<TWO>){
 	chomp($_);
     	if ($_=~/\>/){
-	    @l=split(/\s+/,$_);
-	    @t=split(/\|/,$l[0]);
+	    my @l=split(/\s+/,$_);
+	    my @t=split(/\|/,$l[0]);
 	    $trs{$t[1]}++;
     	}
     }
@@ -155,16 +153,18 @@ sub split_cluster {
     open (CL, "$full_cluster") || die "It cannot open full clusters\n";
     while (<CL>){
     	chomp($_);
-    	@l=split(/\t/,$_);
+    	my @l=split(/\t/,$_);
     	$nt{$l[0]}{$l[1]}+=$trs{$l[2]};
     	$cid{$l[0]}=1;
     }
     close CL;
     my @k=sort(keys(%cid));
     my $el;
+    my $taln=0;
+    my $max;
     open (NALN, ">$project_dir/$pair_folder/Num_alns_by_cl_$sp1-$sp2.log");
     foreach $el (@k){
-    	$naln=$nt{$el}{$sp1}*$nt{$el}{$sp2};
+    	my $naln=$nt{$el}{$sp1}*$nt{$el}{$sp2};
     	$taln+=$naln;
     	if ($naln>$N){  
 	    print NALN "$el\t$naln\tThis cluster exceed $N alignments: Reduce number of total transcripts in exint file for this cluster or increase number of alignments!!!\n";
@@ -181,12 +181,13 @@ sub split_cluster {
 	print STDERR "\n\nWARNING!!! $w clusters exceed the maximum number of alignments: $N  !!!!\n\n"; 
 	#print STDERR "WARNING!!! Skipping $w clusters in the splitted files !!!\n\n"; 
     }	
-    $sum=0;
+    my $sum=0;
+    my %prcid;
     $part=1;
     open (CL, "$full_cluster") || die "It cannot open clusters file\n";
     while (<CL>){
 	chomp($_);
-	@l=split(/\t/,$_);
+	my @l=split(/\t/,$_);
 	if (!$warn{$l[0]}){
 	    open (OUT, ">>$cluster_root-part_"."$part"); # first part already defined
 	    if ($sum<$N){
@@ -213,10 +214,11 @@ sub split_cluster {
     close CL;
 
     ##printing files of clusters with > N alignments
+    my %print;
     open (CL, "$full_cluster") || die "It cannot open clusters file\n";
     while (<CL>){
 	chomp($_);
-	@l=split(/\t/,$_);
+	my @l=split(/\t/,$_);
 	if ($warn{$l[0]}){
 	    if (!$print{$l[0]}){
 		$part++;
@@ -228,4 +230,5 @@ sub split_cluster {
     }		
     close CL;
     $N_parts{$full_cluster}=$part;
+    close OUT;
 }
