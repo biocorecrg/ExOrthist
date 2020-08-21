@@ -385,12 +385,14 @@ process join_best_filtered_scores {
  * Removing redundant hits
  */
 process filter_redundant {
+    publishDir "${params.output}/", mode: 'copy', pattern: "Overlap_exons_by_sp.tab"
 
     input:
     file(scores) from filtered_all_scores
 
     output:
     file("Best_score_exon_hits_pairs.txt") into score_exon_hits_pairs
+    file("Overlap_exons_by_sp.tab") into output_to_save
 
 	script:
 	liftcmd = ""
