@@ -72,9 +72,9 @@ while (<IN>){
 	    $e2=$line[1]."#exon_2#".$line[4];
 	    $i2=$line[1]."#intron_1#".$line[4];
 	    if ($isc{$i2}) { if ($isc{$i2} eq "NO_INTRON"){ $sI2=0; } else { $sI2=$isc{$i2};}  } else { $sI2=-0.25 }
-	    if ($esc{$e2}) { $sC2=($esc{$e2}*0.16); }
+	    if ($esc{$e2}) { $sC2=($esc{$e2} * 0.15); } # prev = 0.16
 	    if ($line[5] ne "NO_EXON_ALN") { 
-		$sA=($line[7]*0.18); 
+		$sA=($line[7] * 0.20); # prev = 0.18
 		$TSC=$sA+$sI2+$sC2; ##Total Score
 		print OUTONE "$c\tExon\tN_terminal\t$line[1]\t$line[2]\t$line[3]\t";
 		print OUTONE "$line[4]\t$line[5]\t$line[6]\tNA\tNA\t$sA\t$sI2\t$sC2\t$TSC\t$line[8]\t$line[9]\n";
@@ -95,9 +95,9 @@ while (<IN>){
 	    $e1=$line[1]."#exon_".($l1[1]-1)."#".$line[4];
 	    $i1=$line[1]."#intron_".($l1[1]-1)."#".$line[4];
 	    if ($isc{$i1}) { if ($isc{$i1} eq "NO_INTRON"){ $sI1=0; } else { $sI1=$isc{$i1} } }  else{ $sI1=-0.25; }
-	    if ($esc{$e1}) { $sC1=($esc{$e1}*0.16); }
+	    if ($esc{$e1}) { $sC1=($esc{$e1} * 0.15); } # prev = 0.16
 	    if ($line[5] ne "NO_EXON_ALN") { 
-		$sA=($line[7]*0.18);
+		$sA=($line[7] * 0.20); # prev = 0.18
 		$TSC=$sC1+$sI1+$sA+0.41; ##Total Score  (to sum up to 1, the missing exon and intron score are added); ##Total Score
 		print OUTONE "$c\tExon\tC_terminal\t$line[1]\t$line[2]\t$line[3]\t";
 		print OUTONE "$line[4]\t$line[5]\t$line[6]\t$sC1\t$sI1\t$sA\tNA\tNA\t$TSC\t$line[8]\t$line[9]\n";
@@ -120,11 +120,11 @@ while (<IN>){
 	    $e2=$line[1]."#exon_".($l1[1]+1)."#".$line[4];
 	    $i2=$line[1]."#intron_".($l1[1])."#".$line[4];
 	    if ($isc{$i1}) { if ($isc{$i1} eq "NO_INTRON"){ $sI1=0; } else { $sI1=$isc{$i1}; }  } else { $sI1=-0.25; }
-	    if ($esc{$e1}) { $sC1=($esc{$e1}*0.16); }
+	    if ($esc{$e1}) { $sC1=($esc{$e1} * 0.15); } # prev = 0.16
 	    if ($isc{$i2}) { if ($isc{$i2} eq "NO_INTRON") { $sI2=0; } else { $sI2=$isc{$i2}; } } else{ $sI2=-0.25; }
-	    if ($esc{$e2}) { $sC2=($esc{$e2}*0.16); }
+	    if ($esc{$e2}) { $sC2=($esc{$e2} * 0.15); } # prev = 0.16 
 	    if ($line[5] ne "NO_EXON_ALN") { 
-		$sA=$line[7]*0.18; 
+		$sA=$line[7] * 0.20; # prev = 0.18
 		$TSC=$sC1+$sI1+$sA+$sI2+$sC2;			
 		print OUTONE "$c\tExon\tInternal\t$line[1]\t$line[2]\t$line[3]\t";
 		print OUTONE "$line[4]\t$line[5]\t$line[6]\t$sC1\t$sI1\t$sA\t$sI2\t$sC2\t$TSC\t$line[8]\t$line[9]\n";

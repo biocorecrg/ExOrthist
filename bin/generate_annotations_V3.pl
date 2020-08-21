@@ -13,6 +13,7 @@ my $verboseFlag=1;
 my $help;
 my $add_exons;
 my $do_all_steps=1;
+my $keep_all_files;
 
 #Arguments
 Getopt::Long::Configure("no_auto_abbrev");
@@ -22,6 +23,7 @@ GetOptions("GTF=s" => \$gtf_file,
 	   "sp=s" => \$species,
 	   "add_exons=s" => \$add_exons, #before $vastdb_refs
 	   "verbose=s" => \$verboseFlag,
+	   "keep_files" => \$keep_all_files,
 	   "h" => \$help,
 	   "help" => \$help
     );
@@ -47,8 +49,7 @@ OMPULSORY
 OPTIONAL
      -add_exons        File with additional exons to get their orthology
                            If a species is missing the reference file, \"NA\" should be provided
-     -EX_DB            Path to EXONS_DB/ folder (default ./; i.e. working directory)
-                           If it does not exit, it will create a EXONS_DB/ folder in the working directory
+     -EX_DB            Path to where the folder with the species annotation files is created.
      -verbose T/F      Verbose (default TRUE) 
      -h/--help         This help message.
 
@@ -358,7 +359,6 @@ if ($do_all_steps){
 	open (O, ">$exons_db_folder/$species/FakeTranscripts-$species-vB.gtf");
 	open (LOG, ">$exons_db_folder/$species/LOG_FakeTranscripts-$species-vB.tab");
 	print LOG "EVENT\tGENE_ID\tEXON\tFAKE_TR\tTYPE\tSOLUTION\n";
-	open (LOG2, ">$exons_db_folder/$species/STATS_FakeTranscripts-$species-vB.tab");
 	
 #### Now loops through every exon, and focuses on the non-annotated
 # Rules:
@@ -878,18 +878,10 @@ if ($do_all_steps){
 	verbPrint("   Rescued skipping\t$tally_non_annot_hit\n");
 	verbPrint("   Partially Annotated\t$tally_partial\n");
 	verbPrint("   Not rescued\t$tally_non_annot_no_hit\n");
-	print LOG2 "Fully Annotated\t$tally_annotated\n".
-	    "Rescued skipping\t$tally_non_annot_hit\n".
-	    "Partially Annotated\t$tally_partial\n".
-	    "Not rescued\t$tally_non_annot_no_hit\n";
-	
 	verbPrint("   Solutions:\n");
-	print LOG2 "\nSolutions:\n";
 	foreach $type (sort {$a<=>$b} keys %tally_solutions){
 	    verbPrint("   Type $type\t$tally_solutions{$type}\n");
-	    print LOG2 "Type $type\t$tally_solutions{$type}\n";
 	}
-	close LOG2;
 	close LOG;
 	close O;
 	
@@ -1494,7 +1486,7 @@ if ($do_all_steps){
 		    }
 		    $sum_junc++;
 		    $flag=0;
-		    $ov_juncs{$id}.="\n".$id."\t".$_;
+		    $ov_juncs{$id}.="\n".$id."\t".$_; # correct?
 		}
 		else{ ### the junction does not overlap, print all the information from previous junctions
 		    $sum_junc=0;
@@ -1732,5 +1724,114 @@ if ($do_all_steps){
     my $number_rm_tr = scalar(keys(%rmtr));
     verbPrint ("Number of transcripts with multiexon skipping removed: $number_rm_tr\n");
 }
+# Handles intermediate files
+my $GTF_to_compress = "$exons_db_folder/$species/$species"."_annot_fake.gtf";
+system "gzip $GTF_to_compress";
+
+###########################################################################################
+###Getting overlapping exons by species####
+
+my $exposfile=$exons_db_folder."/".$species."/".$species."_protein_ids_exons_pos.txt";
+my $outexfile=$exons_db_folder."/".$species."/".$species."_prot_exons.txt";
+my $finalout=$exons_db_folder."/".$species."/".$species."_overlap_CDS_exons.txt"; # formerly: Sp_prot_exons_overlap.txt 
+
+verbPrint ("Generating $species"."_prot_exons_overlap.txt\n");
+
+##sorting exons by gene and position
+#`cat $exposfile  | perl -n -e '$_=~s/\|/\t/; print "$_";' | cut -f2,6 |  sort -k1 | uniq > $outexfile`;
+open (TEMP_I, $exposfile) || die "It cannot open the exons file ($exposfile)\n";
+# Format: FBpp0111833|FBgn0025836 exon_8 696-1030 chrX 137256-138260 +
+my %temp_coords;
+while (<TEMP_I>){
+    chomp($_);
+    my @t=split(/\t/);
+    my ($gene)=$t[0]=~/\|(.+)/;
+    if (defined $gene){
+	push(@{$temp_coords{$gene}},$t[4]);
+    }
+}
+close TEMP_I;
+
+my %done_ex;
+open (TEMP_O, ">$outexfile") || die "It cannot open the temporary exon file\n";
+foreach my $gene (sort keys %temp_coords){
+    foreach my $coord (sort @{$temp_coords{$gene}}){
+	my $temp_ex = "$gene:$coord";
+	print TEMP_O "$gene\t$coord\n" unless $done_ex{$temp_ex};
+	$done_ex{$temp_ex}=1;
+    }
+}
+close TEMP_O;
+
+my %junctions;
+my %ov_juncs;
+my ($pos5p,$pos3p)=0;
+my $count=0;
+my $id;
+
+open (EXFILE, ">$finalout"); ##Final output of overlapping exons
+open (INFILE, $outexfile) || die "It cannot open $outexfile\n";
+while (<INFILE>){ #Format: GeneID  start-stop
+    if ($_){
+	chomp($_);
+	my @line=split(/\t/,$_);
+	$line[0]=~s/\s+//; ###saving_gene_id
+	$line[1]=~s/\s+//;
+	my @pos=split(/\-/,$line[1]);
+
+	if (!$junctions{$line[0]}){ # new gene
+	    if ($pos5p != 0) {
+		if (defined $id){
+		    print EXFILE "$ov_juncs{$id}\n" if (defined $ov_juncs{$id});
+		}
+	    }
+	    $count++;
+	    $id="OV_EX_".$species."_".$count;
+	    $ov_juncs{$id}=$id."\t".$_;
+	    $junctions{$line[0]} = $line[1];
+	    $pos5p=$pos[0];
+	    $pos3p=$pos[1];
+	}	
+	else {
+	    if ($pos[0]>=$pos5p && $pos[0]<=$pos3p){ ##the junction overlaps
+		if ($pos[1]>$pos3p){
+		    $pos3p=$pos[1];
+		}
+		$ov_juncs{$id}.="\n".$id."\t".$_; # correct
+	    }
+	    else { ### the junction does not overlap, print all the information from previous junctions
+		$pos5p=$pos[0];
+		$pos3p=$pos[1];
+		print EXFILE "$ov_juncs{$id}\n" if (defined $ov_juncs{$id});
+		$count++;
+		$id="OV_EX_".$species."_".$count;
+		$ov_juncs{$id}=$id."\t".$_;
+	    }
+	}
+    }
+}
+close (INFILE);
+print EXFILE "$ov_juncs{$id}\n" if (defined $ov_juncs{$id});
+close EXFILE;
+system "rm $outexfile";
+
+unless (defined $keep_all_files){
+    verbPrint ("Cleaning up intermediate files\n");
+    my $file1 = "$exons_db_folder/$species/$species"."_annot_exon_sizes.txt";
+    my $file2 = "$exons_db_folder/$species/$species"."_CDS_introns.txt";
+    my $file3 = "$exons_db_folder/$species/$species"."_prot_sizes.txt";
+    my $file4 = "$exons_db_folder/$species/$species"."_tr_coords.txt";
+    my $file5 = "$exons_db_folder/$species/$species"."_tr_coords_CDS.txt";
+    my $file6 = "$exons_db_folder/$species/$species"."_trid_protid.txt";    
+    system "rm $file1 $file2 $file3 $file4 $file5 $file6";
+}
 
 verbPrint ("Annotations for $species finished!"); 
+
+##END OF SCRIPT##
+
+
+
+
+
+

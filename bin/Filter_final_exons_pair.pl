@@ -1,19 +1,21 @@
 #!/usr/bin/env perl
 use warnings;
-#use strict;
+use strict;
 
-##SCRIPT FOR GET RIG OF REDUNDANT PAIR OF EXONS##
-##
-my $i1=$ARGV[0]; ##overlapping exons
-my $i2=$ARGV[1]; ##best score hit exons
-my $out=$ARGV[2]; ##liftover exons
-my $i3=$ARGV[3]; ##outfile name
+##SCRIPT TO GET RIGD OF REDUNDANT PAIR OF EXONS##
+my $infile1=$ARGV[0]; ## overlapping exon info (Overlap_exons_by_sp.tab)
+my $infile2=$ARGV[1]; ## best score hit exons (Best_score_exon_hits_filtered_$m-$int-$id.tab)
+my $outfile=$ARGV[2]; ## outfile name
+my $infile3=$ARGV[3]; ## liftover pairs, if provided
 
-# OV_EX_Bla_36	BL00001	Sc0000095:474219-474451:-	Bla	1015
-    open (IN,"$i1") || die "Missing overlapping exons"; 
+my %exid; my %max; my %bh;
+my %pair;
+
+open (IN,"$infile1") || die "Missing overlapping exons"; 
+# Format: OV_EX_Bla_36	BL00001	Sc0000095:474219-474451:-	Bla	1015
 while (<IN>){
     chomp($_);
-    @l=split(/\t/,$_);
+    my @l=split(/\t/,$_);
     $exid{$l[1]."\t".$l[2]}=$l[0];
     if (!$max{$l[0]}){
 	$max{$l[0]}=$l[4];
@@ -24,47 +26,46 @@ while (<IN>){
 	$bh{$l[0]}=$l[1]."\t".$l[2];
     }
 }
+close IN;
 
-open (OUT, ">$out");
-##BL00000	Sc0000095:736652-736717:-	NEMVEDRAFT_v1g239017	NEMVEscaffold_11:253907-253972:-	Bla	Nve
-open (IN,"$i2") || die "Missing best score exons"; 
-while (<IN>){
+open (OUT, ">$outfile") || die "It cannot open the output file $outfile\n";
+open (IN2,"$infile2") || die "Missing best score exons"; 
+## Format: BL00000	Sc0000095:736652-736717:-	NEMVEDRAFT_v1g239017	NEMVEscaffold_11:253907-253972:-	Bla	Nve SCORE?
+while (<IN2>){
     chomp($_);
-    @l=split(/\t/,$_);
-    $id1=$l[0]."\t".$l[1];
-    $ovid1=$exid{$id1};
-    $bh1=$bh{$ovid1};
-    $id2=$l[2]."\t".$l[3];
-    $ovid2=$exid{$id2};
-    $bh2=$bh{$ovid2};
+    my @l=split(/\t/,$_);
+    my $id1=$l[0]."\t".$l[1];
+    my $ovid1=$exid{$id1};
+    my $bh1=$bh{$ovid1};
+    my $id2=$l[2]."\t".$l[3];
+    my $ovid2=$exid{$id2};
+    my $bh2=$bh{$ovid2};
     
+    # does it exclude the reciprocal?
     if (!$pair{$bh1."\t".$bh2} && !$pair{$bh2."\t".$bh1}){
 	print OUT "$bh1\t$bh2\t$l[4]\t$l[5]\n";
 	$pair{$bh1."\t".$bh2}=1;
     }
 }
-if ($i3){
-open (IN,"$i3") || die "Missing lift over file"; 
-while (<IN>){
-    chomp($_);
-    @l=split(/\t/,$_);
-    $id1=$l[0]."\t".$l[1];
-    $ovid1=$exid{$id1};
-    $bh1=$bh{$ovid1};
-    $id2=$l[2]."\t".$l[3];
-    $ovid2=$exid{$id2};
-    $bh2=$bh{$ovid2};
-    
-    if (!$pair{$bh1."\t".$bh2} && !$pair{$bh2."\t".$bh1}){
-	print OUT "$bh1\t$bh2\t$l[4]\t$l[5]\n";
-	$pair{$bh1."\t".$bh2}=1;
+close IN2;
+
+if ($infile3){
+    open (IN3,"$infile3") || die "It cannot open the provided liftover file ($infile3)"; 
+    ## Format: BL00000	Sc0000095:736652-736717:-	NEMVEDRAFT_v1g239017	NEMVEscaffold_11:253907-253972:-	Bla	Nve
+    while (<IN3>){
+	chomp($_);
+	my @l=split(/\t/,$_);
+	my $id1=$l[0]."\t".$l[1];
+	my $ovid1=$exid{$id1};
+	my $bh1=$bh{$ovid1};
+	my $id2=$l[2]."\t".$l[3];
+	my $ovid2=$exid{$id2};
+	my $bh2=$bh{$ovid2};
+	
+	if (!$pair{$bh1."\t".$bh2} && !$pair{$bh2."\t".$bh1}){
+	    print OUT "$bh1\t$bh2\t$l[4]\t$l[5]\n";
+	    $pair{$bh1."\t".$bh2}=1;
+	}
     }
+    close IN3;
 }
-}
-
-
-
-
-
-
-

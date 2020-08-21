@@ -3,6 +3,12 @@ use warnings;
 use strict;
 use Getopt::Long;
 
+# thoughts: 
+# - upload exons_overlap to have ALL exons.
+# - upload the file with the best hits? 
+#     - check 1) where the best is and how far it falls from the targt
+#     - If it’s the best or close: overlapping/orth seq.
+
 my $f_gene_cluster;
 my $f_exon_cluster;
 my $f_exon_list_sp1;
@@ -49,7 +55,7 @@ Discretionary Options:
      -dPSI_info auto           Type of information provided for each exon. Any of the following: dPSI, qual_call, none, auto.
                                   * none: no information is provided. All exons in the lists are treated as regulated.
                                   * dPSI: a value between -100 and 100. If a numeric value is provided (non NA), the exon is assumed to have sufficient coverage.
-                                  * qual_call: a qualitative information. Valid values: UP, DOWN, NO_CHANGE, NO_COVERAGE (=NA or missing).
+                                  * qual_call: a qualitative information. Valid values: UP, DOWN, REGULATED, NO_CHANGE, NO_COVERAGE (=NA or missing).
                                   * auto: decision among dPSI, qual_call and non will be done automatically [default].
      -min_dPSI int             Minimum absolute delta PSI used to make a qualitatitive UP or DOWN call if dPSI is provided as dPSI_info [def = 15].
      -outFile                  It creates an output file with the exons in conserved clusters (otherwise, it does NOT create it).
@@ -60,6 +66,13 @@ Discretionary Options:
 
 ";
 }
+
+# Changes to implement:
+# - load the lists from the begining. Loop through hash instead of list
+# - load the clusters first, and then the lists (in case redundancy is found).
+# - convert the info already: dPSI => X. none => REGULATED. Add into %info_by_exon.
+# - if ALL exons are provided => add all exons to the gene string: more accurate
+# - only test exons that are REG UP DOWN.
 
 
 ########### Sanity checks and detection of dPSI_info format
