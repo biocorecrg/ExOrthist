@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 use warnings;
-#use strict;
+use strict;
 
 my $p=1000;
 my $dir=$ARGV[0];
@@ -10,10 +10,12 @@ my $file=$dir."/tmp.txt";
 `cat $dir/exons_to_split_part_* > $file`;
 #`rm $dir/exons_to_realign_part_*`; # temporary files? Could be removed?
 
-$h=0;
-$c=0;
-$t=1;
-$nrow = 0;
+my $h=0;
+my $c=0;
+my $t=1;
+my $nrow = 0;
+my $of;
+my %hd;
 open (FILE, $file) || die "It cannot open the merged file of exons to re-align\n";
 while (<FILE>){
     $nrow++;

@@ -16,7 +16,7 @@ my $i8=$ARGV[9];  ##exint file species 1
 my $i9=$ARGV[10];  ##exint file species 
 my $part=$ARGV[11];
 my $bl=$ARGV[12]; ##blosum62  matrix
-my $outf=$ARGV[13]; ## outputfile
+my $outf=$ARGV[13]; ## output folder
 my $cpus=$ARGV[14]; ## CPUs for MAFFT
 
 $cpus=1 if !$cpus;
@@ -27,7 +27,7 @@ my $idex;
 my %onehit;
 my %miss;
 my (@tn1, @tn2, @ln);
-system "mkdir $outf"; 
+system "mkdir $outf" unless (-e $outf);
 
 my $exsc=$outf."/score_exons_".$s1."_".$s2."_part_".$part.".txt";##outputfile for exon scores
 my $insc=$outf."/score_introns_".$s1."_".$s2."_part_".$part.".txt";
@@ -371,6 +371,7 @@ foreach $el (@keys){
 	    system "cat $tg >> $f_merged_aln"; # we could already print a post-processed aln instead
 	    system "cat $int_aln >> $f_merged_aln"; # I have no idea where this is used
 	    open (MERGE_ALN, ">>$f_merged_aln");
+	    print "  > $t1[$zj] $t2[$zi]\n";
 	    ## 2) OPENING OUTPUT GDE FILE
 	    $n1=""; $n2="";
 	    %seq=();
@@ -412,7 +413,6 @@ foreach $el (@keys){
 		    $c++; 
 		    if ($c==0){ $inn1=$_; }
 		    if ($c==1){ $inn2=$_; }
-		    #print "$n1\n$n2\n";
 		}
 		elsif ($_=~/\>/){ $c=-1; }
 		elsif ($_=~/\w+/) {  
@@ -431,7 +431,7 @@ foreach $el (@keys){
 	    if (($sim1>=20 && $sim2>=20) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
 		##5) CALLING SUBROUTINE FOR SCORING INTRONS
 		print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n";
-		if ($is1 && $is2 && $ialn){
+		if ($is1 && $is2 && $ialn && $inn1 && $inn2){ # added $inn1 and $inn2
 		    my $tsp1=$spid{$inn1}; my $tsp2=$spid{$inn2};
 		    my $tmp1=score_introns($is1,$ialn,$is2,$inn1,$inn2,$tsp1,$tsp2,$Gclid);
 		}
@@ -583,8 +583,6 @@ sub score_introns {
 	    if ($seq2[$n]=~/\d/){
 		$dev=1;
 		my $m1=$n-1; my  $m2=$n+1;
-		#$in1{$n1."\tintron_".$i1}="phase_".$seq1[$n]."\t"."phase_".$seq2[$n]."\t"."conserved;".$aln[$m1].",".$aln[$m2];
-		#$h2{$n1."\tintron_".$i1}=$n2."\tintron_".$i2;
 		$paa1=$intron_aa{$n1."\tintron_".$i1};
 		$paa2=$intron_aa{$n2."\tintron_".$i2};
 		$score=0; 
@@ -643,59 +641,61 @@ sub score_introns {
 		$r=$i2;
 		$score=0; $apos=0; $gp=0;
 		for ($t=$n+$j; $t<=$n+$win; $t++){ ##changing the sliding window according to similarity of upstream and downstream regions
-		    if ($seq2[$t] eq "-"){ $gp++; $apos++; }
-		    if ($seq2[$t]=~/[A-Z]/ ) { $apos++; }
-		    if ($seq2[$t]=~/\d/){		    
-			$dev=1;
-			if ($j>0) { $r++; }
-			my $m1=$t-1; my $m2=$t+1; my $m3=$j-1;
-			$idin=$el."\t".$n1."\tintron_".$i1;
-			$paa1=$intron_aa{$n1."\tintron_".$i1};
-			$paa2=$intron_aa{$n2."\tintron_".$r};
-			$score=0;
-			if ($paa1 && $paa2){ ##added this 
-			    if ($m3>0){			    
-				if ($seq1[$n] eq $seq2[$t]) { $score=10; } else { $score=-10; } ##change in the scoring system
-				$score=$score-(abs($m3)); ##resting deviating positions to the score
-				###differentiating from NO_ALN
-				if ($score==0){ $score=-1; }
-				if (!$insc{$idin}){
-				    if ($n1 && $n2){
-					$insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
+		    if ($t <= $#seq2){
+			if ($seq2[$t] eq "-"){ $gp++; $apos++; }
+			if ($seq2[$t]=~/[A-Z]/ ) { $apos++; }
+			if ($seq2[$t]=~/\d/){		    
+			    $dev=1;
+			    if ($j>0) { $r++; }
+			    my $m1=$t-1; my $m2=$t+1; my $m3=$j-1;
+			    $idin=$el."\t".$n1."\tintron_".$i1;
+			    $paa1=$intron_aa{$n1."\tintron_".$i1};
+			    $paa2=$intron_aa{$n2."\tintron_".$r};
+			    $score=0;
+			    if ($paa1 && $paa2){ ##added this 
+				if ($m3>0){			    
+				    if ($seq1[$n] eq $seq2[$t]) { $score=10; } else { $score=-10; } ##change in the scoring system
+				    $score=$score-(abs($m3)); ##resting deviating positions to the score
+				    ###differentiating from NO_ALN
+				    if ($score==0){ $score=-1; }
+				    if (!$insc{$idin}){
+					if ($n1 && $n2){
+					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
+					    
+					    $indev{$idin}=abs($m3);
+					}
+					#print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$r\t$paa2\t$seq2[$t]\t+$m3\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
+				    }
+				    elsif (abs($m3)<$indev{$idin}) {
+					if ($n1 && $n2){
+					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
+					    
+					    $indev{$idin}=abs($m3);
+					}
+				    }
+				}
+				else {
+				    my $w=$m3+2; 
+				    if ($seq1[$n] eq $seq2[$t]) { $score=10; } else { $score=-10; }
+				    $score=$score-(abs($w)); ##resting deviating positions to the score
+				    ###differentiating from NO_ALN
+				    if ($score==0){ $score=-1; }
+				    if (!$insc{$idin}){
 					
-					$indev{$idin}=abs($m3);
+					if ($n1 && $n2){
+					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
+					    $indev{$idin}=abs($w);
+					}
+					#print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$r\t$paa2\t$seq2[$t]\t+$m3\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
 				    }
-				    #print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$r\t$paa2\t$seq2[$t]\t+$m3\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
-				}
-				elsif (abs($m3)<$indev{$idin}) {
-				    if ($n1 && $n2){
-					$insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
-					
-					$indev{$idin}=abs($m3);
+				    elsif (abs($w)<$indev{$idin}) {
+					if ($n1 && $n2){
+					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
+					    $indev{$idin}=abs($w);
+					}
 				    }
+				    #print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$r\t$paa2\t$seq2[$t]\t$w\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
 				}
-			    }
-			    else {
-				my $w=$m3+2; 
-				if ($seq1[$n] eq $seq2[$t]) { $score=10; } else { $score=-10; }
-				$score=$score-(abs($w)); ##resting deviating positions to the score
-				###differentiating from NO_ALN
-				if ($score==0){ $score=-1; }
-				if (!$insc{$idin}){
-				    
-				    if ($n1 && $n2){
-					$insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
-					$indev{$idin}=abs($w);
-				    }
-				    #print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$r\t$paa2\t$seq2[$t]\t+$m3\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
-				}
-				elsif (abs($w)<$indev{$idin}) {
-				    if ($n1 && $n2){
-					$insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
-					$indev{$idin}=abs($w);
-				    }
-				}
-				#print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$r\t$paa2\t$seq2[$t]\t$w\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
 			    }
 			}
 		    } #for paa1 & paa2 conditional
@@ -790,49 +790,51 @@ sub score_introns {
 		my $r=$i2; $apos=0;
 		$score=0; $gp=0;
 		for ($t=$n+$j; $t<=$n+$win; $t++){
-		    if ($seq1[$t] eq "-"){ $gp++; $apos++; }
-		    if ($seq1[$t] =~/[A-Z]/) { $apos++; }
-		    if ($seq1[$t]=~/\d/){ 		    
-			$dev=1;
-			if ($j>0) { $r++; }
-			my $m1=$t-1; my $m2=$t+1; my $m3=$j-1;
-			$idin=$el."\t".$n2."\tintron_".$i1;
-			$paa1=$intron_aa{$n2."\tintron_".$i1};
-			$paa2=$intron_aa{$n1."\tintron_".$r};
-			$score=0;
-			if ($paa1 && $paa2){
-			    if ($m3>0){
-				if ($seq2[$n] eq $seq1[$t]) { $score=10; } else { $score=-10; }
-				$score=$score-(abs($m3)); ##resting deviating positions to the score
-				if (!$insc{$idin}){
-				    if ($n1 && $n2){
-					$insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
-					$indev{$idin}=abs($m3);
+		    if ($t <= $#seq1){ # in some cases, $t is bigger than $#seq1
+			if ($seq1[$t] eq "-"){ $gp++; $apos++; } # @seq1 is the positions of the aln
+			if ($seq1[$t] =~/[A-Z]/) { $apos++; }
+			if ($seq1[$t]=~/\d/){ 		    
+			    $dev=1;
+			    if ($j>0) { $r++; }
+			    my $m1=$t-1; my $m2=$t+1; my $m3=$j-1;
+			    $idin=$el."\t".$n2."\tintron_".$i1;
+			    $paa1=$intron_aa{$n2."\tintron_".$i1};
+			    $paa2=$intron_aa{$n1."\tintron_".$r};
+			    $score=0;
+			    if ($paa1 && $paa2){
+				if ($m3>0){
+				    if ($seq2[$n] eq $seq1[$t]) { $score=10; } else { $score=-10; }
+				    $score=$score-(abs($m3)); ##resting deviating positions to the score
+				    if (!$insc{$idin}){
+					if ($n1 && $n2){
+					    $insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
+					    $indev{$idin}=abs($m3);
+					}
 				    }
-				}
-				elsif (abs($m3)<$indev{$idin}){
-				    if ($n1 && $n2){
-					$insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
-					$indev{$idin}=abs($m3);
+				    elsif (abs($m3)<$indev{$idin}){
+					if ($n1 && $n2){
+					    $insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
+					    $indev{$idin}=abs($m3);
+					}
 				    }
+				    #print INSC "$el\t$n2\tintron_$i1\t$paa1\t$seq2[$n]\t$n1\tintron_$r\t$paa2\t$seq1[$t]\t+$m3\t$aln[$m1],$aln[$m2]\t$score\t$sp2\t$sp1\n";
 				}
-				#print INSC "$el\t$n2\tintron_$i1\t$paa1\t$seq2[$n]\t$n1\tintron_$r\t$paa2\t$seq1[$t]\t+$m3\t$aln[$m1],$aln[$m2]\t$score\t$sp2\t$sp1\n";
-			    }
-			    else {
-				my $w=$m3+2; 
-				if ($seq2[$n] eq $seq1[$t]) { $score=10; } else { $score=-10; }
-				$score=$score-(abs($w)); ##resting deviating positions to the score
-				
-				if (!$insc{$idin}){
-				    if ($n1 && $n2){
-					$insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
-					$indev{$idin}=abs($w);
+				else {
+				    my $w=$m3+2; 
+				    if ($seq2[$n] eq $seq1[$t]) { $score=10; } else { $score=-10; }
+				    $score=$score-(abs($w)); ##resting deviating positions to the score
+				    
+				    if (!$insc{$idin}){
+					if ($n1 && $n2){
+					    $insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
+					    $indev{$idin}=abs($w);
+					}
 				    }
-				}
-				elsif (abs($w)<$indev{$idin}){
-				    if ($n1 && $n2){
-					$insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
-					$indev{$idin}=abs($w);
+				    elsif (abs($w)<$indev{$idin}){
+					if ($n1 && $n2){
+					    $insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
+					    $indev{$idin}=abs($w);
+					}
 				    }
 				}
 			    }
@@ -969,38 +971,40 @@ sub score_exons {
 		$tex="";
 		%check=();
 		if ($sim_score>=0){ ##modified to print all exons that aligned even when sim_score is low, they will be filtered in other programs
-		    for ($k=$rs1; $k<=$rs2; $k++){
-			if ($exon{$n2."_".$k}){
-			    $ex=$exon{$n2."_".$k};
-			    if (!$check{$ex}){
-				$check{$ex}=1;				    
-				if (!$tex){
-				    $tex=$ex;
-				} 
-				else { 
-				    $tex.=",".$ex; 
+		    if (defined $rs1 && defined $rs2){
+			for ($k=$rs1; $k<=$rs2; $k++){
+			    if ($exon{$n2."_".$k}){
+				$ex=$exon{$n2."_".$k};
+				if (!$check{$ex}){
+				    $check{$ex}=1;				    
+				    if (!$tex){
+					$tex=$ex;
+				    } 
+				    else { 
+					$tex.=",".$ex; 
+				    }
 				}
 			    }
 			}
-		    }
-		    if ($tex){
-			if ($rs1==0){ $rs1=1; }
-			if ($tex=~/\,/){ ##if the exon need to be realign is written in a special file for further processing
-			    @nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format
-			    for ($x=0; $x<scalar(@nex); $x++){
-				$tstr=$el."\t".$_."\t".$ne."\t".$n2."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp1."\t".$sp2;
-				$miss{$tstr}=1;
-				#print MISS "$el\t$_\t$ne\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp1\t$sp2\n";
-				print EXSC "$el\t$_\t$ne\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp1\t$sp2\n";
+			if ($tex){
+			    if ($rs1==0){ $rs1=1; }
+			    if ($tex=~/\,/){ ##if the exon need to be realign is written in a special file for further processing
+				@nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format
+				for ($x=0; $x<scalar(@nex); $x++){
+				    $tstr=$el."\t".$_."\t".$ne."\t".$n2."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp1."\t".$sp2;
+				    $miss{$tstr}=1;
+				    #print MISS "$el\t$_\t$ne\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp1\t$sp2\n";
+				    print EXSC "$el\t$_\t$ne\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp1\t$sp2\n";
+				}
 			    }
-			}
-			else {
-			    print EXSC "$el\t$_\t1\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp1\t$sp2\n";
-			    @ln=split(/\t/,$_);
-			    @tn1=split(/\|/,$ln[0]);
-			    @tn2=split(/\|/,$n2);
-			    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
-			    $onehit{$idex}=1;
+			    else {
+				print EXSC "$el\t$_\t1\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp1\t$sp2\n";
+				@ln=split(/\t/,$_);
+				@tn1=split(/\|/,$ln[0]);
+				@tn2=split(/\|/,$n2);
+				$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
+				$onehit{$idex}=1;
+			    }
 			}
 		    }
 		} 
@@ -1060,36 +1064,38 @@ sub score_exons {
 		$tex="";
 		%check=();
 		if ($sim_score>=0){ ###modified to print all exons that aligned event when sim_score is low, they will be filtered in other programs
-		    for ($k=$rs1; $k<=$rs2; $k++){
-			if ($exon{$n1."_".$k}){
-			    $ex=$exon{$n1."_".$k};
-			    if (!$check{$ex}){
-				$check{$ex}=1;
-				if (!$tex){
-				    $tex=$ex;
-				} 
-				else { 
-				    $tex.=",".$ex; 
+		    if (defined $rs1 && defined $rs2){
+			for ($k=$rs1; $k<=$rs2; $k++){
+			    if ($exon{$n1."_".$k}){ # $n1 => prot|gene
+				$ex=$exon{$n1."_".$k};
+				if (!$check{$ex}){
+				    $check{$ex}=1;
+				    if (!$tex){
+					$tex=$ex;
+				    } 
+				    else { 
+					$tex.=",".$ex; 
+				    }
 				}
 			    }
 			}
-		    }
-		    if ($rs1==0){ $rs1=1; }
-		    if ($tex=~/\,/){ ##If the exon needs to be realigned is written in an special file for its further processing
-			@nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format
-			for ($x=0; $x<scalar(@nex); $x++){
-			    #print MISS "$el\t$_\t$ne\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp2\t$sp1\n";
-			    $tstr=$el."\t".$_."\t".$ne."\t".$n1."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp2."\t".$sp1;
-			    $miss{$tstr}=1;
-			    print EXSC "$el\t$_\t$ne\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp2\t$sp1\n";
+			if ($rs1==0){ $rs1=1; }
+			if ($tex=~/\,/){ ##If the exon needs to be realigned is written in an special file for its further processing
+			    @nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format
+			    for ($x=0; $x<scalar(@nex); $x++){
+				#print MISS "$el\t$_\t$ne\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp2\t$sp1\n";
+				$tstr=$el."\t".$_."\t".$ne."\t".$n1."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp2."\t".$sp1;
+				$miss{$tstr}=1;
+				print EXSC "$el\t$_\t$ne\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp2\t$sp1\n";
+			    }
+			} else {
+			    print EXSC "$el\t$_\t1\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp2\t$sp1\n";
+			    @ln=split(/\t/,$_);
+			    @tn1=split(/\|/,$ln[0]);
+			    @tn2=split(/\|/,$n2);
+			    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
+			    $onehit{$idex}=1;
 			}
-		    } else {
-			print EXSC "$el\t$_\t1\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp2\t$sp1\n";
-			@ln=split(/\t/,$_);
-			@tn1=split(/\|/,$ln[0]);
-			@tn2=split(/\|/,$n2);
-			$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
-			$onehit{$idex}=1;
 		    }
 		} 
 		else { 
