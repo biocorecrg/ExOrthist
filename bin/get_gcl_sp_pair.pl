@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-#use warnings;
+use warnings;
 use strict;
 use Getopt::Long;
 use Cwd qw(abs_path cwd);
