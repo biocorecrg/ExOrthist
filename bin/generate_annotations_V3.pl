@@ -13,6 +13,7 @@ my $verboseFlag=1;
 my $help;
 my $add_exons;
 my $do_all_steps=1;
+my $keep_all_files;
 
 #Arguments
 Getopt::Long::Configure("no_auto_abbrev");
@@ -22,6 +23,7 @@ GetOptions("GTF=s" => \$gtf_file,
 	   "sp=s" => \$species,
 	   "add_exons=s" => \$add_exons, #before $vastdb_refs
 	   "verbose=s" => \$verboseFlag,
+	   "keep_files" => \$keep_all_files,
 	   "h" => \$help,
 	   "help" => \$help
     );
@@ -1813,6 +1815,17 @@ close (INFILE);
 print EXFILE "$ov_juncs{$id}\n" if (defined $ov_juncs{$id});
 close EXFILE;
 system "rm $outexfile";
+
+unless (defined $keep_all_files){
+    verbPrint ("Cleaning up intermediate files\n");
+    my $file1 = "$exons_db_folder/$species/$species"."_annot_exon_sizes.txt";
+    my $file2 = "$exons_db_folder/$species/$species"."_CDS_introns.txt";
+    my $file3 = "$exons_db_folder/$species/$species"."_prot_sizes.txt";
+    my $file4 = "$exons_db_folder/$species/$species"."_tr_coords.txt";
+    my $file5 = "$exons_db_folder/$species/$species"."_tr_coords_CDS.txt";
+    my $file6 = "$exons_db_folder/$species/$species"."_trid_protid.txt";    
+    system "rm $file1 $file2 $file3 $file4 $file5 $file6";
+}
 
 verbPrint ("Annotations for $species finished!"); 
 
