@@ -1732,7 +1732,7 @@ system "gzip $GTF_to_compress";
 
 my $exposfile=$exons_db_folder."/".$species."/".$species."_protein_ids_exons_pos.txt";
 my $outexfile=$exons_db_folder."/".$species."/".$species."_prot_exons.txt";
-my $finalout=$exons_db_folder."/".$species."/".$species."_prot_exons_overlap.txt";
+my $finalout=$exons_db_folder."/".$species."/".$species."_overlap_CDS_exons.txt"; # formerly: Sp_prot_exons_overlap.txt 
 
 verbPrint ("Generating $species"."_prot_exons_overlap.txt\n");
 
