@@ -18,7 +18,7 @@ my $f_gene_cluster; # file with the gene clusters for the give species pair => i
 my $f_extra_cluster; # a different cluster file for some species (hard to generalize); eventually allow it to be comma separated
 my $sp1; ##species1 
 my $sp2; ##species2
-my $EX_DB = "./EXONS_DB"; # default
+my $EX_DB = "./EXONS_DB"; # default where the EXONS_DB/ folder is
 my $project_dir  = "./"; ##output folder
 my $verbose; # prints steps
 my $N=10000;
@@ -66,7 +66,6 @@ my %f_exon_pos;
 my %f_intron_pos;
 
 ##Files Sp1
-
 $f_exint{$sp1}="$EX_DB/$sp1/$sp1".".exint";
 $f_protIDs{$sp1}="$EX_DB/$sp1/$sp1"."_annot_exons_prot_ids.txt"; # before _annot_fake_protein_ids_exons.txt"
 $f_exon_pos{$sp1}="$EX_DB/$sp1/$sp1"."_protein_ids_exons_pos.txt";
