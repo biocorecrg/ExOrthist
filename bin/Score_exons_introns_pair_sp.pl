@@ -382,7 +382,6 @@ foreach $el (@keys){
 		    @l=split(/\s+/,$_);
 		    $name=$l[0]; 
 		    $name=~s/\%//;
-		    #print "*$name\n";
 		}
 		else {
 		    $seq{$name}.=$_;
@@ -395,14 +394,15 @@ foreach $el (@keys){
 	    $n2=$nkeys[1];
 	    $seq1=$seq{$n1};
 	    $seq2=$seq{$n2};
-            #print("\n".$seq2."\n");
 	    $sp1=$spid{$n1};
 	    $sp2=$spid{$n2};	        
-	    ## 4) CALLING SUBROUTINE FOR SCORING PROTEINS
+
+	    ## 3) CALLING SUBROUTINE FOR SCORING PROTEINS
 	    my ($sim1,$sim2,$id1,$glsc1)=(0,0,0,0);
 	    ($sim1,$sim2,$id1,$glsc1)=score_proteins($n1,$n2,$seq1,$seq2);
 	    print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; ##printing in the protein scoring file the scores of similarity
-	    ## 3) OPENING OUTPUT INTALN FILE
+
+	    ## 4) OPENING OUTPUT INTALN FILE
 	    open (INTALN, "$int_aln");
 	    my ($ialn, $inn1, $inn2, $iseq1, $iseq2, $is1, $is2);
 	    my (@w1);
@@ -428,7 +428,9 @@ foreach $el (@keys){
 		}
 		else { $c=-1; }
 	    } ## closing INTALN file
-	    if (($sim1>=20 && $sim2>=20) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
+
+#	    if (($sim1>=20 && $sim2>=20) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
+	    if ((($sim1>=20 && $sim2>=20) || $sim1 >= 50 || $sim2 >= 50) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
 		##5) CALLING SUBROUTINE FOR SCORING INTRONS
 		print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n";
 		if ($is1 && $is2 && $ialn && $inn1 && $inn2){ # added $inn1 and $inn2
@@ -579,7 +581,7 @@ sub score_introns {
 	$r=$n+1;
 	if ($seq1[$n]=~/\d/){ $i1++; $dev=0; } if ($seq2[$n]=~/\d/){ $i2++; } 
 	if ($seq1[$n]=~/\d/){
-	        #$i1++;
+	    #$i1++;
 	    if ($seq2[$n]=~/\d/){
 		$dev=1;
 		my $m1=$n-1; my  $m2=$n+1;
@@ -591,18 +593,18 @@ sub score_introns {
 		##A negative score is a non conserved phase 
 		##therefore a score >=0 means that the intron is conserved with ot without aa deviation 
 		if ($paa1 && $paa2){ ##added this 
-		if ($seq1[$n] == $seq2[$n]){ ##checking if the phase is the same for both introns
-		    $score=10;
-		    if ($n1 && $n2){
+		    if ($seq1[$n] == $seq2[$n]){ ##checking if the phase is the same for both introns
+			$score=10;
+			if ($n1 && $n2){
 			print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$i2\t$paa2\t$seq2[$n]\t0\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
+			}
 		    }
-		}
-		else {
-		    $score=-10; ##introns in different phase hava a score of -10 (change in the scoring system)
-		    if ($n1 && $n2){
-			print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$i2\t$paa2\t$seq2[$n]\t0\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
+		    else {
+			$score=-10; ##introns in different phase hava a score of -10 (change in the scoring system)
+			if ($n1 && $n2){
+			    print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$i2\t$paa2\t$seq2[$n]\t0\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
+			}
 		    }
-		}
 		}
 	    }
 	    else { 
@@ -1007,6 +1009,9 @@ sub score_exons {
 			    }
 			}
 		    }
+		    else { 
+			print EXSC "$el\t$_\t0\t$n2\tNO_EXON_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2\n"; 
+		    }
 		} 
 		else { 
 		    print EXSC "$el\t$_\t0\t$n2\tNO_EXON_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2\n"; 
@@ -1080,15 +1085,16 @@ sub score_exons {
 			    }
 			}
 			if ($rs1==0){ $rs1=1; }
+
 			if ($tex=~/\,/){ ##If the exon needs to be realigned is written in an special file for its further processing
 			    @nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format
 			    for ($x=0; $x<scalar(@nex); $x++){
-				#print MISS "$el\t$_\t$ne\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp2\t$sp1\n";
 				$tstr=$el."\t".$_."\t".$ne."\t".$n1."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp2."\t".$sp1;
 				$miss{$tstr}=1;
 				print EXSC "$el\t$_\t$ne\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp2\t$sp1\n";
 			    }
-			} else {
+			} 
+			else {
 			    print EXSC "$el\t$_\t1\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp2\t$sp1\n";
 			    @ln=split(/\t/,$_);
 			    @tn1=split(/\|/,$ln[0]);
@@ -1096,6 +1102,9 @@ sub score_exons {
 			    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
 			    $onehit{$idex}=1;
 			}
+		    }
+		    else {
+			print EXSC "$el\t$_\t0\t$n1\tNO_EXON_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp2\t$sp1\n"; # 1 nt exons at the Cterm
 		    }
 		} 
 		else { 
