@@ -1823,7 +1823,8 @@ unless (defined $keep_all_files){
     my $file4 = "$exons_db_folder/$species/$species"."_tr_coords.txt";
     my $file5 = "$exons_db_folder/$species/$species"."_tr_coords_CDS.txt";
     my $file6 = "$exons_db_folder/$species/$species"."_trid_protid.txt";    
-    system "rm $file1 $file2 $file3 $file4 $file5 $file6";
+    my $file7 = "$exons_db_folder/$species/$species"."_protein_ids_intron_pos.tx";
+    system "rm $file1 $file2 $file3 $file4 $file5 $file6 $file7";
 }
 
 verbPrint ("Annotations for $species finished!"); 
