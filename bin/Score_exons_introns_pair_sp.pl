@@ -18,6 +18,7 @@ my $part=$ARGV[11];
 my $bl=$ARGV[12]; ##blosum62  matrix
 my $outf=$ARGV[13]; ## output folder
 my $cpus=$ARGV[14]; ## CPUs for MAFFT
+my $min_sim_prots=15; # default as SHORT for now. 
 
 $cpus=1 if !$cpus;
 
@@ -430,7 +431,7 @@ foreach $el (@keys){
 	    } ## closing INTALN file
 
 #	    if (($sim1>=20 && $sim2>=20) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
-	    if ((($sim1>=20 && $sim2>=20) || $sim1 >= 50 || $sim2 >= 50) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
+	    if ((($sim1>=$min_sim_prots && $sim2>=$min_sim_prots) || $sim1 >= $min_sim_prots*2 || $sim2 >= $min_sim_prots*2) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
 		##5) CALLING SUBROUTINE FOR SCORING INTRONS
 		print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n";
 		if ($is1 && $is2 && $ialn && $inn1 && $inn2){ # added $inn1 and $inn2
