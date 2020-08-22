@@ -8,7 +8,7 @@ my $nc=$ARGV[2]; ## Number of clusters in each part => default 500
 my $outfile=$ARGV[3]; ## Outfile name per folder
 
 my %cid;
-open (INFILE, $infile1) || die "It cannot open the input file ($infile)\n";
+open (INFILE, $infile1) || die "It cannot open the input file ($infile1)\n";
 # Format: GF000009	Hsa	ENSG00000257008	GPR142	OG0000061O=0,R=1,F>R
 while (<INFILE>){
     chomp($_);
@@ -82,10 +82,10 @@ while (<TEMP_INFILE>){
     }
     elsif ($cid2{$l[0]}){
 	print SC "$l[0]|$l[1]|$l[2]|$l[5]\t$l[0]|$l[3]|$l[4]|$l[6]\n";
-    }
-    
+    }    
 }
 close TEMP_INFILE;
 close SC;
-print STDERR "Number of parts:\t$p\n\n";
+print STDERR "Number of parts:\t$p\n";
 
+system "rm tmp.out sorted_scores.out";
