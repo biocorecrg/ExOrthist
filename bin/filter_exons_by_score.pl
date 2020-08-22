@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 use warnings;
 use strict;
+
 my ($i,$input_file,$sps,$out,$m,$int,$id,$C,$A);
 for ($i=0; $i<=$#ARGV; $i++){
     if($ARGV[$i] eq "-b"){ ##best hit exons
@@ -57,6 +58,7 @@ my (%sc,%pair,%ex, %pr);
 open (INONE, $input_file) || die "It cannot open input file ($input_file)\n";
 # Format of input:
 # 4282	Exon	Internal	ENSDARP00000111316|ENSDARG00000086505	exon_15	chr11:13246628-13246793:-	ENSP00000262811|ENSG00000099308	exon_16	chr19:18245627-18245792:+	0.1183	0.25	0.1372	0.25	0.1144	0.8699	Dre	Hsa
+<INONE>; # discards header
 while (<INONE>){
     $c++;
     chomp($_); 
@@ -159,19 +161,28 @@ while (<INONE>){
 ### It opens the output here, in case it crashes before
 open (OUT, ">$out") || die "It cannot open the output file with filtered exons ($out)\n";
 print OUT "GeneID_sp1\tExon_coords_sp1\tGeneID_sp2\tExon_coords_sp2\tSp1\tSp2\n";
+
 my @keys=keys(%ex);
 @keys=sort(@keys);
 my ($el, $nid, $score, $pr);
 my (@e, @g); 
-foreach $el (@keys){	
+foreach $el (@keys){
+    # $el => GB47592     chr16:4294865-4294923:-          [Query]
+    # $ex{$el} => FBgn0010314    chr2L:9331055-9331110:+  [Subject]
+    
     if ($ex{$el}=~/\,/){
 	@e=split(/\,/,$ex{$el});
-	$score=0;
 	for ($l=0; $l<scalar(@e);$l++){
 	    @g=split(/\t/,$e[$l]);
-	    if ($sc{$el."\t".$e[$l]}> $sc{$el."\t".$g[0]}){
-		$pr{$el."\t".$g[0]}=$el."\t".$e[$l];
-		$score=$sc{$el."\t".$e[$l]};				
+	    if (defined $sc{$el."\t".$g[0]}){
+		if ($sc{$el."\t".$e[$l]} > $sc{$el."\t".$g[0]}){
+		    $pr{$el."\t".$g[0]} = $el."\t".$e[$l];
+		    $sc{$el."\t".$g[0]} = $sc{$el."\t".$e[$l]};
+		}
+	    }
+	    else {
+		$pr{$el."\t".$g[0]} = $el."\t".$e[$l];
+		$sc{$el."\t".$g[0]} = $sc{$el."\t".$e[$l]};
 	    }
 	}
     }
@@ -188,7 +199,4 @@ foreach $el (@keys){
     print OUT "$pr{$el}\t$sp{$nid}\n";
 }
 close OUT;
-
-
-
 
