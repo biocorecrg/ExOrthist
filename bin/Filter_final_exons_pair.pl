@@ -42,7 +42,7 @@ while (<IN2>){
     my $ovid2=$exid{$id2};
     my $bh2=$bh{$ovid2};
     
-    # does it exclude the reciprocal?
+    # it excludes no-symetric hits, but they had been already excluded
     if (!$pair{$bh1."\t".$bh2} && !$pair{$bh2."\t".$bh1}){
 	print OUT "$bh1\t$bh2\t$l[4]\t$l[5]\n";
 	$pair{$bh1."\t".$bh2}=1;
@@ -53,6 +53,7 @@ close IN2;
 if ($infile3){
     open (IN3,"$infile3") || die "It cannot open the provided liftover file ($infile3)"; 
     ## Format: BL00000	Sc0000095:736652-736717:-	NEMVEDRAFT_v1g239017	NEMVEscaffold_11:253907-253972:-	Bla	Nve
+    <IN3>;
     while (<IN3>){
 	chomp($_);
 	my @l=split(/\t/,$_);
