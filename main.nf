@@ -37,16 +37,11 @@ log.info """
 
 ==============================================================================
 annotations (GTF files)          : ${params.annotations}
-genomes (fasta files)     	     : ${params.genomes}
+genomes (fasta files)            : ${params.genomes}
 cluster file (txt files)         : ${params.cluster}
 intcons (1 or 2)                 : ${params.intcons}
-   => Whether to consider one or two introns bodering 
-   the exon when filtering by conservation.
 idexons (from 0 to 1)            : ${params.idexons}
-   => Minimum % of similarity between the pair of exons and
-      their corresponding upstream and downstream exons.
 maxsize                          : ${params.maxsize}
-   => % of maximum size difference between the two exons.
 clusternum (number of clusters)  : ${params.clusternum}
 extraexons (e.g. from VastDB)    : ${params.extraexons}
 liftover                         : ${params.liftover}
@@ -55,6 +50,14 @@ vastdb                           : ${params.vastdb}
 output (output folder)           : ${params.output}
 email for notification           : ${params.email}
 
+INFORMATION ON OPTIONS:
+- intcons (1 or 2): Whether to consider one or two introns 
+     bodering the exon when filtering by conservation.
+- idexons (from 0 to 1): Minimum % of similarity between the
+     pair of exons and their corresponding upstream and 
+     downstream exons.
+- maxsize: Maximum size difference between the two exons 
+     (as a fraction of either exon).
 """
 
 if (params.help) {
