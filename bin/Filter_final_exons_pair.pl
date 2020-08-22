@@ -11,7 +11,7 @@ my $infile3=$ARGV[3]; ## liftover pairs, if provided
 my %exid; my %max; my %bh;
 my %pair;
 
-open (IN,"$infile1") || die "Missing overlapping exons"; 
+open (IN, $infile1) || die "It cannot open overlapping exons info ($infile1)\n"; 
 # Format: OV_EX_Bla_36	BL00001	Sc0000095:474219-474451:-	Bla	1015
 while (<IN>){
     chomp($_);
@@ -29,8 +29,9 @@ while (<IN>){
 close IN;
 
 open (OUT, ">$outfile") || die "It cannot open the output file $outfile\n";
-open (IN2,"$infile2") || die "Missing best score exons"; 
+open (IN2, $infile2) || die "It cannot open fil with best score exons ($infile2)\n"; 
 ## Format: BL00000	Sc0000095:736652-736717:-	NEMVEDRAFT_v1g239017	NEMVEscaffold_11:253907-253972:-	Bla	Nve SCORE?
+<IN2>; # discards header
 while (<IN2>){
     chomp($_);
     my @l=split(/\t/,$_);
