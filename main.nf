@@ -50,7 +50,7 @@ vastdb                           : ${params.vastdb}
 output (output folder)           : ${params.output}
 email for notification           : ${params.email}
 
-INFORMATION ON OPTIONS:
+INFORMATION ABOUT OPTIONS:
 - intcons (1 or 2): Whether to consider one or two introns 
      bodering the exon when filtering by conservation.
 - idexons (from 0 to 1): Minimum % of similarity between the
@@ -58,6 +58,8 @@ INFORMATION ON OPTIONS:
      downstream exons.
 - maxsize: Maximum size difference between the two exons 
      (as a fraction of either exon).
+     
+     
 """
 
 if (params.help) {
