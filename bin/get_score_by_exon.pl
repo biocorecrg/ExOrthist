@@ -4,7 +4,7 @@ use strict;
 
 my $input_file=$ARGV[0]; # scores all introns btw pair of species (all merged Final_aln_scores_Sp1_Sp2.txt)
 my $outf=$ARGV[1]; # output folder => Sp1_Sp2
-my ($info, $id, $r, $k, $pid, $sA, $sC1, $sC2, $s1, $s2);
+my ($info, $id, $r, $k, $pid, $s1, $s2);
 my $b=0;
 my (@i1, @i2, @i1b, @i2b, @line, @t1, @t2, @t3, @t4, @name, @l1, @l2);
 my (%sintron);
@@ -108,7 +108,7 @@ while (<IN>){
 		$sA=-0.1; 
 		$TSC=$sC1+$sI1+$sA;
 		print OUTONE "$c\tExon\tC_terminal\t$line[1]\t$line[2]\t$line[3]\t";			
-		print OUTONE "$line[4]\t$line[5]\tNA\t$sC1\t$sI1\t$sA\tNA\tNA\T$TSC\t$line[8]\t$line[9]\n";
+		print OUTONE "$line[4]\t$line[5]\tNA\t$sC1\t$sI1\t$sA\tNA\tNA\t$TSC\t$line[8]\t$line[9]\n";
 		$string=$c."\t"."Exon"."\t"."C_terminal\t".$line[1]."\t".$line[2]."\t".$line[3]."\t";
 		$string.=$line[4]."\t$line[5]\tNA\t".$sC1."\t".$sI1."\t".$sA."\tNA\tNA\t".$TSC."\t".$line[8]."\t".$line[9];
 	    }
