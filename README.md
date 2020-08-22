@@ -46,8 +46,30 @@ Running ExOrthist main module
 
 The pipeline can be launched in this way:
 ```bash
-nextflow run main.nf --clusters "test/*.tab.gz" --genomes "test/GENOMES/*_gDNA.fasta.gz" --annotations "test/GTF/*_annot.gtf.gz" --output output -bg > log.txt
+nextflow run main.nf -bg > log.txt
 ```
+
+A config file "params.config" is need, with the following information:
+
+```
+params {
+    cluster      = "$baseDir/test/Ame_Cdi_Dme_s.tab.gz"
+    genomes      = "$baseDir/test/GENOMES/*_gDNA.fasta.gz"
+    annotations  = "$baseDir/test/GTF/*_annot.gtf.gz"
+    clusternum   = 100
+    extraexons   = ""
+    liftover     = ""
+    orthofolder  = ""
+    vastdb       = ""
+    intcons      = 2
+    idexons      = 0.2
+    maxsize      = 0.65
+    output       = "$baseDir/output_small"
+    email        = "yourmail@yourdomain"
+}
+
+```
+
 
 Test data are in the folder **test**. Input files are:
 
