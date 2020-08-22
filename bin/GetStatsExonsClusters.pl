@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use Getopt::Long;
 
+# needs to check the counts are right!
+
 my $f_gene_cluster;
 my $f_exon_cluster;
 my $exonsDB_folder;
@@ -22,7 +24,7 @@ Script to get basic stats from ExOrthist clusters.
 ";
 }
 
-my @exon_files=glob("$exonsDB_folder/*/*_prot_exons_overlap.txt");
+my @exon_files=glob("$exonsDB_folder/*/*_overlap_CDS_exons.txt");
 die "[Aborted] It cannot find any files with exon info\n" if $#exon_files < 0;
 
 #GF00001 Bta ENSBTAG00000045550 SPAN6
@@ -41,7 +43,8 @@ while (<LIST>){ ##checking list of consistent events
 close LIST;
 
 #OV_EX_Mm2_186054 ENSMUSG00000067377 133892701-133892766
-my %exon_catalog=();
+my %exon_catalog=(); # catalog of exons by overlap
+my %tally_exons_all=(); # n of all exons per species
 my %tally_exons=(); # n of exons per species in genes in clusters
 my %exon_conversion=(); # from gene=coordinate to OV_EX_Mm2_186054.
 
@@ -51,10 +54,11 @@ foreach my $exon_file (@exon_files){
 	chomp($_);
 	my @l=split(/\t/,$_);
 	my $gene=$l[1];
+	my ($species)=$l[0]=~/OV\_EX\_(.+)\_/;
 
-	if ($gene_to_cluster{$gene}){
-	    my $species = $gene_to_species{$gene};
-	    if (!defined $exon_catalog{$gene}{$l[0]}){
+	if (!defined $exon_catalog{$l[0]}){
+	    $tally_exons_all{$species}++;
+	    if ($gene_to_cluster{$gene}){
 		$exon_catalog{$gene}{$l[0]} = 1;
 		$tally_exons{$species}++;
 	    }
@@ -124,11 +128,17 @@ foreach my $exon_cluster (sort keys %tally_by_exon_cluster){
     $total_strings++;
 }
 
-print "Species\tAnnotated CDS exons\tExons in clusters\t%covered\n";
+print "Species\tAnnotated CDS exons\tExons in Genes in clusters\tExons in exon clusters\t%covered\n";
 foreach my $species (sort keys %tally_exons){
     my $perc_covered = sprintf ("%.2f",100*($tally_exons_in_clusters{$species}/$tally_exons{$species}));
-    print "$species\t$tally_exons{$species}\t$tally_exons_in_clusters{$species}\t$perc_covered\%\n";
+    print "$species\t$tally_exons_all{$species}\t$tally_exons{$species}\t$tally_exons_in_clusters{$species}\t$perc_covered\%\n";
 }
+
+$tally_strings{$default_string1}=0 if !defined $tally_strings{$default_string1};
+$tally_strings{$default_string2}=0 if !defined $tally_strings{$default_string2};
+$tally_strings{MANY_3}=0 if !defined $tally_strings{MANY_3};
+$tally_strings{MANY_4}=0 if !defined $tally_strings{MANY_4};
+$tally_strings{INCOMPLETE}=0 if !defined $tally_strings{INCOMPLETE};
 
 my $perc_1=sprintf("%.2f",100*$tally_strings{$default_string1}/$total_strings);
 my $perc_2=sprintf("%.2f",100*$tally_strings{$default_string2}/$total_strings);
@@ -143,7 +153,14 @@ print "Clusters >=3 exons/species\t$tally_strings{MANY_3}\t$perc_3\%\n";
 print "Clusters >=4 exons/species\t$tally_strings{MANY_4}\t$perc_4\%\n";
 print "Incomplete clusters\t$tally_strings{INCOMPLETE}\t$perc_inc\%\n";
 foreach my $species (sort keys %tally_exons){
-    my $perc = sprintf("%.2f",100*$tally_missing{$species}/$tally_strings{INCOMPLETE});
-    print "  - $species\t$tally_missing{$species}\t$perc\%\n";
+    my $perc = "NA";
+    $tally_missing{$species}=0 if !defined $tally_missing{$species};
+    if ($tally_strings{INCOMPLETE}>0){
+	$perc = sprintf("%.2f",100*$tally_missing{$species}/$tally_strings{INCOMPLETE});
+	print "  - $species\t$tally_missing{$species}\t$perc\%\n";
+    }
+    else {
+	print "  - $species\t$tally_missing{$species}\tNA\n";
+    }
 }
 
