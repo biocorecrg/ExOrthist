@@ -29,7 +29,7 @@ open (TMP, ">$tmp") || die "It cannot open the temporary file ($tmp)\n"; # tmp.t
 while (<FILE>){
     chomp($_);
     my @l=split(/\t/,$_);
-    if ($l[7]==1){
+    if ($l[7]==1){ # it selects only the entries with a 1 in column 8...
 	print TMP "$_\n"; 
     }
 }
