@@ -164,9 +164,8 @@ print OUT "GeneID_sp1\tExon_coords_sp1\tGeneID_sp2\tExon_coords_sp2\tSp1\tSp2\n"
 
 my @keys=keys(%ex);
 @keys=sort(@keys);
-my ($el, $nid, $score, $pr);
 my (@e, @g); 
-foreach $el (@keys){
+foreach my $el (@keys){
     # $el => GB47592     chr16:4294865-4294923:-          [Query]
     # $ex{$el} => FBgn0010314    chr2L:9331055-9331110:+  [Subject]
     
@@ -176,12 +175,12 @@ foreach $el (@keys){
 	    @g=split(/\t/,$e[$l]);
 	    if (defined $sc{$el."\t".$g[0]}){
 		if ($sc{$el."\t".$e[$l]} > $sc{$el."\t".$g[0]}){
-		    $pr{$el."\t".$g[0]} = $el."\t".$e[$l];
+		    $pr{$el."\t".$g[0]} = $el."\t".$e[$l]; # the important line
 		    $sc{$el."\t".$g[0]} = $sc{$el."\t".$e[$l]};
 		}
 	    }
 	    else {
-		$pr{$el."\t".$g[0]} = $el."\t".$e[$l];
+		$pr{$el."\t".$g[0]} = $el."\t".$e[$l]; # the important line  
 		$sc{$el."\t".$g[0]} = $sc{$el."\t".$e[$l]};
 	    }
 	}
@@ -194,8 +193,8 @@ foreach $el (@keys){
 
 @keys=keys(%pr);
 @keys=sort(@keys);
-foreach $el (@keys){
-    $nid=$pr{$el};
+foreach my $el (@keys){
+    my $nid=$pr{$el};
     print OUT "$pr{$el}\t$sp{$nid}\n";
 }
 close OUT;
