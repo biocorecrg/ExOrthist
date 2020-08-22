@@ -8,7 +8,7 @@ my $input_file2 = $ARGV[2]; # Liftover exons (optional)
  
 my %ex; # count of exons
 
-open (OUT, ">$out") || die "It cannot open the output file\n";;
+open (OUT, ">$output_file") || die "It cannot open the output file ($output_file)\n";
 
 ### Processes the first input file
 # Format: BL00000	Sc0000095:745259-745367:-	SMAR011687	JH432088:105973-106084:-	Bla	Sma
@@ -16,10 +16,12 @@ open (INONE, $input_file1) || die "It cannot open the first input file\n";
 while (<INONE>){
     chomp($_); 
     my @l=split(/\t/,$_);
-    my $e1=$l[0]."\t".$l[1]."\t".$l[4];
-    my $e2=$l[2]."\t".$l[3]."\t".$l[5];	
-    $ex{$e1}++;
-    $ex{$e2}++;
+    if ($l[0]!~/GeneID_sp/){ # ignores header
+	my $e1=$l[0]."\t".$l[1]."\t".$l[4];
+	my $e2=$l[2]."\t".$l[3]."\t".$l[5];	
+	$ex{$e1}++;
+	$ex{$e2}++;
+    }
 }
 close INONE;
 
@@ -30,10 +32,12 @@ if (defined $input_file2){
     while (<INTWO>){
 	chomp($_); 
 	my @l=split(/\t/,$_);
-	my $e1=$l[0]."\t".$l[1]."\t".$l[4];
-	my $e2=$l[2]."\t".$l[3]."\t".$l[5];	
-	$ex{$e1}++;
-	$ex{$e2}++;
+	if ($l[0]!~/GeneID_sp/){ # ignores header
+	    my $e1=$l[0]."\t".$l[1]."\t".$l[4];
+	    my $e2=$l[2]."\t".$l[3]."\t".$l[5];	
+	    $ex{$e1}++;
+	    $ex{$e2}++;
+	}
     }
     close INTWO;
 }
