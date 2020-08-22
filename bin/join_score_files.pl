@@ -50,4 +50,4 @@ system "cat $folder/*part_*.ALL.aln | gzip > $folder/Exint_Alignments.aln.gz";
 
 print "5. Cleaning up intermediate files\n";
 `rm $o1 $o2 $o3 $tmp $tex`; ## removing temporal files
-#`rm *part_* realigned_exons_*`;
+`rm *part_* realigned_exons_*`; # more temp files
