@@ -400,7 +400,7 @@ process filter_redundant {
     file("Overlap_exons_by_sp.tab") into output_to_save
 
 	script:
-	liftcmd = ""
+	liftfile = ""
 	if (params.liftover != "") {
 		liftfile = file(params.liftover)
 		if ( !liftfile.exists() ) exit 1, "Missing liftover file: ${liftfile}!"
