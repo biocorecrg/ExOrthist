@@ -40,15 +40,15 @@ annotations (GTF files)          : ${params.annotations}
 genomes (fasta files)     	     : ${params.genomes}
 cluster file (txt files)         : ${params.cluster}
 intcons (1 or 2)                 : ${params.intcons}
-Whether to consider one or two introns bodering the exon
-when filtering by conservation.
+   => Whether to consider one or two introns bodering 
+   the exon when filtering by conservation.
 idexons (from 0 to 1)            : ${params.idexons}
-Minimum % of similarity between the pair of exons and
-their corresponding upstream and downstream exons.
+   => Minimum % of similarity between the pair of exons and
+      their corresponding upstream and downstream exons.
 maxsize                          : ${params.maxsize}
-% of maximum size ...
+   => % of maximum size difference between the two exons.
 clusternum (number of clusters)  : ${params.clusternum}
-extraexons (i.e. from vastb)     : ${params.extraexons}
+extraexons (e.g. from VastDB)    : ${params.extraexons}
 liftover                         : ${params.liftover}
 orthofolder                      : ${params.orthofolder}
 vastdb                           : ${params.vastdb}
@@ -58,8 +58,8 @@ email for notification           : ${params.email}
 """
 
 if (params.help) {
-    log.info """This is the pipeline"""
-    log.info """Please write some description here\n"""
+    log.info """ExOrthist v0.0.1.beta"""
+    log.info """ExOrthist is a Nextflow-based pipeline to obtain groups of exon orthologous at all evolutionary timescales.\n"""
     exit 1
 }
 if (params.resume) exit 1, "Are you making the classical --resume typo? Be careful!!!! ;)"
