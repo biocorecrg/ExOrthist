@@ -98,7 +98,7 @@ Adding manually curated exon orthology pairs
 
 To add pairs of manually curated or liftOver-based pairwise orthology associations...
 
-The file format is as follows (tsv):  GeneID_Sp1 Exon_Coord_Sp1 GeneID_Sp2 Exon_Coord_Sp2
+The file format is as follows (tsv; header is expected):  GeneID_Sp1 Exon_Coord_Sp1 GeneID_Sp2 Exon_Coord_Sp2
 
 ```bash
 ENSG00000171055	chr2:36552056-36552268:-	ENSMUSG00000056121	chr17:78377717-78377890:-
