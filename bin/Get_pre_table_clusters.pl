@@ -20,5 +20,9 @@ while (<INFILE>){
 }
 close (TMP);
 
-system ("cat tmp_excls.tab | sort -k1 > Exon_Clusters.tab");
+open (O, ">Exon_Clusters.tab") || die "Cannot open the output file\n";
+print O "ExCluster_ID\tGeneID\tCoordinate\tSpecies\n";
+close O;
+
+system ("cat tmp_excls.tab | sort -k1 >> Exon_Clusters.tab");
 system "rm pre_cluster_exons.txt tmp_excls.tab";
