@@ -70,6 +70,13 @@ params {
 
 ```
 
+If pipeline the pipeline crashes at any step, it can be re-launched using the `--resume` option:
+```bash
+nextflow run main.nf --resume -bg > log.txt
+```
+
+Test data for ExOrthist
+------------
 
 Test data are in the folder **test**. Input files are:
 
