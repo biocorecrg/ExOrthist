@@ -25,9 +25,8 @@ open (INFILE2b, $infile2) || die "It cannot open the Exons scores by species pai
 while (<INFILE2b>){
     chomp($_);
     my @l=split(/\t/,$_);
-    my $exon_sp1 = "$l[0]=$l[1]=$l[4]";
-    my $exon_sp2 = "$l[2]=$l[3]=$l[5]";
-    $best_hit{$exon_sp1} = $exon_sp2;
+    # it has to be done by gene by exon
+    $best_hit{$l[0]}{$l[1]}{$l[2]}=$l[3];
 }
 close INFILE2b;
 
@@ -38,10 +37,8 @@ open (INFILE2, $infile2) || die "It cannot open the Exons scores by species pair
 while (<INFILE2>){
     chomp($_);
     my @l=split(/\t/,$_);
-    my $exon_sp1 = "$l[0]=$l[1]=$l[4]";
-    my $exon_sp2 = "$l[2]=$l[3]=$l[5]";
     my $label_best_reciprocal = "FALSE";
-    if (defined $best_hit{$exon_sp2}){$label_best_reciprocal = "TRUE" if $best_hit{$exon_sp2} eq $exon_sp1;}
+    if (defined $best_hit{$l[2]}{$l[3]}{$l[0]}){$label_best_reciprocal = "TRUE" if $best_hit{$l[2]}{$l[3]}{$l[0]} eq $l[1];}
 
     ### Prints out
     if (defined $cid{$l[0]}){  
@@ -59,7 +56,7 @@ my $cid="NA";
 my ($p, $part, $cls);
 my %cid2;
 
-system "rm -r PART_*/" if (-e "PART_01");
+system "rm -r PART_[0-9][0-9]/" if (-e "PART_01");
 
 open (TEMP_INFILE, "sorted_scores.out") || die "It cannot open the temporary input sorted_scores.out\n";
 while (<TEMP_INFILE>){
