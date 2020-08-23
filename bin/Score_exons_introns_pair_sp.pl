@@ -852,7 +852,7 @@ sub score_introns {
 		$paa1=$intron_aa{$n2."\tintron_".$i1};
 		if ($n1 && $n2){
 		    if ($gp>=int($apos*0.6)){ ##bad alignment in the protein query, giving a score of 0
-			print INSC "$el\t$n2\tintron_$i1\t$paa1\t$seq2[$n]\t$n1\tNO_ALN\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2\n";
+			print INSC "$el\t$n2\tintron_$i1\t$paa1\t$seq2[$n]\t$n1\tNO_ALN\tNA\tNA\tNA\tNA\tNA\t$sp2\t$sp1\n"; # bug corrected
 			
 		    }else {   		   
 			print INSC "$el\t$n2\tintron_$i1\t$paa1\t$seq2[$n]\t$n1\tNO_INTRON\tNA\tNA\tNA\tNA\t0\t$sp2\t$sp1\n";  
