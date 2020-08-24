@@ -1,4 +1,0 @@
-links to genomes:
-Hs2: /users/mirimia/mirimia/XPIPE/GENOMES/Hs2_gDNA.fasta
-Mm2: /users/mirimia/mirimia/XPIPE/GENOMES/Mm2_gDNA.fasta
-Bta: /users/mirimia/mirimia/XPIPE/GENOMES/Bta_gDNA.fasta

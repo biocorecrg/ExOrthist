@@ -30,37 +30,41 @@ params.resume          = false
 
 
 log.info """
-Biocore@CRG Yamile's pipeline - N F  ~  version ${version}
 
-╦ ╦╔═╗╔╦╗╦╦  ╔═╗╔═╗  ┌─┐┬┌─┐┌─┐┬  ┬┌┐┌┌─┐
-╚╦╝╠═╣║║║║║  ║╣ ╚═╗  ├─┘│├─┘├┤ │  ││││├┤
- ╩ ╩ ╩╩ ╩╩╩═╝╚═╝╚═╝  ┴  ┴┴  └─┘┴─┘┴┘└┘└─┘
+╔╦╗┬ ┬┌─┐  ╔═╗─┐ ┬╔═╗┬─┐┌┬┐┬ ┬┬┌─┐┌┬┐
+ ║ ├─┤├┤   ║╣ ┌┴┬┘║ ║├┬┘ │ ├─┤│└─┐ │ 
+ ╩ ┴ ┴└─┘  ╚═╝┴ └─╚═╝┴└─ ┴ ┴ ┴┴└─┘ ┴ 
 
 ==============================================================================
 annotations (GTF files)          : ${params.annotations}
-genomes (fasta files)     	     : ${params.genomes}
+genomes (fasta files)            : ${params.genomes}
 cluster file (txt files)         : ${params.cluster}
 intcons (1 or 2)                 : ${params.intcons}
-Whether to consider one or two introns bodering the exon
-when filtering by conservation.
 idexons (from 0 to 1)            : ${params.idexons}
-Minimum % of similarity between the pair of exons and
-their corresponding upstream and downstream exons.
 maxsize                          : ${params.maxsize}
-% of maximum size ...
 clusternum (number of clusters)  : ${params.clusternum}
-extraexons (i.e. from vastb)     : ${params.extraexons}
+extraexons (e.g. from VastDB)    : ${params.extraexons}
 liftover                         : ${params.liftover}
 orthofolder                      : ${params.orthofolder}
 vastdb                           : ${params.vastdb}
 output (output folder)           : ${params.output}
 email for notification           : ${params.email}
 
+INFORMATION ABOUT OPTIONS:
+- intcons (1 or 2): Whether to consider one or two introns 
+     bodering the exon when filtering by conservation.
+- idexons (from 0 to 1): Minimum % of similarity between the
+     pair of exons and their corresponding upstream and 
+     downstream exons.
+- maxsize: Maximum size difference between the two exons 
+     (as a fraction of either exon).
+     
+     
 """
 
 if (params.help) {
-    log.info """This is the pipeline"""
-    log.info """Please write some description here\n"""
+    log.info """ExOrthist v0.0.1.beta"""
+    log.info """ExOrthist is a Nextflow-based pipeline to obtain groups of exon orthologous at all evolutionary timescales.\n"""
     exit 1
 }
 if (params.resume) exit 1, "Are you making the classical --resume typo? Be careful!!!! ;)"
@@ -141,7 +145,7 @@ if (params.extraexons) {
 /*
  * split cluster file
  */
-process split_cluster_file_per_specie {
+process split_cluster_file_per_species {
     tag { clusterfile }
 
     input:
@@ -386,15 +390,17 @@ process join_best_filtered_scores {
  * Removing redundant hits
  */
 process filter_redundant {
+    publishDir "${params.output}/", mode: 'copy', pattern: "Overlap_exons_by_sp.tab"
 
     input:
     file(scores) from filtered_all_scores
 
     output:
     file("Best_score_exon_hits_pairs.txt") into score_exon_hits_pairs
+    file("Overlap_exons_by_sp.tab") into output_to_save
 
 	script:
-	liftcmd = ""
+	liftfile = ""
 	if (params.liftover != "") {
 		liftfile = file(params.liftover)
 		if ( !liftfile.exists() ) exit 1, "Missing liftover file: ${liftfile}!"
@@ -573,7 +579,7 @@ else {
 }
 
 workflow.onComplete {
-    println "Pipeline BIOCORE@CRG YAMILE'S PIPELINE!"
+    println "--- Pipeline BIOCORE@CRG ExOrthist ---"
     println "Started at  $workflow.start"
     println "Finished at $workflow.complete"
     println "Time elapsed: $workflow.duration"

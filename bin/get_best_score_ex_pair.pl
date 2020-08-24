@@ -4,14 +4,16 @@ use strict;
 
 ##SCRIPT FOR SCORING EXONS BTW PAIR OF SPECIES##
 ##
-my $i1=$ARGV[0]; ##score all exons 
-my $out=$ARGV[1];; ##species 2
+my $i1=$ARGV[0]; ## score all exons: Score_all_exons.txt
+my $out=$ARGV[1]; ## Best_scores_pair_exons.txt
 my (%print);
 my ($pair1, $pair2);
 my @l;
 open (OUT, ">$out");
-#GF000004.03ENSP00000264360|ENSG00000138650exon_11-878chr4133150141-133152771+1ENSMUSP00000131073|ENSMUSG000000491001-87897.6198.1800.00ENSMUSP00000131073|ENSMUSG00000049100exon_11-878chr345379253-45381883+Hs2Mm2
-open (IN,"$i1") || die "Missing exon file";  
+# Format: GF000004.03ENSP00000264360|ENSG00000138650exon_11-878chr4133150141-133152771+1ENSMUSP00000131073|ENSMUSG000000491001-87897.6198.1800.00ENSMUSP00000131073|ENSMUSG00000049100exon_11-878chr345379253-45381883+Hs2Mm2
+open (IN,"$i1") || die "Missing exon file ($i1)\n";  
+my $header = <IN>;
+print OUT $header;
 while (<IN>){
     chomp($_);
     @l=split(/\t/,$_);
@@ -26,3 +28,5 @@ while (<IN>){
 	print OUT "$pair2\n";
     }   
 }
+close OUT;
+close IN;
