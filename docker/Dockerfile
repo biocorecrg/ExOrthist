@@ -19,7 +19,12 @@ RUN yum install -y epel-release libxml2-devel libcurl-devel
 RUN yum install R-${R_VERSION} -y
 RUN mkdir -p /usr/share/doc/R-${R_VERSION}/html
 RUN Rscript -e "install.packages(c('igraph'), repos='http://cran.us.r-project.org')"
+RUN Rscript -e "install.packages(c('ggplot2','ggpubr', 'cowplot', 'hashmap', 'reshape2'), repos='http://cran.us.r-project.org')"
 
+#Installing python modules
+RUN yum install -y openssl
+RUN pip install --upgrade virtualenv
+RUN pip install pandas collections re
 
 # Clean cache
 RUN yum clean all 
