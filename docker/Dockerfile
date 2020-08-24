@@ -24,7 +24,7 @@ RUN Rscript -e "install.packages(c('ggplot2','ggpubr', 'cowplot', 'hashmap', 're
 #Installing python modules
 RUN yum install -y openssl
 RUN pip install --upgrade virtualenv
-RUN pip install pandas collections re
+RUN pip install pandas
 
 # Clean cache
 RUN yum clean all 
