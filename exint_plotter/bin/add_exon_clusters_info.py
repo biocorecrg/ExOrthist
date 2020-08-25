@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
-import pandas as pd
 import argparse  
+import pandas as pd
+import re
 
 #read arguments
 parser = argparse.ArgumentParser(description="Add info regarding evolutionary conservation to each exon")
 parser.add_argument("--input_file", "-i", required=True)
-parser.add_argument("--output_file", "-o", required=True)
 parser.add_argument("--exon_clusters", "-c", required=True)
 parser.add_argument("--species", "-s", required=True)
+parser.add_argument("--output_file", "-out", required=True)
 
 args = parser.parse_args()
 my_input = args.input_file
@@ -17,9 +18,6 @@ my_clusters = args.exon_clusters
 my_species = args.species
 
 #### Main
-import pandas as pd
-import re
-
 #read input
 my_df = pd.read_table(str(my_input), header=None, names=["GeneID", "ExonID", "Strand", "UpPhase", "DownPhase"])
 exon_clusters_df = pd.read_table(str(my_clusters), header=0, index_col=False, sep="\t")

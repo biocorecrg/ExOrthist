@@ -9,14 +9,14 @@
 ### The reference species can be derived from the geneID.
 #This is just for now, for the debugging. This part will have to be modified accordingly.
 #.libPaths(c("/Users/federica/mnt/software/R/3.5", "/Users/federica/mnt/software/R", .libPaths()))
-.libPaths(c("/software/mi/Rlib3.6/", "/software/as/el7.2/EasyBuild/CRG/software/R/3.6.0-foss-2019a/lib64/R/library", .libPaths()))
+#.libPaths(c("/software/mi/Rlib3.6/", "/software/as/el7.2/EasyBuild/CRG/software/R/3.6.0-foss-2019a/lib64/R/library", .libPaths()))
 
 #upload libraries
 suppressWarnings(library("ggplot2")) 
 suppressWarnings(library("ggpubr"))
 suppressWarnings(library("cowplot"))
-suppressWarnings(library("hashmap"))
 suppressWarnings(library("reshape2"))
+suppressWarnings(library("hashmap"))
 
 
 #How it will be when reading the arguments
@@ -59,7 +59,7 @@ source(paste0(my_script_folder, "/exint_plotter_functions.R"))
 
 ########
 #anyways this will have to be subsetted by the query geneID
-species_query_table = read.delim(paste0(my_input_folder, my_query_species, "_exons-introns_cluster_info.tab"), sep="\t", header=TRUE, row=1)
+species_query_table = read.delim(paste0(my_input_folder, my_query_species, "_exons_cluster_info-fakecoords.tab"), sep="\t", header=TRUE, row=1)
 
 my_gene_table = subset(species_query_table, GeneID == my_gene) #select the gene of interest
 my_gene_table$FakeCoords = as.character(paste0(my_gene_table$FakeStart, ";", my_gene_table$FakeStop)) #generate coordinates ID
@@ -100,7 +100,7 @@ considered_species = ordered_target_species[(ordered_target_species  %in% names(
 #problem: when there are only exons which are not in the exon clusters.
 for (my_target_species in considered_species) {
   #upload target species table wihout fake coordinates
-  target_species_table = read.delim(paste0(my_input_folder, my_target_species, "_exons-introns_cluster_info.tab"), 
+  target_species_table = read.delim(paste0(my_input_folder, my_target_species, "_exons_cluster_info-fakecoords.tab"), 
                                     sep="\t", header=TRUE, row=1, stringsAsFactors=FALSE)
   
   #cycle on all the orthologoues genes in target species

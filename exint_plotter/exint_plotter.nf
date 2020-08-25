@@ -20,7 +20,7 @@ Executing with the following parameters:
 
 annotations (GTF files)			: ${params.annotations}
 exon overlap info			: ${params.overlap}
-exon introns nums			: ${params.exintnum}
+ref proteins info (pipeline output)	: ${params.refprot}
 exon clusters (pipeline output)		: ${params.exonclusters}
 exon best scores (pipeline output)	: ${params.bestscores}
 gene clusters (same as pipeline input)	: ${params.geneclusters}
@@ -48,14 +48,14 @@ Channel
     .ifEmpty{error "Cannot find any overlap info: ${params.overlap}"}
     .set{overlap_info}
 
-//Create channel for files with info regarding ex/int numbers
+//Create channel for files with ref proteins info
 Channel
-    .fromFilePairs(params.exintnum, size: 1)
-    .ifEmpty{error "Cannot find any overlap info: ${params.overlap}"}
-    .set{exint_num_info_all}
+    .fromFilePairs(params.refprot, size: 1)
+    .ifEmpty{error "Cannot find any overlap info: ${params.refprot}"}
+    .set{refprot_info}
 
 //create a joint channel where each key is paired with the corresponding files
-annotations.join(overlap_info).join(exint_num_info_all).into{all_input_info_raw}
+annotations.join(overlap_info).join(refprot_info).set{all_input_info_raw}
 
 my_geneID = "${params.geneID}"
 gene_clusters = file(params.geneclusters)
@@ -105,8 +105,9 @@ process select_species_with_orthologs {
 	"""
 }
 
-selected_species.map{it -> it.split(",")}.flatMap().set{my_try}
-all_input_info_raw.join(my_try).set{all_input_info}
+selected_species.map{it -> it.split(",")}.flatMap().set{single_species}
+all_input_info_raw.join(single_species).set{all_input_info}
+
 
 /*
  * Filter input files for genes belonging to the gene cluster of interest
@@ -119,43 +120,15 @@ process subset_input_files {
 	input:
 	val(gene_clusterID) from gene_clusterID
 	file(gene_clusters)
-	set species, file(annotations), file(overlap_info), file(exint_num_info_all) from all_input_info
+	set species, file(annotations), file(overlap_info), file(ref_proteins) from all_input_info
 	output:
 	set species, file("*_subsetted_annot.gtf"), file("*_subsetted_overlap_info.txt") into annotations_overlap_info
-	set species, file("*_subsetted_annot.gtf") into (annotations_4_strand, annotations_4_refphases, annotations_4_exphases, annotations_4_final_phases, annotations_4_isoforms, annotations_4_isoforms1)
-	set species, file("*_subsetted_ref_exon_int_number.txt") into exint_num_info
+	set species, file("*_subsetted_annot.gtf") into (annotations_4_strand, annotations_4_refphases, annotations_4_exphases, annotations_4_isoforms)
+	set species, file("*_subsetted_ref_proteins.txt") into ref_prot_info
 
 	script:
 	"""
-#!/usr/bin/env python
-import pandas as pd
-import re
-
-my_cluster_df = pd.read_csv("${gene_clusters}", sep="\t", header=None, index_col=False)
-selected_genes = list(my_cluster_df[my_cluster_df.iloc[:,0]=="${gene_clusterID}"].iloc[:,2])
-#Subset GTF
-my_gtf_df = pd.read_table("${annotations}", header=None, index_col=False)
-my_raw_gene_id = [part for element in list(my_gtf_df.iloc[:,my_gtf_df.shape[1]-1]) for part in element.split(";") if "gene_id" in part]
-my_gene_id = [re.sub(".*[ ]", "", re.sub('"', "", element)) for element in my_raw_gene_id]
-my_gtf_df["GeneID"] = my_gene_id
-my_gtf_sub_df = my_gtf_df.loc[my_gtf_df.GeneID.isin(selected_genes)]
-my_gtf_sub_df = my_gtf_sub_df.drop(columns=["GeneID"])
-my_gtf_sub_df.to_csv("${species}_subsetted_annot.gtf", header=False, index=False, sep="\t", na_rep="NA")
-#Subset Overlap file
-my_overlap_df = pd.read_table("${overlap_info}", header=None, index_col=False, sep="\t")
-my_overlap_sub_df = my_overlap_df[my_overlap_df.iloc[:,1].isin(selected_genes)]
-my_overlap_sub_df.to_csv("${species}_subsetted_overlap_info.txt", header=False, index=False, sep="\t", na_rep="NA")
-#Subset exint_info
-my_exintnum_df = pd.read_table("${exint_num_info_all}", sep="\t", header=0, index_col=False, names=["REF_PROT", "N_ex", "N_int"])
-my_geneid = [re.sub(".*\\|", "", element) for element in list(my_exintnum_df["REF_PROT"])]
-my_exintnum_df["GeneID"] = my_geneid
-my_exintnum_sub_df = my_exintnum_df[my_exintnum_df["GeneID"].isin(selected_genes)]
-my_exintnum_sub_df = my_exintnum_sub_df.drop(columns=["GeneID"])
-my_exintnum_sub_df.to_csv("${species}_subsetted_ref_exon_int_number.txt", sep="\t", header=True, index=False, na_rep="NA")
-#Subset Best hits
-#my_besthits_df = pd.read_table("${best_hits_input}", header=0, index_col=False, sep="\t")
-#my_besthits_sub_df = my_besthits_df[my_besthits_df.CID=="${gene_clusterID}"]
-#my_besthits_sub_df.to_csv("Best_hits_subsetted", sep="\t", header=True, index=False, na_rep="NA")
+	python ${baseDir}/bin/subset_inputs.py -a ${annotations} -o ${overlap_info} -r ${ref_proteins} -c ${gene_clusters} -g ${gene_clusterID} -s ${species}  
 	"""
 }
 
@@ -181,7 +154,7 @@ my_besthits_sub_df.to_csv("Best_hits_subsetted", sep="\t", header=True, index=Fa
 	"""
 }
 
-//Still to adapt to the single gene view.
+
 /*
  * Select only one exon from each group of overlapping exons
  */
@@ -194,48 +167,14 @@ process overlapping_exons_info {
     publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink' //in theory simlink is the default
 
 	input:
-	set species, file(GTF), file(overlap) from annotations_overlap_info
+	set species, file(annotations), file(overlap_info) from annotations_overlap_info
 
 	output:
-    	set val(species), file("*_exons_overlap_info.tab") into (processed_overlap_info, processed_overlap_info1, processed_overlap_info2, processed_overlap_info3)
+    	set val(species), file("*_exons_overlap_info.tab") into (processed_overlap_info, processed_overlap_info1, processed_overlap_info2)
     	//The header of the resulting file is: GeneID, OverlapID, Exon_coords, exon_frequency (in isoforms), exon length 
-
 	script:
 	"""
-#!/usr/bin/env python
-
-import pandas as pd
-import re
-import collections
-
-my_overlap_df = pd.read_table("${overlap}", sep="\t", header=None, names=["OverlapID", "GeneID", "ExCoords"])
-my_gtf = pd.read_table("${GTF}", sep="\t", header=None)
-my_gtf_subset = my_gtf.iloc[:,my_gtf.shape[1]-1]
-
-my_raw_gene_id = [part for element in list(my_gtf_subset) for part in element.split(";") if "gene_id" in part]
-my_gtf["geneID"] = [re.sub(".*[ ]", "", re.sub('"', "", element)) for element in my_raw_gene_id]
-
-#Remove genes with exons annotated on different strands
-geneID_strand_df = my_gtf.iloc[:,[6,my_gtf.shape[1]-1]].drop_duplicates() #If a gene has exons annotated on both strands, the geneID will be duplicated. 
-selected_geneIDs = [item for item, count in collections.Counter(list(geneID_strand_df["geneID"])).items() if count == 1]
-my_gtf = my_gtf.loc[my_gtf["geneID"].isin(selected_geneIDs)]
-my_gtf["Coords"] = [str(element)+"-"+str(element1) for element, element1 in zip(list(my_gtf.iloc[:,3]), list(my_gtf.iloc[:,4]))]
-my_gtf["CompleteCoords"] = [str(element)+":"+str(element1)+"-"+str(element2) for element, element1, element2 in zip(list(my_gtf.iloc[:,0]), list(my_gtf.iloc[:,3]), list(my_gtf.iloc[:,4]))]
-
-#Add frequency and exon length
-my_gtf_exons = my_gtf[my_gtf.iloc[:,2]=="exon"] #Create a dictionary with key=coords, value=freq
-my_exon_freq_dict = {key : value for key, value in collections.Counter(list(my_gtf_exons["Coords"])).items()}
-my_overlap_df["Freq"] = my_overlap_df["ExCoords"].map(my_exon_freq_dict).fillna(0) #add frequency
-my_overlap_df["Length"] = [int(re.sub(".*-", "",element))-int(re.sub("-.*", "", element)) for element in list(my_overlap_df["ExCoords"])] #add exon lenght
-#Add complete coords
-complete_coords_dict = pd.Series(my_gtf.CompleteCoords.values, index=my_gtf.Coords).to_dict()
-my_overlap_df["CompleteCoords"] = my_overlap_df["ExCoords"].map(complete_coords_dict)
-#Put a filter on the Freq: I think for now it is necessary because we don't have the exons from the FakeTranscripts (thus, there are exons from the clusters which have frequency 0).
-my_overlap_df = my_overlap_df.loc[my_overlap_df.Freq > 0]
-#Order df
-my_overlap_df = my_overlap_df[["GeneID","OverlapID","CompleteCoords","Freq","Length"]]
-#Write to file
-my_overlap_df.to_csv("${species}_exons_overlap_info.tab", sep="\t", header=False, index=False, na_rep="NA")
+	python ${baseDir}/bin/overlapping_exons_info.py -a ${annotations} -o ${overlap_info} -out ${species}_exons_overlap_info.tab
 	"""
 }
 
@@ -246,11 +185,11 @@ process overlapping_exons_selection {
 	input:
 	set species, file(processed_overlap) from processed_overlap_info
 	output:
-	set species, file("*_exons_overlap_selected.tab") into (selected_exons_4_strand, selected_exons_4_isoforms, selected_exons_4_strand1, selected_exons_4_strand2, selected_exons_4_strand3)
+	set species, file("*_exons_overlap_selected.tab") into (selected_exons_4_strand, selected_exons_4_isoforms, selected_exons_4_strand1, selected_exons_4_strand2)
 
 	script:
 	"""
-	python ${baseDir}/bin/select_overlapping_exons.py -i ${processed_overlap} -o ${species}_exons_overlap_selected.tab
+	python ${baseDir}/bin/select_overlapping_exons.py -i ${processed_overlap} -out ${species}_exons_overlap_selected.tab
 	"""
 }
 
@@ -259,140 +198,65 @@ process overlapping_exons_selection {
  */
 
 //Generate input channel
-annotations_4_refphases.join(exint_num_info).set{ref_phases_input}
+annotations_4_refphases.join(ref_prot_info).set{ref_phases_input}
 
 //Isolate phases from the reference protein
 //The header of the output file is: exonID (chr:start-stop), phase.
-process ref_protein_phases {
+process isolate_refprotein_exons_phases {
 	tag {"${species}"}
 	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
 
 	input:
-	set species, file(GTF), file(int_ex_num) from ref_phases_input
+	set species, file(annotations), file(ref_prots) from ref_phases_input
 	output:
 	set species, file("*_exons_RefProt_phases.tab") into ref_prot_phases
 
 	script:
 	"""
-#!/usr/bin/env python
-
-import pandas as pd
-import re
-
-my_gtf = pd.read_table("${GTF}", sep="\t", header=None)
-my_ex_int_num_df = pd.read_table("${int_ex_num}", sep="\t", header=0)
-
-#select only protein coding
-my_gtf = my_gtf[my_gtf.iloc[:,my_gtf.shape[1]-1].str.contains("protein_id")]
-my_gtf_subset = my_gtf.iloc[:,my_gtf.shape[1]-1]
-my_gtf_subset = my_gtf_subset[my_gtf_subset.str.contains("protein_id")]
-my_raw_prot_id = [part for element in list(my_gtf_subset) for part in element.split(";") if "protein_id" in part]
-my_gtf["proteinID"] = [re.sub(".*[ ]", "", re.sub('"', "", element)) for element in my_raw_prot_id]
-
-ref_proteins_list = [re.sub("\\|.*", "", element) for element in list(my_ex_int_num_df["REF_PROT"])]
-my_int_gtf = my_gtf.loc[my_gtf["proteinID"].isin(ref_proteins_list)] 
-my_coords = [str(element)+":"+str(element1)+"-"+str(element2) for element, element1, element2 in zip(list(my_int_gtf.iloc[:,0]), list(my_int_gtf.iloc[:,3]), list(my_int_gtf.iloc[:,4]))]
-my_final_gtf = pd.concat([pd.Series(my_coords), pd.Series(list(my_int_gtf.iloc[:,7]))], axis=1) #get a dataframe with exonID, exonPhase
-my_final_gtf.to_csv("${species}_exons_RefProt_phases.tab", sep="\t", header=False, index=False, na_rep="NA")
+	python ${baseDir}/bin/isolate_refprotein_exons_phases.py -a ${annotations} -r ${ref_prots} -out ${species}_exons_RefProt_phases.tab
 	"""
 }
 
 //Generate input channel
 annotations_4_exphases.join(ref_prot_phases).set{intron_phases_input}
 
-
 //Associate phases to each intron/exon
 //In the cases where an exon is annotated with different phases depending on the isoform, I select the phase that the exon has in the reference protein.
 //This is what the previous file is useful for.
 //The header of the output file is: exonID (chr:start-stop), phase.
-process isolate_intron_phases {
+process isolate_all_exons_phases {
 	tag {"${species}"}
 	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
 
 	input:
-	set species, file(GTF), file(ref_phases) from intron_phases_input
+	set species, file(annotations), file(ref_phases) from intron_phases_input
 	output:
-	set species, file("*_GTF_intron_phases") into GTF_phases
+	set species, file("*_all_exons_phases") into all_phases
 
 	script:
 	"""
-#!/usr/bin/env python
-
-import pandas as pd
-import re
-import collections
-
-my_gtf = pd.read_table("${GTF}", sep="\t", header=None)
-my_phases = pd.read_table("${ref_phases}", sep="\t", header=None, names=["Coords", "Phase"])
-
-my_int_gtf = my_gtf.loc[my_gtf.iloc[:,2]=="CDS"]
-my_coords = [str(element)+":"+str(element1)+"-"+str(element2) for element, element1, element2 in zip(list(my_int_gtf.iloc[:,0]), list(my_int_gtf.iloc[:,3]), list(my_int_gtf.iloc[:,4]))]
-my_int_gtf["Coords"] = my_coords
-my_int_gtf = my_int_gtf.rename(columns={7:"Phase"})
-my_filt_gtf = my_int_gtf.loc[:,["Coords", "Phase"]].drop_duplicates()
-my_unique_coords = [key for key, value in collections.Counter(list(my_filt_gtf["Coords"])).items() if value == 1] 
-my_duplicated_coords = [key for key, value in collections.Counter(list(my_filt_gtf["Coords"])).items() if value > 1] 
-my_duplicated_phases = my_phases.loc[my_phases["Coords"].isin(my_duplicated_coords)]
-my_unique_phases = my_filt_gtf.loc[my_filt_gtf["Coords"].isin(my_unique_coords)]
-my_final_phases = pd.concat([my_duplicated_phases, my_unique_phases]).sort_values(by=["Coords"])
-my_final_phases.to_csv("${species}_GTF_intron_phases", sep="\t", header=False, index=False, na_rep="NA")
+	python ${baseDir}/bin/isolate_all_exons_phases.py -a ${annotations} -r ${ref_phases} -out ${species}_all_exons_phases
 	"""
 }
-
 
 
 /*
  * Add strand and exon phases
  */
 //Generate input channel
-selected_exons_4_strand.join(annotations_4_strand).join(GTF_phases).set{add_strand_phases_input}
+selected_exons_4_strand.join(annotations_4_strand).join(all_phases).set{add_strand_phases_input}
 //As before, I am removing all those genes whose isoforms are annotated on different strands (for some reasons)
 //The header of the output is: GeneID, ExonID, Strand
-process add_exon_strand_phases {
+process add_strand_and_phase {
 	tag {"${species}"}
 	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
 	input:
-	set species, file(selected_exons), file(GTF), file(exon_phases) from add_strand_phases_input
+	set species, file(selected_exons), file(annotations), file(exon_phases) from add_strand_phases_input
 	output:
 	set species, file("*_exons_overlap_selected_phases.tab") into added_exon_phases
 	script:
 	"""
-#!/usr/bin/env python
-
-import pandas as pd
-import re
-import collections
-
-my_selected_exons = pd.read_table("${selected_exons}", sep="\t", header=0)
-my_gtf = pd.read_table("${GTF}", sep="\t", header=None)
-my_exon_phases_df = pd.read_table("${exon_phases}", sep="\t", header=None, names=["Coords", "Phase"]) 
-
-my_gtf_subset = my_gtf.iloc[:,my_gtf.shape[1]-1] #select the last columns of the GTF
-my_raw_gene_id = [part for element in list(my_gtf_subset) for part in element.split(";") if "gene_id" in part] #select geneID
-my_gtf["geneID"] = [re.sub(".*[ ]", "", re.sub('"', "", element)) for element in my_raw_gene_id]
-
-#Remove genes with exons annotated on different strands
-geneID_strand_df = my_gtf.iloc[:,[6,my_gtf.shape[1]-1]].drop_duplicates() #If a gene has exons annotated on both strands, the geneID will be duplicated. 
-selected_geneIDs = [item for item, count in collections.Counter(list(geneID_strand_df["geneID"])).items() if count == 1]
-my_gtf = my_gtf.loc[my_gtf["geneID"].isin(selected_geneIDs)]
-#my_gtf["Coords"] = [str(element1)+"-"+str(element2) for element1, element2 in zip(list(my_gtf.iloc[:,3]), list(my_gtf.iloc[:,4]))]
-my_gtf["Coords"] = [str(element)+":"+str(element1)+"-"+str(element2) for element, element1, element2 in zip(list(my_gtf.iloc[:,0]), list(my_gtf.iloc[:,3]), list(my_gtf.iloc[:,4]))]
-my_gtf = my_gtf.rename(columns={6 : "Strand"})
-#my_gtf_filt = my_gtf.loc[:,["Coords","CompleteCoords","Strand"]].drop_duplicates() #select only coords and strand
-my_gtf_filt = my_gtf.loc[:,["Coords","Strand"]].drop_duplicates() #select only coords and strand
-
-#Create a dictionary with key=Coords, value=strand
-my_coords_strand_dict = pd.Series(my_gtf_filt.Strand.values, index=my_gtf_filt.Coords).to_dict()
-my_selected_exons["Strand"] = my_selected_exons["ExonID"].map(my_coords_strand_dict)
-#Create a dictionary with key=Coords, value=phase
-my_coords_phase_dict = pd.Series(my_exon_phases_df.Phase.values, index=my_exon_phases_df.Coords).to_dict()
-my_selected_exons["Phase"] = my_selected_exons["ExonID"].map(my_coords_phase_dict).fillna(0)
-my_selected_exons["Phase"] = [int(element) for element in list(my_selected_exons["Phase"])] #transform to integer
-#Create a dictionary with key=Coords, value=CompleteCoords
-#my_coords_dict = pd.Series(my_gtf_filt.CompleteCoords.values, index=my_gtf_filt.Coords).to_dict()
-#my_selected_exons["ExonID"] = my_selected_exons["ExonID"].map(my_coords_dict)
-my_final_df = my_selected_exons[["geneID", "ExonID", "Phase", "Strand"]]
-my_final_df.to_csv("${species}_exons_overlap_selected_phases.tab", sep="\t", header=False, index=False, na_rep="NA")
+	python ${baseDir}/bin/add_strand_and_phase.py -e ${selected_exons} -a ${annotations} -p ${exon_phases} -out ${species}_exons_overlap_selected_phases.tab
 	"""
 }
 
@@ -407,7 +271,7 @@ process add_updown_phases {
 
 	script:
 	"""
-	python ${baseDir}/bin/add_updown_phases.py -i ${exons} -o ${species}_exons_UpDown_phases.tab
+	python ${baseDir}/bin/add_updown_phases.py -i ${exons} -out ${species}_exons_UpDown_phases.tab
 	"""
 }
 
@@ -426,7 +290,7 @@ process add_exon_cluster_info {
 
 	script:
 	"""
-	python ${baseDir}/bin/add_exon_clusters_info.py -i ${exons} -c ${clusterfile} -o ${species}_exons_cluster_info.tab -s ${species}
+	python ${baseDir}/bin/add_exon_clusters_info.py -i ${exons} -c ${clusterfile} -out ${species}_exons_cluster_info.tab -s ${species}
 	"""
 }
 
@@ -435,17 +299,17 @@ process add_exon_cluster_info {
  * Add introns and fake coords (for plotting) to query species
  */
 
-process add_introns_and_fake_coords {
+process add_fake_coords {
 	tag {"${species}"}
 	publishDir "${params.output}/${params.geneID}/processed_tables", mode: 'copy'
 	input:
 	set species, file(cluster_info) from ex_cluster_info
 	output:
-	file("*_exons-introns_cluster_info.tab") into ex_int_cluster_info
+	file("*_exons_cluster_info-fakecoords.tab") into ex_int_cluster_info
 
 	script:
 	"""
-	python ${baseDir}/bin/add_introns_and_fake_coords.py -i ${cluster_info} -o ${species}_exons-introns_cluster_info.tab
+	python ${baseDir}/bin/add_fake_coords.py -i ${cluster_info} -out ${species}_exons_cluster_info-fakecoords.tab
 	"""
 }
 
@@ -485,7 +349,7 @@ Channel
     .toList().map{[it, it].combinations().findAll{a,b -> a!=b && a=="Hs2"}}
     .flatMap()
     .map{"${it[0]}_${it[1]}".toString()}
-    .into{all_species_pairs; all_species_pairs1; all_species_pairs2}
+    .into{all_species_pairs; all_species_pairs1}
 
 
 process break_besthits_speciespair {
@@ -532,7 +396,7 @@ process add_best_hits_scores {
  * Isoform information section
  */
 //I merged two rules from the snakemake here
-process isoform_exon_numbers {
+process isoform_info {
 	tag {"${species}"}
 	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
 	input:
@@ -549,50 +413,18 @@ process isoform_exon_numbers {
 
 //There was a small bug before. Now it should be fixed.
 geneclusters = file(params.geneclusters)
-process first_last_internal_ex_info {
+process exon_position_info {
 	tag {"${species}"}
-	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
+	publishDir "${params.output}/${params.geneID}/processed_tables", mode: 'copy'
 	input:
 	file(geneclusters)
 	set species, file(tot_ex), file(ex_index), file(selected_ex) from isoform_tot_ex.join(isoform_ex_index).join(selected_exons_4_isoforms)
 	output:
-	//set species, file("*_first_exons.tab") into first_exons
-	//set species, file("*_last_exons.tab") into last_exons
 	file("*_all_exons_positions.tab") into all_ex_positions
 
 	script:
 	"""
-#!/usr/bin/env python
-
-import pandas as pd
-import collections
-
-my_ex_index_df = pd.read_table("${ex_index}", sep="\t", header=None, names=["Coords", "Pos", "GeneID", "TranscriptID"])
-my_ex_tot_df = pd.read_table("${tot_ex}", sep="\t", header=None, names=["GeneID", "TranscriptID", "TotEx"])
-my_first_ex_list = list(my_ex_index_df.loc[my_ex_index_df["Pos"]==1]["Coords"])
-my_last_ex_dict = pd.Series(my_ex_tot_df.TotEx.values, index=my_ex_tot_df.TranscriptID).to_dict()
-my_ex_index_df["TotEx"] = my_ex_index_df["TranscriptID"].map(my_last_ex_dict)
-my_last_ex_list = list(my_ex_index_df.loc[my_ex_index_df["Pos"]==my_ex_index_df["TotEx"]]["Coords"])
-my_internal_ex_list = [element for element in list(my_ex_index_df["Coords"]) if element not in my_first_ex_list+my_last_ex_list]
-my_first_last_ex_raw = list(set(my_first_ex_list))+list(set(my_last_ex_list))
-my_first_last_ex_list = [element for element, count in collections.Counter(my_first_last_ex_raw).items() if count > 1]
-
-#create dictionary for exon status. This works because update will replace the last value.
-my_first_ex_dict = {element : "first" for element in my_first_ex_list}
-my_last_ex_dict = {element : "last" for element in my_last_ex_list}
-my_firstlast_ex_dict = {element : "first;last" for element in my_first_last_ex_list}
-my_internal_ex_dict = {element : "Internal" for element in my_internal_ex_list}
-my_all_ex_dict = {**my_first_ex_dict, **my_last_ex_dict, **my_firstlast_ex_dict, **my_internal_ex_dict}
-
-#create dictionary for gene clusters
-my_clusters = pd.read_table("${geneclusters}", sep="\t", header=None)
-my_gene_clusters_dict = pd.Series(list(my_clusters.iloc[:,0]), index=list(my_clusters.iloc[:,2])).to_dict()
-
-#Join results in final table
-my_ex_index_df["Status"] = my_ex_index_df["Coords"].map(my_all_ex_dict)
-my_ex_index_df["ClusterID"] = my_ex_index_df["GeneID"].map(my_gene_clusters_dict)
-my_final_df = my_ex_index_df[["GeneID", "ClusterID", "Coords", "Status"]].drop_duplicates()
-my_final_df.to_csv("${species}_all_exons_positions.tab", sep="\t", header=False, index=False, na_rep="NA")
+	python ${baseDir}/bin/exon_position_info.py -t ${tot_ex} -i ${ex_index} -g ${geneclusters} -out ${species}_all_exons_positions.tab
 	"""
 }
 
@@ -649,165 +481,3 @@ process plot_exint {
 	Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} 
 	"""
 }
-
-//###############################
-//###### TMP backup #############
-//###############################
-
-//process overlapping_exons_info {
-//    //The tag directive associates each process execution with a custom label.
-//    //It is used to generate the logs.
-//    //From what I see, the tag is usually some variable defined in the input?
-//    tag {"${species}"} 
-//    publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink' //in theory simlink is the default
-//
-//	input:
-//	set species, file(GTF), file(overlap) from annotations_overlap_info
-//
-//	output:
-//    	set val(species), file("*_exons_overlap_info.tab") into (processed_overlap_info, processed_overlap_info1, processed_overlap_info2, processed_overlap_info3)
-//    	//The header of the resulting file is: GeneID, OverlapID, Exon_coords, exon_frequency (in isoforms), exon length 
-//
-//	script:
-//	"""
-//	cat ${overlap} | awk -v OFS="\t" '{print \$1,\$2,\$3,\$3}' | sed 's/-/\t/' \
-//| awk -v OFS="\t" '{print \$1,\$2,\$5,\$4-\$3}' | translate -a -r -k <(cat ${GTF} | sed 's/;/\t/; s/"//g; s/gene_id //' \
-//| awk -v OFS="\t" '{print \$9,\$1";"\$7}' | sort | uniq | filter_1col 1 <(cat ${GTF} | sed 's/;/\t/; s/"//g; s/gene_id //' \
-//| awk -v OFS="\t" '{print \$9,\$1";"\$7}' | sort | uniq | cut -f1 | sort | uniq -u)) 2 | sed 's/;/\t/' \
-//| awk -v OFS="\t" '{print \$2,\$1,\$5":"\$3,\$4}' | translate -a -v -e 0 <(cat ${GTF} | awk '\$3=="exon"' \
-//| awk -v OFS="\t" '{print \$1":"\$4"-"\$5}' | sort | uniq -c | sed 's/^[ \t]*//; s/ /\t/' \
-//| awk -v OFS="\t" '{print \$2,\$1}') 3 > ${species}_exons_overlap_info.tab
-//	"""
-//	}
-
-//Isolate phases from the reference protein
-//process ref_protein_phases {
-//	tag {"${species}"}
-//	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
-//
-//	input:
-//	set species, file(GTF), file(int_ex_num) from ref_phases_input
-//	output:
-//	set species, file("*_exons_RefProt_phases.tab") into ref_prot_phases
-//
-//	script:
-//	"""
-//cat $GTF | sed 's/ /_/g' | awk -v OFS="\t" '{print \$9,\$1":"\$4"-"\$5,\$8}' | grep protein_id \
-//| sed 's/.*protein_id_//; s/"//g; s/;/\t/' | awk -v OFS="\t" '{print \$(NF-1),\$NF,\$1}' \
-//| filter_1col 3 <(cat $int_ex_num | tail -n+2 | cut -f1 | sed 's/|.*//') | awk -v OFS="\t" '{print \$2,\$1}' \
-//| sort | uniq | sort -k2,2 | uniq -u -f1 | awk -v OFS="\t" '{print \$2,\$1}' > ${species}_exons_RefProt_phases.tab 
-//	"""
-//}
-
-//Associate phases to each intron/exon
-//process isolate_intron_phases {
-//	tag {"${species}"}
-//	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
-//
-//	input:
-//	set species, file(GTF), file(ref_phases) from intron_phases_input
-//	output:
-//	set species, file("*_GTF_intron_phases") into GTF_phases
-//
-//	script:
-//	"""
-//	cat <(cat $GTF | awk -v OFS="\t" '\$3=="CDS" {print \$8, \$1":"\$4"-"\$5}' | sort | uniq | sort -k2,2 | uniq -d -f1 \
-//| cut -f2 | translate -v -e "NA" -a -r <(cat $ref_phases) 1) <(cat $GTF | awk -v OFS="\t" '\$3=="CDS" {print \$8, \$1":"\$4"-"\$5}' \
-//| sort | uniq | sort -k2,2 | uniq -u -f1 | awk -v OFS="\t" '{print \$2,\$1}') > ${species}_GTF_intron_phases  
-//	"""
-//}
-
-//process add_exon_strand {
-//	tag {"${species}"}
-//	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
-//	input:
-//	set species, file(selected_exons), file(GTF) from add_strand_input
-//	output:
-//	set species, file("*_exons_overlap_selected_strand.tab") into selected_exons_strand
-//	script:
-//	"""
-//	cat $selected_exons | tail -n+2 | cut -f1,3 | translate -a -r <(cat $GTF | sed 's/;/\t/; s/"//g; s/gene_id //' \
-//| awk -v OFS="\t" '{print \$9,\$7}' | sort | uniq | filter_1col 1 <(cat $GTF | sed 's/;/\t/; s/"//g; s/gene_id //' | awk -v OFS="\t" '{print \$9,\$7}' \
-//| sort | uniq | cut -f1 | sort | uniq -u)) 1 > ${species}_exons_overlap_selected_strand.tab
-//	"""
-//}
-
-//Generate input channel
-//selected_exons_strand.join(GTF_phases).set{phases_exons_comb}
-//Add phases to the selected exons file
-//The snakemake was working, but I am doing something horrible here.
-//I will need to recheck all the code step by step
-//process add_intron_phases {
-//	tag {"${species}"}
-//	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
-//	input:
-//	set species, file(selected_exons), file(phases) from phases_exons_comb
-//	output:
-//	set species, file("*_exons_overlap_selected_phases.tab") into added_exon_phases
-//
-//	script:
-//	"""
-//#!/usr/bin/env python
-//
-//import pandas as pd
-//
-//my_selected_exons = pd.read_table("${selected_exons}", sep="\t", header=)
-//
-//	cat $selected_exons | translate -a -v -e 0 <(cat $phases) 2 > ${species}_exons_overlap_selected_phases.tab
-//	"""
-//}
-
-//process add_intron_phases {
-//	tag {"${species}"}
-//	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
-//	input:
-//	set species, file(selected_exons), file(phases) from phases_exons_comb
-//	output:
-//	set species, file("*_exons_overlap_selected_phases.tab") into added_exon_phases
-//
-//	script:
-//	"""
-//	cat $selected_exons | translate -a -v -e 0 <(cat $phases) 2 > ${species}_exons_overlap_selected_phases.tab
-//	"""
-//}
-
-//process isolate_first_last_ex {
-//	tag {"${species}"}
-//	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
-//	input:
-//	set species, file(tot_ex), file(ex_index) from isoform_tot_ex.join(isoform_ex_index)
-//	output:
-//	set species, file("*_first_exons.tab") into first_exons
-//	set species, file("*_last_exons.tab") into last_exons
-//
-//	script:
-//	"""
-//	cat $ex_index | awk '\$2==1' > "${species}"_first_exons.tab
-//cat $ex_index | awk -v OFS="\t" '{print \$1,\$3";"\$4";"\$2}' \
-//| filter_1col 2 <(cat $tot_ex | awk '{print \$1";"\$2";"\$3}') \
-//| tr ";" "\t" | awk -v OFS="\t" '{print \$1,\$4,\$3,\$2}' > "${species}"_last_exons.tab 
-//	"""
-//}
-
-
-
-//Here I am merging three rules which were separated in the snakemake
-//geneclusters = file(params.geneclusters)
-//process first_last_internal_ex_info {
-//	tag{"${species}"}
-//	publishDir "${params.output}/${params.geneID}/processed_tables", mode: 'copy'
-//	input:
-//	file(geneclusters)
-//	set species, file(first_ex), file(last_ex), file(selected_ex) from first_exons.join(last_exons).join(selected_exons_4_isoforms)
-//	output:
-//	file("*_all_exons_positions.tab") into all_ex_positions
-//
-//	script:
-//	"""
-//	cat $first_ex | cut -f1,4 | sort | uniq |  awk -v OFS="\t" '{print \$1,\$2,"first"}' > output.tmp
-//	cat $last_ex | cut -f1,4 | sort | uniq |  awk -v OFS="\t" '{print \$1,\$2,"last"}' >> output.tmp
-//	cat $selected_ex | tail -n+2 | cut -f1,3 | translate -a -d -v -e "Internal" <(cat output.tmp | cut -f1,3) 2 \
-//	| translate -a -n -k <(cat $geneclusters | cut -f1,3 | awk '\$1!=""') 1 > "$species"_all_exons_positions.tab
-//	rm output.tmp
-//	"""
-//}
