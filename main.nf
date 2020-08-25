@@ -381,8 +381,9 @@ process join_best_filtered_scores {
 
 	script:
 	"""
-    cat best_score_* >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.idexons}.tab
-    #for i in best_score_*; do cat \$i >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.idexons}.tab; done
+    #cat best_score_* >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.idexons}.tab
+    echo "GeneID_sp1\tExon_coords_sp1\tGeneID_sp2\tExon_coords_sp2\tSp1\tSp2" > Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.idexons}.tab;
+    for i in best_score_*; do cat \$i | tail -n+2 >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.idexons}.tab; done
     """
 }
 
