@@ -42,10 +42,10 @@ while (<IN2>){
     my $ovid2=$exid{$id2};
     my $bh2=$bh{$ovid2};
     
-    # it excludes no-symetric hits, but they had been already excluded
-    if (!$pair{$bh1."\t".$bh2} && !$pair{$bh2."\t".$bh1}){
+    # it originally excluded no-symetric hits
+    if (!$pair{$bh1."\t".$bh2}){# && !$pair{$bh2."\t".$bh1}){ # now it allows reciprocal matches   
 	print OUT "$bh1\t$bh2\t$l[4]\t$l[5]\n";
-	$pair{$bh1."\t".$bh2}=1;
+	$pair{$bh1."\t".$bh2}=1; # simply to avoid repeated lines
     }
 }
 close IN2;
@@ -64,9 +64,9 @@ if ($infile3){
 	my $ovid2=$exid{$id2};
 	my $bh2=$bh{$ovid2};
 	
-	if (!$pair{$bh1."\t".$bh2}){# && !$pair{$bh2."\t".$bh1}){ allows reciprocal matches
+	if (!$pair{$bh1."\t".$bh2}){# && !$pair{$bh2."\t".$bh1}){ # allows reciprocal matches
 	    print OUT "$bh1\t$bh2\t$l[4]\t$l[5]\n";
-	    $pair{$bh1."\t".$bh2}=1;
+	    $pair{$bh1."\t".$bh2}=1; # to avoid repeated lies
 	}
     }
     close IN3;
