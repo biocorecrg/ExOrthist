@@ -37,6 +37,7 @@ my_exon_num = [re.sub(".*[ ]", "", re.sub('"', "", element)) for element in my_r
 ex_num_df = pd.concat([pd.Series(my_gene_id), pd.Series(my_transcript_id), pd.Series(my_exon_num)], axis=1)
 ex_num_df.columns = ["GeneID", "TranscriptID", "ExNum"]
 ex_num_df = ex_num_df.drop_duplicates() #remove duplicated rows (exons with different splices sites)
+ex_num_df["ExNum"] = [int(element) for element in list(ex_num_df["ExNum"])] #change data type of ExNum to integer
 grouped_df = ex_num_df.groupby("TranscriptID")
 final_df = pd.DataFrame()
 for name, group in grouped_df:

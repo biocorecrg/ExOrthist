@@ -6,7 +6,7 @@ import argparse
 #read arguments
 parser = argparse.ArgumentParser(description="Select only one exon from a set of overlapping ones")
 parser.add_argument("--input_file", "-i", required=True)
-parser.add_argument("--output_file", "-o", required=True)
+parser.add_argument("--output_file", "-out", required=True)
 
 args = parser.parse_args()
 my_input = args.input_file

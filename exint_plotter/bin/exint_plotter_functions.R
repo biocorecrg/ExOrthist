@@ -53,49 +53,17 @@ generate_NA_coordinates = function(unmatched_target, my_gene_target_table)  {
 }
 
 ##########
-get_first_ex_df = function(plotting_table) {
-  first_ex_df = subset(plotting_table, ExPosition=="first")
-  first_ex_df$first_point = paste0(first_ex_df$FakeStart, ";", 
-                                   as.character(first_ex_df$Order+0.25))
-  #first_ex_df$second_point = paste0(as.character(first_ex_df$FakeStart + (abs(first_ex_df$FakeStart)+abs(first_ex_df$FakeStop))/2), 
-  #                                       ";", as.character(first_ex_df$Order+0.5))
-  first_ex_df$third_point = paste0(as.character(first_ex_df$FakeStop), 
-                                   ";", as.character(first_ex_df$Order+0.5))
-  first_ex_df$fourth_point = paste0(as.character(first_ex_df$FakeStop), 
-                                    ";", as.character(first_ex_df$Order))
-  #first_ex_df$fifth_point = paste0(as.character(first_ex_df$FakeStart + (abs(first_ex_df$FakeStart)+abs(first_ex_df$FakeStop))/2), 
-  #                                      ";", as.character(first_ex_df$Order))
-  
-  
-  first_ex_df$my_ID = paste0(first_ex_df$ExonID,  ";", first_ex_df$State)
-  first_ex_df = first_ex_df[,c("my_ID", "first_point", "third_point",  "fourth_point")]
-  first_ex_df_long = melt(first_ex_df, id="my_ID")
-  first_ex_df_long$ExonID = sub(";.*", "", first_ex_df_long$my_ID)
-  first_ex_df_long$State  = sub(".*;", "", first_ex_df_long$my_ID)
-  first_ex_df_long$x = as.numeric(sub(";.*", "", first_ex_df_long$value))
-  first_ex_df_long$y = as.numeric(sub(".*;", "", first_ex_df_long$value))
-  first_ex_df_long$my_ID =  NULL
-  first_ex_df_long$variable = NULL
-  first_ex_df_long$value = NULL
-  return(first_ex_df_long)
-}
-
 get_last_ex_df = function(plotting_table) {
   last_ex_df = subset(plotting_table, ExPosition=="last")
   last_ex_df$first_point = paste0(last_ex_df$FakeStart, ";", 
-                                  as.character(last_ex_df$Order))
-  last_ex_df$second_point = paste0(last_ex_df$FakeStart, ";", 
-                                   as.character(last_ex_df$Order+0.5))
-  #last_ex_df$third_point = paste0(as.character(last_ex_df$FakeStart + (abs(last_ex_df$FakeStop - last_ex_df$FakeStart))/2),
-  #";", as.character(last_ex_df$Order+0.5))
-  last_ex_df$fourth_point = paste0(as.character(last_ex_df$FakeStop), 
-                                   ";", as.character(last_ex_df$Order+0.25))
-  #last_ex_df$fifth_point = paste0(as.character(last_ex_df$FakeStart + (abs(last_ex_df$FakeStop - last_ex_df$FakeStart))/2),
-  #";", as.character(last_ex_df$Order))
-  
+                                   as.character(last_ex_df$Order+0.25))
+  last_ex_df$second_point = paste0(as.character(last_ex_df$FakeStop), 
+                                   ";", as.character(last_ex_df$Order+0.5))
+  last_ex_df$third_point = paste0(as.character(last_ex_df$FakeStop), 
+                                    ";", as.character(last_ex_df$Order))
+
   last_ex_df$my_ID = paste0(last_ex_df$ExonID,  ";", last_ex_df$State)
-  #last_ex_df = last_ex_df[,c("my_ID", "first_point", "second_point", "third_point",  "fourth_point", "fifth_point")]
-  last_ex_df = last_ex_df[,c("my_ID", "first_point", "second_point", "fourth_point")]
+  last_ex_df = last_ex_df[,c("my_ID", "first_point", "second_point",  "third_point")]
   last_ex_df_long = melt(last_ex_df, id="my_ID")
   last_ex_df_long$ExonID = sub(";.*", "", last_ex_df_long$my_ID)
   last_ex_df_long$State  = sub(".*;", "", last_ex_df_long$my_ID)
@@ -105,6 +73,29 @@ get_last_ex_df = function(plotting_table) {
   last_ex_df_long$variable = NULL
   last_ex_df_long$value = NULL
   return(last_ex_df_long)
+}
+
+get_first_ex_df = function(plotting_table) {
+  first_ex_df = subset(plotting_table, ExPosition=="first")
+  first_ex_df$first_point = paste0(first_ex_df$FakeStart, ";", 
+                                  as.character(first_ex_df$Order))
+  first_ex_df$second_point = paste0(first_ex_df$FakeStart, ";", 
+                                   as.character(first_ex_df$Order+0.5))
+
+  first_ex_df$third_point = paste0(as.character(first_ex_df$FakeStop), 
+                                   ";", as.character(first_ex_df$Order+0.25))
+  
+  first_ex_df$my_ID = paste0(first_ex_df$ExonID,  ";", first_ex_df$State)
+  first_ex_df = first_ex_df[,c("my_ID", "first_point", "second_point", "third_point")]
+  first_ex_df_long = melt(first_ex_df, id="my_ID")
+  first_ex_df_long$ExonID = sub(";.*", "", first_ex_df_long$my_ID)
+  first_ex_df_long$State  = sub(".*;", "", first_ex_df_long$my_ID)
+  first_ex_df_long$x = as.numeric(sub(";.*", "", first_ex_df_long$value))
+  first_ex_df_long$y = as.numeric(sub(".*;", "", first_ex_df_long$value))
+  first_ex_df_long$my_ID =  NULL
+  first_ex_df_long$variable = NULL
+  first_ex_df_long$value = NULL
+  return(first_ex_df_long)
 }
 
 get_first_last_ex_df = function(plotting_table) {

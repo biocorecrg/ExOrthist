@@ -10,7 +10,7 @@ parser.add_argument("--overlapping_query", "-q", required=True)
 parser.add_argument("--overlapping_target", "-t", required=True)
 parser.add_argument("--selected_overlapping_query", "-sq", required=True)
 parser.add_argument("--selected_overlapping_target", "-st", required=True)
-parser.add_argument("--output_file", "-o", required=True)
+parser.add_argument("--output_file", "-out", required=True)
 
 args = parser.parse_args()
 my_best_hits = args.best_hits
