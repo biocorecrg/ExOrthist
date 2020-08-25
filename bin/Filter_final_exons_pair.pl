@@ -64,7 +64,7 @@ if ($infile3){
 	my $ovid2=$exid{$id2};
 	my $bh2=$bh{$ovid2};
 	
-	if (!$pair{$bh1."\t".$bh2} && !$pair{$bh2."\t".$bh1}){
+	if (!$pair{$bh1."\t".$bh2}){# && !$pair{$bh2."\t".$bh1}){ allows reciprocal matches
 	    print OUT "$bh1\t$bh2\t$l[4]\t$l[5]\n";
 	    $pair{$bh1."\t".$bh2}=1;
 	}

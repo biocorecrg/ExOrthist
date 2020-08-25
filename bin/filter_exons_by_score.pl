@@ -83,17 +83,17 @@ while (<INONE>){
 	
 	# sets IDs, etc
 	@g1=split(/\|/,$line[3]); @g2=split(/\|/,$line[6]);		
-	if ($sid{$line[15]}<$sid{$line[16]}) { 
+#	if ($sid{$line[15]}<$sid{$line[16]}) { # allows reciprocal matches
 	    $id1=$g1[1]."\t".$line[5];
 	    $id2=$g2[1]."\t".$line[8];
 	    $sp{$id1."\t".$id2}=$line[15]."\t".$line[16];
 	    $sp{$id2."\t".$id1}=$line[16]."\t".$line[15];	
-	} else { 
-	    $id2=$g1[1]."\t".$line[5];  
-	    $id1=$g2[1]."\t".$line[8]; 
-	    $sp{$id1."\t".$id2}=$line[16]."\t".$line[15];
-	    $sp{$id2."\t".$id1}=$line[15]."\t".$line[16];			
-	}	   			
+#	} else { 
+#	    $id2=$g1[1]."\t".$line[5];  
+#	    $id1=$g2[1]."\t".$line[8]; 
+#	    $sp{$id1."\t".$id2}=$line[16]."\t".$line[15];
+#	    $sp{$id2."\t".$id1}=$line[15]."\t".$line[16];			
+#	}	   			
 	if ($line[2] eq "Internal") {
 	    # tests if $int (1 or 2) intron positions are conserved
 	    if ($int==2){
