@@ -25,7 +25,9 @@ RUN Rscript -e "install.packages(c('nloptr'), repos='http://cran.us.r-project.or
 RUN Rscript -e "install.packages(c('pbkrtest', 'lme4', 'pbkrtest', 'lme4'), repos='http://cran.us.r-project.org')"
 #RUN echo ciao
 RUN Rscript -e "install.packages(c('ggpubr', 'cowplot'), repos='http://cran.us.r-project.org')"
-RUN Rscript -e "install.packages(c('hashmap', 'reshape'), repos='http://cran.us.r-project.org')"
+RUN Rscript -e "install.packages(c('devtools','reshape2'), repos='http://cran.us.r-project.org')"
+RUN Rscript -e "devtools::install_github('nathan-russell/hashmap')"
+
 #hashmap
 #reshape
 #Installing python modules
