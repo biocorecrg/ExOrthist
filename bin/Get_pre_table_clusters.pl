@@ -18,7 +18,7 @@ while (<INFILE>){
 	$_=~s/\|/\t/g;
 	my @l=split(/\t/,$_);
 	my $id=$l[0].".".sprintf("%.3d",$l[4]);
-	$l[10] = sprintf("%.2f",$l[10]);
+	$l[10] = sprintf("%.3f",$l[10]);
 	print TMP  "$id\t$l[1]\t$l[2]\t$l[3]\t$l[10]\n"; # adds Memb score
     }   
 }
