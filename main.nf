@@ -390,7 +390,6 @@ process join_best_filtered_scores {
  * Removing redundant hits
  */
 process filter_redundant {
-    publishDir "${params.output}/", mode: 'copy', pattern: "Overlap_exons_by_sp.tab"
 
     input:
     file(scores) from filtered_all_scores
