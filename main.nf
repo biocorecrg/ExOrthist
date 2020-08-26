@@ -429,12 +429,12 @@ process get_pre_cluster_exons {
 	"""
    if [ `echo ${clusterfile} | grep ".gz"` ]; then
        zcat ${clusterfile} > cluster_file
-       Get_Pre_cluster_exons.pl cluster_file ${score_exon_hits_pairs} 500 out.txt
+       Get_pre_cluster_exons.pl cluster_file ${score_exon_hits_pairs} 500 out.txt
        rm cluster_file
     else
-       Get_Pre_cluster_exons.pl ${clusterfile} ${score_exon_hits_pairs} 500 out.txt
+       Get_pre_cluster_exons.pl ${clusterfile} ${score_exon_hits_pairs} 500 out.txt
     fi
-    #Get_Pre_cluster_exons.pl ${clusterfile} ${score_exon_hits_pairs} 500 out.txt
+    #Get_pre_cluster_exons.pl ${clusterfile} ${score_exon_hits_pairs} 500 out.txt
 	"""
 }
 
