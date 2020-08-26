@@ -5,8 +5,8 @@ if (length(args)<2) {stop("[USAGE] Rscript --vanilla cluster.R <file1> <file2> "
 file1 <- args[1]
 file2 <- args[2]
 
-library(igraph, quietly = TRUE, warn.conflicts = FALSE, verbose = FALSE)
-library(hashmap, quietly = TRUE, warn.conflicts = FALSE, verbose = FALSE)
+library("igraph", quietly = TRUE, warn.conflicts = FALSE, verbose = FALSE)
+library("hashmap", quietly = TRUE, warn.conflicts = FALSE, verbose = FALSE)
 
 my_table = read.table(file1, col.names=c("ID1", "ID2", "Best_reciprocal"))
 ######## Generate graph #############
@@ -17,7 +17,7 @@ my_final_clusters = as.data.frame(as.matrix(membership(my_clusters))); colnames(
 
 ######## Compute values for membership score #############
 #Compute the total number of genes in clusters.
-all_IDs = c(best_reciprocal_df_ID1, best_reciprocal_df_ID2)
+all_IDs = unique(c(as.vector(my_table$ID1), as.vector(my_table$ID2)))
 TOT_genes_in_cluster = length(unique(sub(";.*", "", sub("\\|", ";", sub(".*;", "", sub("\\|", ";", all_IDs))))))
 
 #Create a dictionary with exonID, number of TRUE Best_reciprocal
@@ -26,12 +26,13 @@ best_reciprocal_matrix = vector()
 for (my_exon in rownames(my_final_clusters)) {
   my_cluster_id = my_final_clusters[my_exon,"ClusterID"]
   all_exons_in_cluster = rownames(subset(my_final_clusters, ClusterID ==  my_cluster_id))
-  all_rec_hits = c(as.vector(subset(my_table, ID1==my_exon & Best_reciprocal == "TRUE")$ID2), as.vector(subset(my_table, ID2==my_exon & Best_reciprocal == "TRUE")$ID1))
+  all_rec_hits = unique(c(as.vector(subset(my_table, ID1==my_exon & Best_reciprocal == "TRUE")$ID2), as.vector(subset(my_table, ID2==my_exon & Best_reciprocal == "TRUE")$ID1)))
   rec_hits_in_cluster = length(all_rec_hits[all_rec_hits %in% all_exons_in_cluster])
   best_reciprocal_matrix = rbind(best_reciprocal_matrix, c(my_exon, rec_hits_in_cluster))
 }
 best_reciprocal_df = as.data.frame(best_reciprocal_matrix); colnames(best_reciprocal_df) = c("ExonID", "Best_reciprocal_num")
 best_reciprocal_df$ExonID = as.vector(best_reciprocal_df$ExonID); best_reciprocal_df$Best_reciprocal_num = as.numeric(as.vector(best_reciprocal_df$Best_reciprocal_num))
+
 
 #Create a dictionary with species -> number of species genes in the cluster.
 gene_species_vector = unique(sub("\\|.*\\|", ";", sub(".*;", "", sub("\\|", ";", all_IDs))))
@@ -71,4 +72,4 @@ my_final_clusters$membership_score = (my_final_clusters$In_degree + my_final_clu
 my_final_clusters = my_final_clusters[,c("ExonID", "ClusterID", "Out_degree", "In_degree", "SPECIES_exons_in_cluster", "TOT_exons_in_cluster", "N_reciprocals", "membership_score")]
 
 #save to file
-write.table(my_final_clusters, file=file2, quote=FALSE, sep="\t", row.names = FALSE)
+write.table(my_final_clusters, file=file2, quote=FALSE, sep="\t", row.names = FALSE, col.names=FALSE)
