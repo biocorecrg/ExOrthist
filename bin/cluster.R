@@ -72,4 +72,4 @@ my_final_clusters$membership_score = (my_final_clusters$In_degree + my_final_clu
 my_final_clusters = my_final_clusters[,c("ExonID", "ClusterID", "Out_degree", "In_degree", "SPECIES_exons_in_cluster", "TOT_exons_in_cluster", "N_reciprocals", "membership_score")]
 
 #save to file
-write.table(my_final_clusters, file=file2, quote=FALSE, sep="\t", row.names = FALSE)
+write.table(my_final_clusters, file=file2, quote=FALSE, sep="\t", row.names = FALSE, col.names=FALSE)
