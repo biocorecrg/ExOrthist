@@ -166,7 +166,6 @@ process split_cluster_file_per_species {
 	"""
 }
 
-
 idfolders
   .toList().map{ [it, it] .combinations().findAll{ a, b -> a[0] < b[0]} }
   .flatMap()
@@ -417,18 +416,27 @@ process filter_redundant {
 /*
 * Split the file of exon pairs
 */
+clusterfile = file(params.cluster)
 process get_pre_cluster_exons {
     input:
     file(score_exon_hits_pairs)
-    file(cls_tab_file_4_clustering)
+    //file(cls_tab_file_4_clustering)
+    file(clusterfile)
 
     output:
     file("PART_*/*.tab") into cluster_parts
 
 	script:
 	"""
-    Get_Pre_cluster_exons.pl ${cls_tab_file_4_clustering} ${score_exon_hits_pairs} 500 out.txt
-    """
+   if [ `echo ${clusterfile} | grep ".gz"` ]; then
+       zcat ${clusterfile} > cluster_file
+       Get_Pre_cluster_exons.pl cluster_file ${score_exon_hits_pairs} 500 out.txt
+       rm cluster_file
+    else
+       Get_Pre_cluster_exons.pl ${clusterfile} ${score_exon_hits_pairs} 500 out.txt
+    fi
+    #Get_Pre_cluster_exons.pl ${clusterfile} ${score_exon_hits_pairs} 500 out.txt
+	"""
 }
 
 /*
