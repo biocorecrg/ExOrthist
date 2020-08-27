@@ -140,6 +140,7 @@ while (<IN>){
 		$string.=$line[4]."\t$line[5]\tNA\t".$sC1."\t".$sI1."\t".$sA."\t".$sI2."\t".$sC2."\t".$TSC."\t".$line[8]."\t".$line[9];			
 	    }
 	}
+	### Here is where the BEST hit per GENE is selected
 	if ($TSC==0) { $TSC=0.000001; }
 	if (!$totalSC{$idex}){
 	    $totalSC{$idex}=$TSC;			
