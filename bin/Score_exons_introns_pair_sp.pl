@@ -34,10 +34,10 @@ my $exsc=$outf."/score_exons_".$s1."_".$s2."_part_".$part.".txt";##outputfile fo
 my $insc=$outf."/score_introns_".$s1."_".$s2."_part_".$part.".txt";
 my $prsc=$outf."/score_proteins_".$s1."_".$s2."_part_".$part.".txt";##outputfile for scores of whole protein alignment
 my $msf=$outf."/exons_to_split_part_".$part.".txt"; ##generating a file for those exons that need to be realigned
-open (EXSC, ">$exsc");
-open (INSC, ">$insc");
-open (PRSC, ">$prsc");
-open (MISS, ">$msf");
+open (EXSC, ">$exsc") || die "It cannot open output file $exsc\n";
+open (INSC, ">$insc") || die "It cannot open output file $insc\n";
+open (PRSC, ">$prsc") || die "It cannot open output file $prsc\n";
+open (MISS, ">$msf") || die "It cannot open output file $msf\n";
 
 ##Printing headers 
 #Header protein score file
