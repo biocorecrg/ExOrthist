@@ -567,7 +567,7 @@ sub score_introns {
     my $ngp=0;
 
     for ($n=0; $n<scalar(@nseq1); $n++){ ##getting aln positions
-	if ($nseq1[$n]=~/\s+/ && $nseq2[$n] =~/\s+/ && $naln[$n]=~/\s+/){}
+	if ($nseq1[$n]=~/\s+/ && $nseq2[$n] =~/\s+/ && $naln[$n]=~/\s+/ && defined $naln[$n] && defined $nseq1[$n] && defined $nseq2[$n]){}
 	elsif ($nseq1[$n] || $nseq2[$n] || $naln[$n] || $nseq1[$n] == 0 || $nseq2[$n]==0 ){
 	    push (@seq1,$nseq1[$n]);
 	    push (@seq2,$nseq2[$n]);
