@@ -5,12 +5,8 @@ use Getopt::Long;
 use Data::Dumper;
 
 ### AIMS OF SCRIPT
-#* to split the gene clusters into smaller bits (e.g. 500 clusters per file) and creates a folder GENE_CLUSTERS in the species pair folder
-#* prepare folders for a pair of species
-#* submit jobs to score exons for each sub-file of clusters for the given species pair
-#* submit jobs to score introns for each sub-file of clusters for the given species pair
-#* score introns and exons [these are the two main scripts]: Score_exons_pair_sp.pl and Score_introns_pair_sp.pl
-         
+# to split the gene clusters into smaller bits (e.g. 500 clusters per file) and creates a folder GENE_CLUSTERS in the species pair folder
+# prepare folders for a pair of species
 
 #### DECLARATION AND GENERATION OF VARIABLES
 my $clean; # forces full deletion of pre-existing runs
