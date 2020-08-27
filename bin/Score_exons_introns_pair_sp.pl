@@ -355,7 +355,7 @@ foreach $el (@keys){
     if ($pid2{$el}=~/\,/){ @t2=split(/\,/,$pid2{$el}); }
     else { push(@t2,$pid2{$el});  }    
     ##getting pairwise exint file and then make alignment
-    print "$el\n"; ##printing in standard output the gene cluster ID that is being processed
+#    print "$el\n"; ##printing in standard output the gene cluster ID that is being processed
     my $Gclid=$el;
     for ($zj=0; $zj<scalar(@t1); $zj++){ ##opening FOR 1
 	for ($zi=0; $zi<scalar(@t2); $zi++) {  ##opening FOR 2
@@ -372,7 +372,7 @@ foreach $el (@keys){
 	    system "cat $tg >> $f_merged_aln"; # we could already print a post-processed aln instead
 	    system "cat $int_aln >> $f_merged_aln"; # I have no idea where this is used
 	    open (MERGE_ALN, ">>$f_merged_aln");
-	    print "  > $t1[$zj] $t2[$zi]\n";
+#	    print "  > $t1[$zj] $t2[$zi]\n";
 	    ## 2) OPENING OUTPUT GDE FILE
 	    $n1=""; $n2="";
 	    %seq=();
