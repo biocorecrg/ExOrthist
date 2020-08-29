@@ -25,6 +25,7 @@ exon clusters (pipeline output)		: ${params.exonclusters}
 exon best scores (pipeline output)	: ${params.bestscores}
 gene clusters (same as pipeline input)	: ${params.geneclusters}
 geneID					: ${params.geneID}
+relevant exons				: ${params.relevantex}
 """
 
 /*
@@ -457,14 +458,19 @@ else {
 		interesting_species = list(set([element for element in species_list if element in str("${all_species}").split(",")]))
 		interesting_species.insert(0, interesting_species.pop(interesting_species.index("Hs2")))
 		final_species_list = ",".join(str(element) for element in interesting_species)
-		print(final_species_list)
+		print(final_species_list, end='')
 		"""
 	}
 }
 
 //R script to actually make the plot.
 my_geneID = "${params.geneID}"
-gene_clusters = file(params.geneclusters) 
+gene_clusters = file(params.geneclusters)
+
+if (params.relevantex) {relevant_exons = file("${params.relevantex}")} else {
+	relevant_exons = ""
+}
+ 
 process plot_exint {
 	tag{"${species}"}
 	publishDir "${params.output}/${params.geneID}", mode: 'copy'
@@ -473,11 +479,12 @@ process plot_exint {
 	val(my_query_species) from query_species1 
 	val(ordered_target)
 	file(gene_clusters)
+	file(relevant_exons)
 	file("*") from plot_input
 	output:
 	"${baseDir}/exint_plots"
 	script:
 	"""
-	Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} 
+	Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} "${relevant_exons}" 
 	"""
 }

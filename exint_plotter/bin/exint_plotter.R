@@ -26,16 +26,8 @@ my_query_species = args[2]
 my_folder = args[3]
 my_script_folder = args[4]
 gene_clusters = args[5]
-my_ordered_species_raw = args[6] #Facultative. If the argument is not provided, I will take the species order from the cluster file.
-
-#### Define the order of the species:
-#If a comma delimited string is not provided as external argument, the order of the species is derived from the gene cluster file.
-# if (is.na(my_ordered_species_raw)) {
-#   species_orthologs_table = read.delim(gene_clusters, sep="\t", header=FALSE); colnames(species_orthologs_table)[1:4] = c("ClusterID", "Species", "GeneID", "GeneName")
-#   ordered_target_species = unique(as.vector(species_orthologs_table$Species))
-# } else {
-#   ordered_target_species = unlist(strsplit(my_ordered_species_raw, split=","))
-# }
+my_ordered_species_raw = args[6] #The order of the species is defined within the nextflow.
+my_interesting_exons = args[7] #Facultative. one column file containing the coordinates for the exons to highlight.
 
 ######## Set up
 my_input_folder = paste0(my_folder, "/processed_tables/")
@@ -58,7 +50,10 @@ source(paste0(my_script_folder, "/exint_plotter_functions.R"))
 #In principle they should be ordered by evolutionary distance.
 
 ########
-#anyways this will have to be subsetted by the query geneID
+#generate vector with interesting exons
+interesting_exons = as.vector(read.table(my_interesting_exons, header=FALSE)$V1)
+
+########
 species_query_table = read.delim(paste0(my_input_folder, my_query_species, "_exons_cluster_info-fakecoords.tab"), sep="\t", header=TRUE, row=1)
 
 my_gene_table = subset(species_query_table, GeneID == my_gene) #select the gene of interest
@@ -123,10 +118,6 @@ for (my_target_species in considered_species) {
     best_hits_table$ExonID_target = rep(NA, nrow(best_hits_table))
     #This in theory is just to remove columns
     best_hits_table = subset(best_hits_table, select=-c(Score_C1, Score_I1, Score_I2, Score_C2))
-    #best_hits_table$Score_C1 = NULL
-    #best_hits_table$Score_I1 = NULL
-    #best_hits_table$Score_I2 = NULL
-    #best_hits_table$Score_C2 = NULL
     best_hits_table = unique(best_hits_table) #Check this. IDK why we should have duplicated rows.
     
     
