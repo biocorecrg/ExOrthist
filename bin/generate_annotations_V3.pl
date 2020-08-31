@@ -258,6 +258,11 @@ if ($do_all_steps){
 	my (@t);
 	my ($g, $ev,$i,$f,$coA,$coB);
 	my (%Ev_Gene,%C1_ref,%A_ref,%C2_ref,%coA_ev,%co_ev,%coB_ev);
+        my %expl_solution;
+        $expl_solution{1}="Match C1+C2 exons";
+        $expl_solution{2}="Match C1 exon";
+        $expl_solution{3}="Match C1 donor";
+        $expl_solution{4}="Match C2 exon";
 	
 	open (EXONS, $add_exons) || die "*** DIE: Cannot open $add_exons\n";
 	<EXONS>;
@@ -359,7 +364,7 @@ if ($do_all_steps){
 # ...
 # In some cases, the exact exon is wrongly annotated, but there is no skipping form
 	# A lot variable declarations to avoid issues from merging scripts
-	my ($tally_annotated,$C1_inc,$C2_inc,$C1_ref,$C2_ref,$C1i,$C1r,$C1_incA,$C1_refA,$C1f,$C2f,$C2_incA,$C2_refA,$C2i,$C2r,$Ai,$Af,$coA_A,$coB_A,$temp_tr,$exons_tr,$selected_tr,$ref_tr,$OK,$t_C2,$exons_sel,$t_C1,$CDS_end,$CDS_ini,$CDS_seq,$STOP_detected,$bit,$co_Af_CDS,$co_Ai_CDS,$codon,$comment,$exN,$extra,$final_tr,$finished,$first_offset,$full_line,$full_line2,$full_line3,$full_line4,$le_CDS_ex,$length_A,$lineN,$loop,$new_line,$new_line2,$new_line3,$new_offset,$offset_A,$out_frame,$rescue_type,$seq_bit,$seq_bit_test,$started,$stop_co_f,$stop_co_i,$str,$tally_non_annot_hit,$tally_non_annot_no_hit,$tally_partial,$type);
+	my ($tally_annotated,$C1_inc,$C2_inc,$C1i,$C1f,$C1_incA,$C2i,$C2f,$C2_incA,$Ai,$Af,$coA_A,$coB_A,$temp_tr,$exons_tr,$selected_tr,$OK,$t_C2,$exons_sel,$t_C1,$CDS_end,$CDS_ini,$CDS_seq,$STOP_detected,$bit,$co_Af_CDS,$co_Ai_CDS,$codon,$comment,$exN,$extra,$final_tr,$finished,$first_offset,$full_line,$full_line2,$full_line3,$full_line4,$le_CDS_ex,$length_A,$lineN,$loop,$new_line,$new_line2,$new_line3,$new_offset,$offset_A,$out_frame,$seq_bit,$seq_bit_test,$started,$stop_co_f,$stop_co_i,$str,$tally_non_annot_hit,$tally_non_annot_no_hit,$tally_partial);
 	my (@t_line,@t_line2,@t_line3,@t_line4,@t_line_C2);
 	my (%C1_accepted_index,%tally_solutions);
 	foreach $ev (sort keys %A_ref){
@@ -369,7 +374,7 @@ if ($do_all_steps){
 	    }
 	    else {
 		$selected_tr="";
-# 		my $ref_tr; # not provided 
+ 		my $ref_tr; # not provided yet => left here for future developments
 		$C1_inc=$C1_ref{$ev};
 		$C2_inc=$C2_ref{$ev};
 		### only the C1do and C2ac
@@ -400,7 +405,7 @@ if ($do_all_steps){
 			$C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_inc};
 		    }
 		    elsif ($tr_co{$tr}{$C1_inc}){
-			($temp_tr)=$selected_tr=~/[12345]\=(.+)/; # it may be empty
+			($temp_tr)=$selected_tr=~/[12]\=(.+)/; # it may be empty
 			if (defined $temp_tr){
 			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
 			}else {$exons_sel=1;}
@@ -412,13 +417,13 @@ if ($do_all_steps){
 			    $OK=1 if $i>$Af && $str{$g} eq "+";
 			    $OK=1 if $f<$Ai && $str{$g} eq "-";
 			    if (defined $ref_tr){
-				$selected_tr="5=$tr" unless ($selected_tr eq "5=$ref_tr" || $selected_tr=~/[1234]\=/ || $exons_sel>=$exons_tr || !$OK);
-			    } else {$selected_tr="5=$tr" unless ($selected_tr=~/[1234]\=/ || $exons_sel>=$exons_tr || !$OK);}
+				$selected_tr="2=$tr" unless ($selected_tr eq "2=$ref_tr" || $selected_tr=~/1\=/ || $exons_sel>=$exons_tr || !$OK);
+			    } else {$selected_tr="2=$tr" unless ($selected_tr=~/1\=/ || $exons_sel>=$exons_tr || !$OK);}
 			    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_inc};
 			}
 		    }
 		    elsif (($tr_coA{$tr}{$C1_incA} && $str{$g} eq "-") || ($tr_coB{$tr}{$C1_incA} && $str{$g} eq "+") ){ # C1do exists in transcript
-			($temp_tr)=$selected_tr=~/[1234567]\=(.+)/; # it may be empty
+			($temp_tr)=$selected_tr=~/[123]\=(.+)/; # it may be empty
 			if (defined $temp_tr){
 			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
 			}else {$exons_sel=1;}
@@ -430,13 +435,13 @@ if ($do_all_steps){
 			    $OK=1 if $i>$Af && $str{$g} eq "+";
 			    $OK=1 if $f<$Ai && $str{$g} eq "-";
 			    if (defined $ref_tr){
-				$selected_tr="7=$tr" unless ($selected_tr eq "7=$ref_tr" || $selected_tr=~/[123456]\=/ || !$OK || $exons_sel>=$exons_tr);
-			    } else {$selected_tr="7=$tr" unless ($selected_tr=~/[123456]\=/ || !$OK || $exons_sel>=$exons_tr);}
+				$selected_tr="3=$tr" unless ($selected_tr eq "3=$ref_tr" || $selected_tr=~/[12]\=/ || !$OK || $exons_sel>=$exons_tr);
+			    } else {$selected_tr="3=$tr" unless ($selected_tr=~/[12]\=/ || !$OK || $exons_sel>=$exons_tr);}
 			    $C1_accepted_index{$ev}{$tr}=$index_coA{$tr}{$C1_incA};
 			}
 		    }
 		    elsif ($tr_co{$tr}{$C2_inc}){
-			($temp_tr)=$selected_tr=~/[123456789]\=(.+)/; # it may be empty
+			($temp_tr)=$selected_tr=~/[1234]\=(.+)/; # it may be empty
 			if (defined $temp_tr){
 			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
 			}else {$exons_sel=1;}
@@ -448,15 +453,15 @@ if ($do_all_steps){
 			    $OK=1 if $f<$Ai && $str{$g} eq "+";
 			    $OK=1 if $i>$Af && $str{$g} eq "-";
 			    if (defined $ref_tr){
-				$selected_tr="9=$tr" unless ($selected_tr eq "9=$ref_tr" || $selected_tr=~/[12345678]\=/ || !$OK || $exons_sel>=$exons_tr);
-			    } else {$selected_tr="9=$tr" unless ($selected_tr=~/[12345678]\=/ || !$OK || $exons_sel>=$exons_tr);}
+				$selected_tr="4=$tr" unless ($selected_tr eq "4=$ref_tr" || $selected_tr=~/[123]\=/ || !$OK || $exons_sel>=$exons_tr);
+			    } else {$selected_tr="4=$tr" unless ($selected_tr=~/[123]\=/ || !$OK || $exons_sel>=$exons_tr);}
 			    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C2_inc}-1;
 			}
 		    }
 		}
 		if ($selected_tr){
 		    $tally_non_annot_hit++;
-		    ($rescue_type,$final_tr)=$selected_tr=~/(.+?)\=(.+)/;
+		    my ($rescue_type,$final_tr)=$selected_tr=~/(.+?)\=(.+)/;
 		    $tally_solutions{$rescue_type}++;
 		    
 		    ### creating fake transcripts:
@@ -760,7 +765,7 @@ if ($do_all_steps){
 				    }
 				}
 			    }
-			    print LOG "$ev\t$g\t$exN\t$final_tr"."fB$tally_non_annot_hit\t$comment\t$rescue_type\n";
+			    print LOG "$ev\t$g\t$exN\t$final_tr"."fB$tally_non_annot_hit\t$comment\t$expl_solution{$rescue_type}\n";
 			}
 		    }
 		}
@@ -777,8 +782,8 @@ if ($do_all_steps){
 	verbPrint("   Partially Annotated\t$tally_partial\n");
 	verbPrint("   Not rescued\t$tally_non_annot_no_hit\n");
 	verbPrint("   Solutions:\n");
-	foreach $type (sort {$a<=>$b} keys %tally_solutions){
-	    verbPrint("   Type $type\t$tally_solutions{$type}\n");
+	foreach my $type_sol (sort {$a<=>$b} keys %tally_solutions){
+	    verbPrint("   - $expl_solution{$type_sol}\t$tally_solutions{$type_sol}\n");
 	}
 	close LOG;
 	close O;
