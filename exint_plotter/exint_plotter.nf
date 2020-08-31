@@ -25,6 +25,7 @@ exon clusters (pipeline output)		: ${params.exonclusters}
 exon best scores (pipeline output)	: ${params.bestscores}
 gene clusters (same as pipeline input)	: ${params.geneclusters}
 geneID					: ${params.geneID}
+relevant exons				: ${params.relevant_exs}
 """
 
 /*
@@ -133,6 +134,7 @@ process subset_input_files {
 }
 
 //Depending on how big this file is, we might need different RAM requirements.
+//I am using bash because it's much faster than python here.
 best_hits_input = file(params.bestscores)
 process subset_best_hits {
 	tag {"${gene_clusterID}"}
@@ -144,14 +146,10 @@ process subset_best_hits {
 	output:
 	file(Best_hits_subsetted) into best_hits
 	script:
-	"""
-#!/usr/bin/env python
-
-import pandas as pd
-my_besthits_df = pd.read_table("${best_hits_input}", header=0, index_col=False, sep="\t")
-my_besthits_sub_df = my_besthits_df[my_besthits_df.CID=="${gene_clusterID}"]
-my_besthits_sub_df.to_csv("Best_hits_subsetted", sep="\t", header=True, index=False, na_rep="NA")
-	"""
+"""
+awk 'NR==1' ${best_hits_input} > Best_hits_subsetted
+cat ${best_hits_input} | awk '\$1=="${gene_clusterID}"' >> Best_hits_subsetted
+"""
 }
 
 
@@ -457,14 +455,19 @@ else {
 		interesting_species = list(set([element for element in species_list if element in str("${all_species}").split(",")]))
 		interesting_species.insert(0, interesting_species.pop(interesting_species.index("Hs2")))
 		final_species_list = ",".join(str(element) for element in interesting_species)
-		print(final_species_list)
+		print(final_species_list, end='')
 		"""
 	}
 }
 
 //R script to actually make the plot.
 my_geneID = "${params.geneID}"
-gene_clusters = file(params.geneclusters) 
+gene_clusters = file(params.geneclusters)
+
+if (params.relevant_exs) {relevant_exons = file("${params.relevant_exs}")} else {
+	relevant_exons = ""
+}
+ 
 process plot_exint {
 	tag{"${species}"}
 	publishDir "${params.output}/${params.geneID}", mode: 'copy'
@@ -473,11 +476,31 @@ process plot_exint {
 	val(my_query_species) from query_species1 
 	val(ordered_target)
 	file(gene_clusters)
+	file(relevant_exons)
 	file("*") from plot_input
 	output:
 	"${baseDir}/exint_plots"
 	script:
 	"""
-	Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} 
+	Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} "${relevant_exons}" 
 	"""
 }
+
+//process isolate_cluster_id {
+//	tag {"${geneID}"}
+//	input:
+//	val(my_geneID)
+//	file(gene_clusters)
+//	output:
+//	stdout into (gene_clusterID, gene_clusterID1, gene_clusterID2, gene_clusterID3)
+//	script:
+//	"""
+//	#!/usr/bin/env python
+//
+//	import pandas as pd
+//	
+//	my_df = pd.read_csv("${gene_clusters}", sep="\t", header=None, index_col=False)
+//	clusterID = list(my_df[my_df.iloc[:,2]=="${my_geneID}"].iloc[:,0])[0]
+//	print(clusterID, end='')
+//	"""
+//}
