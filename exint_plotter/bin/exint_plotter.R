@@ -53,6 +53,7 @@ interesting_exons = as.vector(read.table(my_interesting_exons, header=FALSE)$V1)
 
 ########
 species_query_table = read.delim(paste0(my_input_folder, my_query_species, "_exons_cluster_info-fakecoords.tab"), sep="\t", header=TRUE, row=1)
+species_query_table = species_query_table[species_query_table$State!="",] #removing some weird spurious entries
 
 my_gene_table = subset(species_query_table, GeneID == my_gene) #select the gene of interest
 my_gene_table$FakeCoords = as.character(paste0(my_gene_table$FakeStart, ";", my_gene_table$FakeStop)) #generate coordinates ID
@@ -95,6 +96,7 @@ for (my_target_species in considered_species) {
   #upload target species table wihout fake coordinates
   target_species_table = read.delim(paste0(my_input_folder, my_target_species, "_exons_cluster_info-fakecoords.tab"), 
                                     sep="\t", header=TRUE, row=1, stringsAsFactors=FALSE)
+  target_species_table = target_species_table[target_species_table$State!="",] #removing some weird spurious entries
   
   #cycle on all the orthologoues genes in target species
   for (target_gene in my_gene_orthologs[names(my_gene_orthologs) == my_target_species]) {
@@ -236,7 +238,6 @@ for (my_target_species in considered_species) {
 ###########################################################
 ########### Prepare plotting input ########################
 ###########################################################
-
 plotting_table = final_table
 plotting_table$GeneID = as.vector(plotting_table$GeneID)
 plotting_table$Species = as.vector(plotting_table$Species)
@@ -287,13 +288,13 @@ for (my_exon in interesting_exons) {
 internal_ex_df = subset(plotting_table, ExPosition=="Internal")
 if ("first" %in% unique(as.vector(plotting_table$ExPosition))) {
   first_ex_df = get_first_ex_df(plotting_table) } else {
-    first_ex_df = data.frame(matrix(ncol = 5, nrow = 0)); colnames(first_ex_df) = c("x", "y", "ExonID", "State", "Filling_status")} #create empty dataframe.
+    first_ex_df = data.frame(matrix(ncol = 6, nrow = 0)); colnames(first_ex_df) = c("x", "y", "ExonID", "State", "Filling_status", "AnnotStatus")} #create empty dataframe.
 if("last" %in% unique(as.vector(plotting_table$ExPosition))) {
   last_ex_df = get_last_ex_df(plotting_table)} else {
-    last_ex_df = data.frame(matrix(ncol = 5, nrow = 0)); colnames(last_ex_df) = c("x", "y", "ExonID", "State", "Filling_status")} #create empty dataframe.
+    last_ex_df = data.frame(matrix(ncol = 6, nrow = 0)); colnames(last_ex_df) = c("x", "y", "ExonID", "State", "Filling_status", "AnnotStatus")} #create empty dataframe.
 if ("first;last" %in% unique(as.vector(plotting_table$ExPosition))) {
   first_last_ex_df = get_first_last_ex_df(plotting_table)} else {
-  first_last_ex_df = data.frame(matrix(ncol = 5, nrow = 0)); colnames(first_last_ex_df) = c("x", "y", "ExonID", "State", "Filling_status")} #create empty dataframe.
+  first_last_ex_df = data.frame(matrix(ncol = 6, nrow = 0)); colnames(first_last_ex_df) = c("x", "y", "ExonID", "State", "Filling_status", "AnnotStatus")} #create empty dataframe.
 
 #Only plot the exon length for the reference gene.
 plotting_table$ExonLength[plotting_table$GeneID != my_gene] = NA
@@ -302,21 +303,25 @@ plotting_table$ExonLength[plotting_table$GeneID != my_gene] = NA
 unique_table_for_names = unique(plotting_table[c("Species", "ExonNumberPlot", "GeneID", "Order")])
 unique_table_for_names = unique_table_for_names[rev(order(unique_table_for_names$Order)),]
 
+
 ##################################################
 ########### Make the plot ########################
 ##################################################
 
 my_plot = ggplot()  +
-  geom_rect(data=internal_ex_df, aes(xmin=FakeStart, xmax=FakeStop, ymin=Order, ymax=Order+0.5, alpha=State, fill=Filling_status), color="black") + #internal exons.
-  geom_polygon(data=first_ex_df, aes(x=x, y=y, alpha=State, group=ExonID, fill=Filling_status), color="black") + #first exons.
-  geom_polygon(data=last_ex_df, aes(x=x, y=y, alpha=State, group=ExonID, fill=Filling_status), color="black") + #last exons.
-  geom_polygon(data=first_last_ex_df, aes(x=x, y=y, alpha=State, group=ExonID, fill=Filling_status), color="black") + #exons which are both first and last.
+  geom_rect(data=internal_ex_df, aes(xmin=FakeStart, xmax=FakeStop, ymin=Order, ymax=Order+0.5, alpha=AnnotStatus, fill=Filling_status, linetype=State), color="black") + #internal exons.
+  geom_polygon(data=first_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State), color="black") + #first exons.
+  geom_polygon(data=last_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State), color="black") + #last exons.
+  geom_polygon(data=first_last_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State), color="black") + #exons which are both first and last.
   scale_fill_manual(values=group_colors_vector, name = "Interesting Exons", labels=c("default", paste0(interesting_exons, " (", my_query_species,")"))) + #the order of the labels should be the same as in group_colors_vector. 
   #geom_rect(data=internal_ex_df, aes(xmin=FakeStart, xmax=FakeStop, ymin=Order, ymax=Order+0.5, alpha=State), fill="lightsteelblue3", color="dimgray") + #internal exons.
   #geom_polygon(data=first_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #first exons.
   #geom_polygon(data=last_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #last exons.
   #geom_polygon(data=first_last_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #exons which are both first and last.
-  scale_alpha_manual(values=c("Exon"=1, "Exon_added"=0.4)) + #different transparencies to exons actually matching or not the reference gene.
+  
+  #scale_alpha_manual(values=c("Exon"=1, "Exon_added"=0.4)) + #different transparencies to exons actually matching or not the reference gene.
+  scale_alpha_manual(values=c("annotated"=1, "not_annotated"=0)) + #color depending on the annotation status.
+  scale_linetype_manual(values=c("Exon"="solid", "Exon_added"="dashed")) +
   theme(axis.title = element_blank(),
         axis.text = element_blank(),
         panel.border = element_blank(),

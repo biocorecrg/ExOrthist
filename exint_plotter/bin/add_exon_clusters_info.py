@@ -19,7 +19,7 @@ my_species = args.species
 
 #### Main
 #read input
-my_df = pd.read_table(str(my_input), header=None, names=["GeneID", "ExonID", "Strand", "UpPhase", "DownPhase"])
+my_df = pd.read_table(str(my_input), header=None, names=["GeneID", "ExonID", "Strand", "UpPhase", "DownPhase", "AnnotStatus"])
 exon_clusters_df = pd.read_table(str(my_clusters), header=0, index_col=False, sep="\t")
 exon_clusters_df_species = exon_clusters_df.loc[exon_clusters_df["Sps"] == my_species]
 

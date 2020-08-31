@@ -124,7 +124,7 @@ process subset_input_files {
 	set species, file(annotations), file(overlap_info), file(ref_proteins) from all_input_info
 	output:
 	set species, file("*_subsetted_annot.gtf"), file("*_subsetted_overlap_info.txt") into annotations_overlap_info
-	set species, file("*_subsetted_annot.gtf") into (annotations_4_strand, annotations_4_refphases, annotations_4_exphases, annotations_4_isoforms)
+	set species, file("*_subsetted_annot.gtf") into (annotations_4_strand, annotations_4_refphases, annotations_4_exphases, annotations_4_isoforms, annotations_4_annots)
 	set species, file("*_subsetted_ref_proteins.txt") into ref_prot_info
 
 	script:
@@ -274,6 +274,23 @@ process add_updown_phases {
 }
 
 /*
+ * Add exon annotation status
+ */
+process add_exon_annotation_status {
+	tag {"${$species}"}
+	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
+	input:
+	set species, file(annotations), file(exons) from annotations_4_annots.join(updown_phases)
+	output:
+	set species, file("*_exons_annotation_status") into annotation_status
+	script:
+	"""
+	python ${baseDir}/bin/add_annotation_status.py -a ${annotations} -e ${exons} -out ${species}_exons_annotation_status
+	"""
+}
+
+
+/*
  * Add exon cluster information
  */
 clusterfile = file(params.exonclusters)
@@ -282,7 +299,8 @@ process add_exon_cluster_info {
 	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
 	input:
 	file(clusterfile)
-	set species, file(exons) from updown_phases
+	//set species, file(exons) from updown_phases
+	set species, file(exons) from annotation_status
 	output:
 	set species, file("*_exons_cluster_info.tab") into ex_cluster_info
 
@@ -291,6 +309,7 @@ process add_exon_cluster_info {
 	python ${baseDir}/bin/add_exon_clusters_info.py -i ${exons} -c ${clusterfile} -out ${species}_exons_cluster_info.tab -s ${species}
 	"""
 }
+
 
 //These are all the files we will use for when each species is a query species.
 /*
