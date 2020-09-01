@@ -8,7 +8,7 @@ params {
     orthofolder  = ""
     vastdb       = ""
     intcons      = 2
-    idexons      = 0.2
+    exsim      = 0.2
     maxsize      = 0.65
     output       = "$baseDir/output_small"
     email        = "yourmail@yourdomain"

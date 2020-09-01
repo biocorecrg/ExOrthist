@@ -40,7 +40,7 @@ annotations (GTF files)          : ${params.annotations}
 genomes (fasta files)            : ${params.genomes}
 cluster file (txt files)         : ${params.cluster}
 intcons (1 or 2)                 : ${params.intcons}
-idexons (from 0 to 1)            : ${params.idexons}
+exsim (from 0 to 1)            : ${params.exsim}
 maxsize                          : ${params.maxsize}
 clusternum (number of clusters)  : ${params.clusternum}
 extraexons (e.g. from VastDB)    : ${params.extraexons}
@@ -53,7 +53,7 @@ email for notification           : ${params.email}
 INFORMATION ABOUT OPTIONS:
 - intcons (1 or 2): Whether to consider one or two introns 
      bodering the exon when filtering by conservation.
-- idexons (from 0 to 1): Minimum % of similarity between the
+- exsim (from 0 to 1): Minimum % of similarity between the
      pair of exons and their corresponding upstream and 
      downstream exons.
 - maxsize: Maximum size difference between the two exons 
@@ -343,7 +343,7 @@ process get_all_scores_exon_introns {
     ${species[0]}/${species[0]}_protein_ids_intron_pos_CDS.txt ${species[1]}/${species[1]}_protein_ids_intron_pos_CDS.txt \
     ${comp_id}/Final_aln_scores_${comp_id}.txt;
     get_score_by_exon.pl ${comp_id}/Final_aln_scores_${comp_id}.txt ${comp_id}
-    #filter_exons_by_score.pl -b ${comp_id}/Best_score_hits_exons.txt -sps ${species[0]},${species[1]} -int ${params.intcons} -id ${params.idexons} -max_size ${params.maxsize}
+    #filter_exons_by_score.pl -b ${comp_id}/Best_score_hits_exons.txt -sps ${species[0]},${species[1]} -int ${params.intcons} -id ${params.exsim} -max_size ${params.maxsize}
     """
 }
 
@@ -362,7 +362,7 @@ process filter_scores {
 	script:
     def species = comp_id.split("-")
 	"""
-    filter_exons_by_score.pl -b ${best_score} -sps ${species[0]},${species[1]} -int ${params.intcons} -id ${params.idexons} -max_size ${params.maxsize}
+    filter_exons_by_score.pl -b ${best_score} -sps ${species[0]},${species[1]} -int ${params.intcons} -id ${params.exsim} -max_size ${params.maxsize}
     """
 }
 
@@ -376,13 +376,13 @@ process join_best_filtered_scores {
     file ("best_score_*") from filterscore_per_joining.collect()
 
     output:
-    file("Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.idexons}.tab") into filtered_all_scores
+    file("Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab") into filtered_all_scores
 
 	script:
 	"""
-    #cat best_score_* >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.idexons}.tab
-    echo "GeneID_sp1\tExon_coords_sp1\tGeneID_sp2\tExon_coords_sp2\tSp1\tSp2" > Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.idexons}.tab;
-    for i in best_score_*; do cat \$i | tail -n+2 >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.idexons}.tab; done
+    #cat best_score_* >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab
+    echo "GeneID_sp1\tExon_coords_sp1\tGeneID_sp2\tExon_coords_sp2\tSp1\tSp2" > Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab;
+    for i in best_score_*; do cat \$i | tail -n+2 >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab; done
     """
 }
 
