@@ -36,14 +36,14 @@ source(paste0(my_script_folder, "/exint_plotter_functions.R"))
 interesting_exons = as.vector(read.table(my_interesting_exons, header=FALSE)$V1) #generate vector with interesting exons
 
 ###### for testing
-# my_gene="ENSG00000006788"
-# my_query_species="Hs2"
-# my_folder = paste0("/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/exint_plotter/output_exint/", my_gene, "/")
-# gene_clusters = "/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/exint_plotter/data/clusters/gene_clusters"
-# my_input_folder = paste0(my_folder, "/processed_tables/")
-# my_ordered_species_raw="Hs2,Mm2,Bta"
-# ordered_target_species = unlist(strsplit(my_ordered_species_raw, split=","))
-# interesting_exons = as.vector(read.table("/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/exint_plotter/data/clusters/interesting_exons.txt", header=FALSE)$V1)
+my_gene="ENSG00000006788"
+my_query_species="Hs2"
+my_folder = paste0("/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/exint_plotter/output_exint/", my_gene, "/")
+gene_clusters = "/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/exint_plotter/data/clusters/gene_clusters"
+my_input_folder = paste0(my_folder, "/processed_tables/")
+my_ordered_species_raw="Hs2,Mm2,Bta"
+ordered_target_species = unlist(strsplit(my_ordered_species_raw, split=","))
+interesting_exons = as.vector(read.table("/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/exint_plotter/data/clusters/interesting_exons.txt", header=FALSE)$V1)
 
 ######## Main code ##########
 ########### QUERY SPECIES SECTION ################

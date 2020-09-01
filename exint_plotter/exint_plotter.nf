@@ -26,6 +26,7 @@ exon best scores (pipeline output)	: ${params.bestscores}
 gene clusters (same as pipeline input)	: ${params.geneclusters}
 geneID					: ${params.geneID}
 relevant exons				: ${params.relevant_exs}
+reclustered gene orthology file:	: ${params.sub_orthologs}
 """
 
 /*
@@ -59,7 +60,7 @@ Channel
 annotations.join(overlap_info).join(refprot_info).set{all_input_info_raw}
 
 my_geneID = "${params.geneID}"
-gene_clusters = file(params.geneclusters)
+if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
 process isolate_cluster_id {
 	tag {"${geneID}"}
 	input:
@@ -114,7 +115,8 @@ all_input_info_raw.join(single_species).set{all_input_info}
  * Filter input files for genes belonging to the gene cluster of interest
  */
 
-gene_clusters = file(params.geneclusters)
+//gene_clusters = file(params.geneclusters)
+if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
 process subset_input_files {
 	tag {"${gene_clusterID}"}
 	publishDir "${params.output}/${params.geneID}/inputs", mode: 'symlink'
@@ -338,7 +340,8 @@ process add_fake_coords {
 //But the best hits scores files are too big to be read every single time
 
 my_geneID = "${params.geneID}"
-gene_clusters = file(params.geneclusters)
+//gene_clusters = file(params.geneclusters)
+if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
 process isolate_query_species {
 	tag {"${geneID}"}
 	input:
@@ -360,9 +363,10 @@ process isolate_query_species {
 
 //Generate a channel with all combinations of species query with each species target
 //Take the species from GTFs name
-def my_query = "${query_species1}".toString()
+//def my_query = "${query_species1}".toString()
 Channel
     .fromFilePairs( params.annotations, size: 1).map{it[0]}.flatMap()
+    //.toList().map{  def my_query = "${query_species1}" [it, it].combinations().findAll{a,b -> a!=b && a==my_query}}
     .toList().map{[it, it].combinations().findAll{a,b -> a!=b && a=="Hs2"}}
     .flatMap()
     .map{"${it[0]}_${it[1]}".toString()}
@@ -429,19 +433,20 @@ process isoform_info {
 
 
 //There was a small bug before. Now it should be fixed.
-geneclusters = file(params.geneclusters)
+//gene_clusters = file(params.geneclusters)
+if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
 process exon_position_info {
 	tag {"${species}"}
 	publishDir "${params.output}/${params.geneID}/processed_tables", mode: 'copy'
 	input:
-	file(geneclusters)
+	file(gene_clusters)
 	set species, file(tot_ex), file(ex_index), file(selected_ex) from isoform_tot_ex.join(isoform_ex_index).join(selected_exons_4_isoforms)
 	output:
 	file("*_all_exons_positions.tab") into all_ex_positions
 
 	script:
 	"""
-	python ${baseDir}/bin/exon_position_info.py -t ${tot_ex} -i ${ex_index} -g ${geneclusters} -out ${species}_all_exons_positions.tab
+	python ${baseDir}/bin/exon_position_info.py -t ${tot_ex} -i ${ex_index} -g ${gene_clusters} -out ${species}_all_exons_positions.tab
 	"""
 }
 
@@ -456,7 +461,8 @@ else {
 	Channel
 	    .fromFilePairs(params.annotations, size: 1)
 	    .map{"${it[0]}".toString()}.flatMap().collect().map{it -> it.join(",")}.set{all_species}
-	gene_clusters = file(params.geneclusters)
+	//gene_clusters = file(params.geneclusters)
+	if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
 	process derived_ordered_species {
 		input:
 		file(gene_clusters)
@@ -481,8 +487,8 @@ else {
 
 //R script to actually make the plot.
 my_geneID = "${params.geneID}"
-gene_clusters = file(params.geneclusters)
-
+//gene_clusters = file(params.geneclusters)
+if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
 if (params.relevant_exs) {relevant_exons = file("${params.relevant_exs}")} else {
 	relevant_exons = ""
 }
