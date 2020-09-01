@@ -2,9 +2,9 @@
 use warnings;
 use strict;
 
-my $p=1000;
+#my $p=1000;
 my $dir=$ARGV[0];
-$p = $ARGV[1];
+my $p = $ARGV[1];
 
 my $file=$dir."/tmp.txt";
 `cat $dir/exons_to_split_part_* > $file`;

@@ -234,20 +234,21 @@ ${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${s
  * Split realn exons
  */
 
+//10 times as many exon alignments as gene clusters in part
+Channel.from("${params.clusternum}").toInteger().map{it*10}.into{ex_aln_per_part}
 process split_realn_exons {
     tag { "${folders}" }
 
     input:
     set comp_id, file(sp1), file(sp2), path(folders), val(req_file) from aligned_subclusters_4_splitting
-	
+    val(ex_aln_per_part)
     output:
     set comp_id, file(sp1), file(sp2), path(folders), file("${folders}/exons_to_realign_part_*.txt") into aligned_subclusters_4_realign
-
-
-	script:
-	"""
-		Split_realn_exons.pl ${folders} ${params.clusternum}
-	"""
+    script:
+    """
+	#Split_realn_exons.pl ${folders} ${params.clusternum}
+	Split_realn_exons.pl ${folders} ${ex_aln_per_part}
+    """
 }
 
 
@@ -284,12 +285,9 @@ realigned_exons_4_merge.map{
 }.groupTuple().map{
     def pieces = "${it[0]}".split("_")
 	[pieces[0], it[1].first()]
-}.groupTuple().into{
-	data_4_merge; data_4_merge1
+}.groupTuple().set{
+	data_4_merge
 }
-
-data_4_merge1.println()
-
 
 /*
  * Join scores
