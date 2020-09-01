@@ -111,6 +111,7 @@ if (params.extraexons) {
 if (params.extraexons) {
 	process generate_annotations_with_extra_exons {
 		tag { genomeid }
+		label 'big_cpus'
 		publishDir "${params.output}/", mode: 'copy'
 
 		input:
