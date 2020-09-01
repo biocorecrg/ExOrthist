@@ -237,12 +237,10 @@ process split_realn_exons {
     tag { "${folders}" }
 
     input:
-    set comp_id, file(sp1), file(sp2), file(folders), val(req_file) from aligned_subclusters_4_splitting
+    set comp_id, file(sp1), file(sp2), path(folders), val(req_file) from aligned_subclusters_4_splitting
 	
     output:
-    //set comp_id, file(folders) into aligned_subclusters_4_merge
-    set comp_id, file(sp1), file(sp2), file(folders), file("${folders}/exons_to_realign_part_*.txt") into aligned_subclusters_4_realign
-    //set comp_id, file(folders), file("${folders}/exons_to_realign_part_*.txt") into aligned_parts_4_realign
+    set comp_id, file(sp1), file(sp2), path(folders), file("${folders}/exons_to_realign_part_*.txt") into aligned_subclusters_4_realign
 
 
 	script:
@@ -264,10 +262,10 @@ process realign_exons {
 
     input:
     file(blosumfile)
-    set val(comp_id), file(sp1), file(sp2), file(aligned_folder), val(exons_to_realign) from aligned_subclusters_4_realign.transpose()
+    set val(comp_id), file(sp1), file(sp2), path(aligned_folder), val(exons_to_realign) from aligned_subclusters_4_realign.transpose()
 
     output:
-    set val(comp_id), file(aligned_folder), file("${aligned_folder}/realigned_*") into realigned_exons_4_merge
+    set val(comp_id), path(aligned_folder), file("${aligned_folder}/realigned_*") into realigned_exons_4_merge
 
 	script:
     def cls_parts = "${aligned_folder.simpleName}".split("_")
