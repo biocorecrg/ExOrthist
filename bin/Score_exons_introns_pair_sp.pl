@@ -567,7 +567,13 @@ sub score_introns {
     my $ngp=0;
 
     for ($n=0; $n<scalar(@nseq1); $n++){ ##getting aln positions
-	if ($nseq1[$n]=~/\s+/ && $nseq2[$n] =~/\s+/ && $naln[$n]=~/\s+/ && defined $naln[$n] && defined $nseq1[$n] && defined $nseq2[$n]){}
+	if (($nseq1[$n] || $nseq2[$n] || $nseq1[$n] == 0 || $nseq2[$n]==0) && !defined $naln[$n]){
+	    $naln[$n]=" ";
+	    push (@seq1,$nseq1[$n]);
+	    push (@seq2,$nseq2[$n]);
+	    push (@aln,$naln[$n]);
+	}
+	elsif ($nseq1[$n]=~/\s+/ && $nseq2[$n] =~/\s+/ && $naln[$n]=~/\s+/ && defined $naln[$n] && defined $nseq1[$n] && defined $nseq2[$n]){}
 	elsif ($nseq1[$n] || $nseq2[$n] || $naln[$n] || $nseq1[$n] == 0 || $nseq2[$n]==0 ){
 	    push (@seq1,$nseq1[$n]);
 	    push (@seq2,$nseq2[$n]);
@@ -597,12 +603,16 @@ sub score_introns {
 		    if ($seq1[$n] == $seq2[$n]){ ##checking if the phase is the same for both introns
 			$score=10;
 			if ($n1 && $n2){
-			print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$i2\t$paa2\t$seq2[$n]\t0\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
+			    $aln[$m1]="n" if !defined $aln[$m1]; 
+			    $aln[$m2]="n" if !defined $aln[$m2];			    
+			    print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$i2\t$paa2\t$seq2[$n]\t0\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
 			}
 		    }
 		    else {
 			$score=-10; ##introns in different phase hava a score of -10 (change in the scoring system)
 			if ($n1 && $n2){
+			    $aln[$m1]="n" if !defined $aln[$m1]; 
+			    $aln[$m2]="n" if !defined $aln[$m2];
 			    print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$i2\t$paa2\t$seq2[$n]\t0\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
 			}
 		    }
@@ -663,6 +673,8 @@ sub score_introns {
 				    if ($score==0){ $score=-1; }
 				    if (!$insc{$idin}){
 					if ($n1 && $n2){
+					    $aln[$m1]="n" if !defined $aln[$m1]; 
+					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
 					    
 					    $indev{$idin}=abs($m3);
@@ -671,6 +683,8 @@ sub score_introns {
 				    }
 				    elsif (abs($m3)<$indev{$idin}) {
 					if ($n1 && $n2){
+					    $aln[$m1]="n" if !defined $aln[$m1]; 
+					    $aln[$m2]="n" if !defined $aln[$m2];					    
 					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
 					    
 					    $indev{$idin}=abs($m3);
@@ -686,6 +700,8 @@ sub score_introns {
 				    if (!$insc{$idin}){
 					
 					if ($n1 && $n2){
+					    $aln[$m1]="n" if !defined $aln[$m1]; 
+					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
 					    $indev{$idin}=abs($w);
 					}
@@ -693,6 +709,8 @@ sub score_introns {
 				    }
 				    elsif (abs($w)<$indev{$idin}) {
 					if ($n1 && $n2){
+					    $aln[$m1]="n" if !defined $aln[$m1]; 
+					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
 					    $indev{$idin}=abs($w);
 					}
@@ -746,12 +764,16 @@ sub score_introns {
 		    if ($seq2[$n] == $seq1[$n]){ ##checking if the phase is the same for both introns
 			$score=10;
 			if ($n1 && $n2){
+			    $aln[$m1]="n" if !defined $aln[$m1]; 
+			    $aln[$m2]="n" if !defined $aln[$m2];
 			    print INSC "$el\t$n2\tintron_$i1\t$paa1\t$seq2[$n]\t$n1\tintron_$i2\t$paa2\t$seq1[$n]\t0\t$aln[$m1],$aln[$m2]\t$score\t$sp2\t$sp1\n";
 			}
 		    }
 		    else {
 			$score=-10;
 			if ($n1 && $n2){
+			    $aln[$m1]="n" if !defined $aln[$m1]; 
+			    $aln[$m2]="n" if !defined $aln[$m2];
 			    print INSC "$el\t$n2\tintron_$i1\t$paa1\t$seq2[$n]\t$n1\tintron_$i2\t$paa2\t$seq1[$n]\t0\t$aln[$m1],$aln[$m2]\t$score\t$sp2\t$sp1\n";
 			}
 		    }
@@ -810,12 +832,16 @@ sub score_introns {
 				    $score=$score-(abs($m3)); ##resting deviating positions to the score
 				    if (!$insc{$idin}){
 					if ($n1 && $n2){
+					    $aln[$m1]="n" if !defined $aln[$m1]; 
+					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
 					    $indev{$idin}=abs($m3);
 					}
 				    }
 				    elsif (abs($m3)<$indev{$idin}){
 					if ($n1 && $n2){
+					    $aln[$m1]="n" if !defined $aln[$m1]; 
+					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
 					    $indev{$idin}=abs($m3);
 					}
@@ -829,12 +855,16 @@ sub score_introns {
 				    
 				    if (!$insc{$idin}){
 					if ($n1 && $n2){
+					    $aln[$m1]="n" if !defined $aln[$m1]; 
+					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
 					    $indev{$idin}=abs($w);
 					}
 				    }
 				    elsif (abs($w)<$indev{$idin}){
 					if ($n1 && $n2){
+					    $aln[$m1]="n" if !defined $aln[$m1]; 
+					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
 					    $indev{$idin}=abs($w);
 					}

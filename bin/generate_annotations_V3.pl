@@ -41,15 +41,15 @@ if (!defined $genome_file || !defined $gtf_file || !defined $species || defined 
 
 Script that creates all annotation files needed for the second module of the pipeline
 
-OMPULSORY
-     -GTF              Path where GTFs are stored (they should be named Sp1_annot.gtf)
-     -G                Path where gDNAs are stored (they should be named Sp1_gDNA.fasta)
-     -sp Sp1           Species id.
+COMPULSORY
+     -GTF              Path to GTF (it should be named Sp1_annot.gtf)
+     -G                Path to gDNA (it should be named Sp1_gDNA.fasta)
+     -sp Sp1           Species ID.
 
 OPTIONAL
      -add_exons        File with additional exons to get their orthology
-                           If a species is missing the reference file, \"NA\" should be provided
-     -EX_DB            Path to where the folder with the species annotation files is created.
+                           Format (tsv): ExonID GeneID Coord_A Coord_C1 Coord_C2
+     -EX_DB            Path to where the folder with the species annotation files is created (def = ./).
      -verbose T/F      Verbose (default TRUE) 
      -h/--help         This help message.
 
@@ -245,38 +245,36 @@ if ($do_all_steps){
 
     ### Creates files with the longest protein per gene (exint not maintained, just list)
     my $longest_prot_output = "$exons_db_folder/$species/$species"."_ref_proteins.txt";
-#    my $longest_exint_output = "$exons_db_folder/$species/$species"."_ref_proteins.exint";
     open (L_P_OUTPUT, ">$longest_prot_output") || die "Cannot open $longest_prot_output (loop 1)\n";
-#    print L_P_OUTPUT "GeneID\tProteinID\n"; # maintain without header, as the original
-#    open (L_E_OUTPUT, ">$longest_exint_output") || die "Cannot open $longest_exint_output (loop 1)\n";
     foreach my $temp_exint (sort keys %longest_prot){
 	print L_P_OUTPUT "$temp_exint\t$longest_prot{$temp_exint}\n";
-#	print L_E_OUTPUT "$exint_data{$longest_prot{$temp_exint}}\n";
     }
     close L_P_OUTPUT;
-#    close L_E_OUTPUT;
     
 ##### Introducing missing exons in GTF if extra exons are provided
     if (defined $add_exons){ 
 	verbPrint("Introducing additional exons for $species\n");
-	#ENSG00000029534  HsaEX0004110  chr8:41758036-41758137  chr8:41797512-41797622  chr8:41733971-41734069  chr8:41797512,41758036-41758137,41734069:-
+	#HsaEX0004110  ENSG00000029534  chr8:41758036-41758137  chr8:41797512-41797622  chr8:41733971-41734069
 	my (@t);
 	my ($g, $ev,$i,$f,$coA,$coB);
-	my (%Ev_Gene,%C1_ref,%A_ref,%C2_ref,%coA_ev,%co_ev,%coB_ev,%C1_inc,%C2_inc);
+	my (%Ev_Gene,%C1_ref,%A_ref,%C2_ref,%coA_ev,%co_ev,%coB_ev);
+        my %expl_solution;
+        $expl_solution{1}="Match C1+C2 exons";
+        $expl_solution{2}="Match C1 exon";
+        $expl_solution{3}="Match C1 donor";
+        $expl_solution{4}="Match C2 exon";
 	
 	open (EXONS, $add_exons) || die "*** DIE: Cannot open $add_exons\n";
 	<EXONS>;
 	while (<EXONS>){
 	    chomp;
 	    @t=split(/\t/);
-	    $g=$t[0];
-	    $ev=$t[1];
+	    $ev=$t[0];
+	    $g=$t[1];
 	    $Ev_Gene{$ev}=$g;
 	    $A_ref{$ev}=$t[2];
 	    $C1_ref{$ev}=$t[3];
 	    $C2_ref{$ev}=$t[4];
-	    $C1_inc{$ev}=$t[3]; ##same as C1 reference
-	    $C2_inc{$ev}=$t[4]; ##same as C2 reference 	
 	    $co_ev{$t[2]}=$ev;
 	    ($chr,$i,$f)=$t[2]=~/(.+?)\:(.+?)\-(.+)/;
 	    $coA="$chr:$i";
@@ -366,7 +364,7 @@ if ($do_all_steps){
 # ...
 # In some cases, the exact exon is wrongly annotated, but there is no skipping form
 	# A lot variable declarations to avoid issues from merging scripts
-	my ($tally_annotated,$C1_inc,$C2_inc,$C1_ref,$C2_ref,$C1i,$C1r,$C1_incA,$C1_refA,$C1f,$C2f,$C2_incA,$C2_refA,$C2i,$C2r,$Ai,$Af,$coA_A,$coB_A,$temp_tr,$exons_tr,$selected_tr,$ref_tr,$OK,$t_C2,$exons_sel,$t_C1,$CDS_end,$CDS_ini,$CDS_seq,$STOP_detected,$bit,$co_Af_CDS,$co_Ai_CDS,$codon,$comment,$exN,$extra,$final_tr,$finished,$first_offset,$full_line,$full_line2,$full_line3,$full_line4,$le_CDS_ex,$length_A,$lineN,$loop,$new_line,$new_line2,$new_line3,$new_offset,$offset_A,$out_frame,$rescue_type,$seq_bit,$seq_bit_test,$started,$stop_co_f,$stop_co_i,$str,$tally_non_annot_hit,$tally_non_annot_no_hit,$tally_partial,$type);
+	my ($tally_annotated,$C1_inc,$C2_inc,$C1i,$C1f,$C1_incA,$C2i,$C2f,$C2_incA,$Ai,$Af,$coA_A,$coB_A,$temp_tr,$exons_tr,$selected_tr,$OK,$t_C2,$exons_sel,$t_C1,$CDS_end,$CDS_ini,$CDS_seq,$STOP_detected,$bit,$co_Af_CDS,$co_Ai_CDS,$codon,$comment,$exN,$extra,$final_tr,$finished,$first_offset,$full_line,$full_line2,$full_line3,$full_line4,$le_CDS_ex,$length_A,$lineN,$loop,$new_line,$new_line2,$new_line3,$new_offset,$offset_A,$out_frame,$seq_bit,$seq_bit_test,$started,$stop_co_f,$stop_co_i,$str,$tally_non_annot_hit,$tally_non_annot_no_hit,$tally_partial);
 	my (@t_line,@t_line2,@t_line3,@t_line4,@t_line_C2);
 	my (%C1_accepted_index,%tally_solutions);
 	foreach $ev (sort keys %A_ref){
@@ -376,24 +374,16 @@ if ($do_all_steps){
 	    }
 	    else {
 		$selected_tr="";
-# 		my $ref_tr; # not provided 
-		$C1_inc=$C1_inc{$ev};
-		$C2_inc=$C2_inc{$ev};
-		$C1_ref=$C1_ref{$ev};
-		$C2_ref=$C2_ref{$ev};
+ 		my $ref_tr; # not provided yet => left here for future developments
+		$C1_inc=$C1_ref{$ev};
+		$C2_inc=$C2_ref{$ev};
 		### only the C1do and C2ac
 		($chr,$C1i,$C1f)=$C1_inc=~/(.+?)\:(.+?)\-(.+)/;
 		$C1_incA="$chr:$C1f" if $str{$g} eq "+";
 		$C1_incA="$chr:$C1i" if $str{$g} eq "-";
-		($chr,$C1i,$C1f)=$C1_ref=~/(.+?)\:(.+?)\-(.+)/;
-		$C1_refA="$chr:$C1f" if $str{$g} eq "+";
-		$C1_refA="$chr:$C1i" if $str{$g} eq "-";
 		($chr,$C2i,$C2f)=$C2_inc=~/(.+?)\:(.+?)\-(.+)/;
-		$C2_incA="$chr:$C2f" if $str{$g} eq "-";
 		$C2_incA="$chr:$C2i" if $str{$g} eq "+";
-		($chr,$C2i,$C2f)=$C2_ref=~/(.+?)\:(.+?)\-(.+)/;
-		$C2_refA="$chr:$C2f" if $str{$g} eq "-";
-		$C2_refA="$chr:$C2i" if $str{$g} eq "+";
+		$C2_incA="$chr:$C2f" if $str{$g} eq "-";
 		
 		### exon coordinates
 		($Ai,$Af)=$A_ref{$ev}=~/\:(.+?)\-(.+)/;
@@ -414,41 +404,8 @@ if ($do_all_steps){
 			} else {$selected_tr="1=$tr" unless ($exons_sel>=$exons_tr);}
 			$C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_inc};
 		    }
-		    elsif ($tr_co{$tr}{$C1_inc} && $tr_co{$tr}{$C2_ref} && $index_co{$tr}{$C1_inc}==$index_co{$tr}{$C2_ref}-1){
-			($temp_tr)=$selected_tr=~/[12]\=(.+)/; # it may be empty
-			if (defined $temp_tr){ 
-			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
-			}else {$exons_sel=1;}
-			$exons_tr=$#{$cds_lines{$tr}}+1;
-			if (defined $ref_tr){
-			    $selected_tr="2=$tr" unless ($selected_tr eq "2=$ref_tr" || $selected_tr=~/1\=/ || $exons_sel>=$exons_tr);
-			} else {$selected_tr="2=$tr" unless ($selected_tr=~/1\=/ || $exons_sel>=$exons_tr);}
-			$C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_inc};
-		    }
-		    elsif ($tr_co{$tr}{$C1_ref} && $tr_co{$tr}{$C2_inc} && $index_co{$tr}{$C1_ref}==$index_co{$tr}{$C2_inc}-1){
-			($temp_tr)=$selected_tr=~/[123]\=(.+)/; # it may be empty
-			if (defined $temp_tr){
-			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
-			}else {$exons_sel=1;}
-			$exons_tr=$#{$cds_lines{$tr}}+1;
-			if (defined $ref_tr){
-			    $selected_tr="3=$tr" unless ($selected_tr eq "3=$ref_tr" || $selected_tr=~/[12]\=/ || $exons_sel>=$exons_tr);
-			} else {$selected_tr="3=$tr" unless ($selected_tr=~/[12]\=/ || $exons_sel>=$exons_tr);}
-			$C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_ref};
-		    }
-		    elsif ($tr_co{$tr}{$C1_ref} && $tr_co{$tr}{$C2_ref} && $index_co{$tr}{$C1_ref}==$index_co{$tr}{$C2_ref}-1){
-			($temp_tr)=$selected_tr=~/[1234]\=(.+)/; # it may be empty
-			if (defined $temp_tr){
-			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
-			}else {$exons_sel=1;}
-			$exons_tr=$#{$cds_lines{$tr}}+1;
-			if (defined $ref_tr){
-			    $selected_tr="4=$tr" unless ($selected_tr eq "4=$ref_tr" || $selected_tr=~/[123]\=/ || $exons_sel>=$exons_tr);
-			} else {$selected_tr="4=$tr" unless ($selected_tr=~/[123]\=/ || $exons_sel>=$exons_tr);}
-			$C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_ref};
-		    }
 		    elsif ($tr_co{$tr}{$C1_inc}){
-			($temp_tr)=$selected_tr=~/[12345]\=(.+)/; # it may be empty
+			($temp_tr)=$selected_tr=~/[12]\=(.+)/; # it may be empty
 			if (defined $temp_tr){
 			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
 			}else {$exons_sel=1;}
@@ -460,31 +417,13 @@ if ($do_all_steps){
 			    $OK=1 if $i>$Af && $str{$g} eq "+";
 			    $OK=1 if $f<$Ai && $str{$g} eq "-";
 			    if (defined $ref_tr){
-				$selected_tr="5=$tr" unless ($selected_tr eq "5=$ref_tr" || $selected_tr=~/[1234]\=/ || $exons_sel>=$exons_tr || !$OK);
-			    } else {$selected_tr="5=$tr" unless ($selected_tr=~/[1234]\=/ || $exons_sel>=$exons_tr || !$OK);}
+				$selected_tr="2=$tr" unless ($selected_tr eq "2=$ref_tr" || $selected_tr=~/1\=/ || $exons_sel>=$exons_tr || !$OK);
+			    } else {$selected_tr="2=$tr" unless ($selected_tr=~/1\=/ || $exons_sel>=$exons_tr || !$OK);}
 			    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_inc};
 			}
 		    }
-		    elsif ($tr_co{$tr}{$C1_ref}){
-			($temp_tr)=$selected_tr=~/[123456]\=(.+)/; # it may be empty
-			if (defined $temp_tr){
-			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
-			}else {$exons_sel=1;}
-			$exons_tr=$#{$cds_lines{$tr}}+1;
-			if (defined $index_co{$tr}{$C1_ref}){
-			    $t_C2=$array_tr_co{$tr}[$index_co{$tr}{$C1_ref}+1];
-			    ($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
-			    $OK="";
-			    $OK=1 if $i>$Af && $str{$g} eq "+";
-			    $OK=1 if $f<$Ai && $str{$g} eq "-";
-			    if (defined $ref_tr){
-				$selected_tr="6=$tr" unless ($selected_tr eq "6=$ref_tr" || $selected_tr=~/[12345]\=/ || $exons_sel>=$exons_tr || !$OK);
-			    } else {$selected_tr="6=$tr" unless ($selected_tr=~/[12345]\=/ || $exons_sel>=$exons_tr || !$OK);}
-			    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_ref};
-			}
-		    }
 		    elsif (($tr_coA{$tr}{$C1_incA} && $str{$g} eq "-") || ($tr_coB{$tr}{$C1_incA} && $str{$g} eq "+") ){ # C1do exists in transcript
-			($temp_tr)=$selected_tr=~/[1234567]\=(.+)/; # it may be empty
+			($temp_tr)=$selected_tr=~/[123]\=(.+)/; # it may be empty
 			if (defined $temp_tr){
 			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
 			}else {$exons_sel=1;}
@@ -496,31 +435,13 @@ if ($do_all_steps){
 			    $OK=1 if $i>$Af && $str{$g} eq "+";
 			    $OK=1 if $f<$Ai && $str{$g} eq "-";
 			    if (defined $ref_tr){
-				$selected_tr="7=$tr" unless ($selected_tr eq "7=$ref_tr" || $selected_tr=~/[123456]\=/ || !$OK || $exons_sel>=$exons_tr);
-			    } else {$selected_tr="7=$tr" unless ($selected_tr=~/[123456]\=/ || !$OK || $exons_sel>=$exons_tr);}
+				$selected_tr="3=$tr" unless ($selected_tr eq "3=$ref_tr" || $selected_tr=~/[12]\=/ || !$OK || $exons_sel>=$exons_tr);
+			    } else {$selected_tr="3=$tr" unless ($selected_tr=~/[12]\=/ || !$OK || $exons_sel>=$exons_tr);}
 			    $C1_accepted_index{$ev}{$tr}=$index_coA{$tr}{$C1_incA};
 			}
 		    }
-		    elsif (($tr_coA{$tr}{$C1_refA} && $str{$g} eq "-") || ($tr_coB{$tr}{$C1_refA} && $str{$g} eq "+")){ # C1do exists in transcript
-			($temp_tr)=$selected_tr=~/[12345678]\=(.+)/; # it may be empty
-			if (defined $temp_tr){
-			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
-			}else {$exons_sel=1;}
-			$exons_tr=$#{$cds_lines{$tr}}+1;
-			if (defined $index_coA{$tr}{$C1_refA}){
-			    $t_C2=$array_tr_co{$tr}[$index_coA{$tr}{$C1_refA}+1]; # gets a proper C2, not an acceptor
-			    ($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
-			    $OK="";
-			    $OK=1 if $i>$Af && $str{$g} eq "+";
-			    $OK=1 if $f<$Ai && $str{$g} eq "-";
-			    if (defined $ref_tr){
-				$selected_tr="8=$tr" unless ($selected_tr eq "8=$ref_tr" || $selected_tr=~/[1234567]\=/ || !$OK || $exons_sel>=$exons_tr);
-			    } else {$selected_tr="8=$tr" unless ($selected_tr=~/[1234567]\=/ || !$OK || $exons_sel>=$exons_tr);}
-			    $C1_accepted_index{$ev}{$tr}=$index_coA{$tr}{$C1_refA};
-			}
-		    }
 		    elsif ($tr_co{$tr}{$C2_inc}){
-			($temp_tr)=$selected_tr=~/[123456789]\=(.+)/; # it may be empty
+			($temp_tr)=$selected_tr=~/[1234]\=(.+)/; # it may be empty
 			if (defined $temp_tr){
 			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
 			}else {$exons_sel=1;}
@@ -532,33 +453,15 @@ if ($do_all_steps){
 			    $OK=1 if $f<$Ai && $str{$g} eq "+";
 			    $OK=1 if $i>$Af && $str{$g} eq "-";
 			    if (defined $ref_tr){
-				$selected_tr="9=$tr" unless ($selected_tr eq "9=$ref_tr" || $selected_tr=~/[12345678]\=/ || !$OK || $exons_sel>=$exons_tr);
-			    } else {$selected_tr="9=$tr" unless ($selected_tr=~/[12345678]\=/ || !$OK || $exons_sel>=$exons_tr);}
+				$selected_tr="4=$tr" unless ($selected_tr eq "4=$ref_tr" || $selected_tr=~/[123]\=/ || !$OK || $exons_sel>=$exons_tr);
+			    } else {$selected_tr="4=$tr" unless ($selected_tr=~/[123]\=/ || !$OK || $exons_sel>=$exons_tr);}
 			    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C2_inc}-1;
-			}
-		    }
-		    elsif ($tr_co{$tr}{$C2_ref}){
-			($temp_tr)=$selected_tr=~/[1234567890]\=(.+)/; # it may be empty
-			if (defined $temp_tr){
-			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
-			}else {$exons_sel=1;}
-			$exons_tr=$#{$cds_lines{$tr}}+1;
-			if (defined $index_co{$tr}{$C2_ref}){
-			    $t_C1=$array_tr_co{$tr}[$index_co{$tr}{$C2_ref}-1];
-			    ($i,$f)=$t_C1=~/\:(.+?)\-(.+)/;
-			    $OK="";
-			    $OK=1 if $f<$Ai && $str{$g} eq "+";
-			    $OK=1 if $i>$Af && $str{$g} eq "-";
-			    if (defined $ref_tr){
-				$selected_tr="10=$tr" unless ($selected_tr eq "10=$ref_tr" || $selected_tr=~/[123456789]\=/ || !$OK || $exons_sel>=$exons_tr);
-			    } else {$selected_tr="10=$tr" unless ($selected_tr=~/[123456789]\=/ || !$OK || $exons_sel>=$exons_tr);}
-			    $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C2_ref}-1;
 			}
 		    }
 		}
 		if ($selected_tr){
 		    $tally_non_annot_hit++;
-		    ($rescue_type,$final_tr)=$selected_tr=~/(.+?)\=(.+)/;
+		    my ($rescue_type,$final_tr)=$selected_tr=~/(.+?)\=(.+)/;
 		    $tally_solutions{$rescue_type}++;
 		    
 		    ### creating fake transcripts:
@@ -862,7 +765,7 @@ if ($do_all_steps){
 				    }
 				}
 			    }
-			    print LOG "$ev\t$g\t$exN\t$final_tr"."fB$tally_non_annot_hit\t$comment\t$rescue_type\n";
+			    print LOG "$ev\t$g\t$exN\t$final_tr"."fB$tally_non_annot_hit\t$comment\t$expl_solution{$rescue_type}\n";
 			}
 		    }
 		}
@@ -879,8 +782,8 @@ if ($do_all_steps){
 	verbPrint("   Partially Annotated\t$tally_partial\n");
 	verbPrint("   Not rescued\t$tally_non_annot_no_hit\n");
 	verbPrint("   Solutions:\n");
-	foreach $type (sort {$a<=>$b} keys %tally_solutions){
-	    verbPrint("   Type $type\t$tally_solutions{$type}\n");
+	foreach my $type_sol (sort {$a<=>$b} keys %tally_solutions){
+	    verbPrint("   - $expl_solution{$type_sol}\t$tally_solutions{$type_sol}\n");
 	}
 	close LOG;
 	close O;
@@ -1823,7 +1726,7 @@ unless (defined $keep_all_files){
     my $file4 = "$exons_db_folder/$species/$species"."_tr_coords.txt";
     my $file5 = "$exons_db_folder/$species/$species"."_tr_coords_CDS.txt";
     my $file6 = "$exons_db_folder/$species/$species"."_trid_protid.txt";    
-    my $file7 = "$exons_db_folder/$species/$species"."_protein_ids_intron_pos.tx";
+    my $file7 = "$exons_db_folder/$species/$species"."_protein_ids_intron_pos.txt";
     system "rm $file1 $file2 $file3 $file4 $file5 $file6 $file7";
 }
 

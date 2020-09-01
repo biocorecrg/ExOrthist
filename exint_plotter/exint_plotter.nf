@@ -25,6 +25,7 @@ exon clusters (pipeline output)		: ${params.exonclusters}
 exon best scores (pipeline output)	: ${params.bestscores}
 gene clusters (same as pipeline input)	: ${params.geneclusters}
 geneID					: ${params.geneID}
+relevant exons				: ${params.relevant_exs}
 """
 
 /*
@@ -123,7 +124,7 @@ process subset_input_files {
 	set species, file(annotations), file(overlap_info), file(ref_proteins) from all_input_info
 	output:
 	set species, file("*_subsetted_annot.gtf"), file("*_subsetted_overlap_info.txt") into annotations_overlap_info
-	set species, file("*_subsetted_annot.gtf") into (annotations_4_strand, annotations_4_refphases, annotations_4_exphases, annotations_4_isoforms)
+	set species, file("*_subsetted_annot.gtf") into (annotations_4_strand, annotations_4_refphases, annotations_4_exphases, annotations_4_isoforms, annotations_4_annots)
 	set species, file("*_subsetted_ref_proteins.txt") into ref_prot_info
 
 	script:
@@ -133,6 +134,7 @@ process subset_input_files {
 }
 
 //Depending on how big this file is, we might need different RAM requirements.
+//I am using bash because it's much faster than python here.
 best_hits_input = file(params.bestscores)
 process subset_best_hits {
 	tag {"${gene_clusterID}"}
@@ -144,14 +146,10 @@ process subset_best_hits {
 	output:
 	file(Best_hits_subsetted) into best_hits
 	script:
-	"""
-#!/usr/bin/env python
-
-import pandas as pd
-my_besthits_df = pd.read_table("${best_hits_input}", header=0, index_col=False, sep="\t")
-my_besthits_sub_df = my_besthits_df[my_besthits_df.CID=="${gene_clusterID}"]
-my_besthits_sub_df.to_csv("Best_hits_subsetted", sep="\t", header=True, index=False, na_rep="NA")
-	"""
+"""
+awk 'NR==1' ${best_hits_input} > Best_hits_subsetted
+cat ${best_hits_input} | awk '\$1=="${gene_clusterID}"' >> Best_hits_subsetted
+"""
 }
 
 
@@ -276,6 +274,23 @@ process add_updown_phases {
 }
 
 /*
+ * Add exon annotation status
+ */
+process add_exon_annotation_status {
+	tag {"${$species}"}
+	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
+	input:
+	set species, file(annotations), file(exons) from annotations_4_annots.join(updown_phases)
+	output:
+	set species, file("*_exons_annotation_status") into annotation_status
+	script:
+	"""
+	python ${baseDir}/bin/add_annotation_status.py -a ${annotations} -e ${exons} -out ${species}_exons_annotation_status
+	"""
+}
+
+
+/*
  * Add exon cluster information
  */
 clusterfile = file(params.exonclusters)
@@ -284,7 +299,8 @@ process add_exon_cluster_info {
 	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
 	input:
 	file(clusterfile)
-	set species, file(exons) from updown_phases
+	//set species, file(exons) from updown_phases
+	set species, file(exons) from annotation_status
 	output:
 	set species, file("*_exons_cluster_info.tab") into ex_cluster_info
 
@@ -293,6 +309,7 @@ process add_exon_cluster_info {
 	python ${baseDir}/bin/add_exon_clusters_info.py -i ${exons} -c ${clusterfile} -out ${species}_exons_cluster_info.tab -s ${species}
 	"""
 }
+
 
 //These are all the files we will use for when each species is a query species.
 /*
@@ -457,14 +474,19 @@ else {
 		interesting_species = list(set([element for element in species_list if element in str("${all_species}").split(",")]))
 		interesting_species.insert(0, interesting_species.pop(interesting_species.index("Hs2")))
 		final_species_list = ",".join(str(element) for element in interesting_species)
-		print(final_species_list)
+		print(final_species_list, end='')
 		"""
 	}
 }
 
 //R script to actually make the plot.
 my_geneID = "${params.geneID}"
-gene_clusters = file(params.geneclusters) 
+gene_clusters = file(params.geneclusters)
+
+if (params.relevant_exs) {relevant_exons = file("${params.relevant_exs}")} else {
+	relevant_exons = ""
+}
+ 
 process plot_exint {
 	tag{"${species}"}
 	publishDir "${params.output}/${params.geneID}", mode: 'copy'
@@ -473,11 +495,31 @@ process plot_exint {
 	val(my_query_species) from query_species1 
 	val(ordered_target)
 	file(gene_clusters)
+	file(relevant_exons)
 	file("*") from plot_input
 	output:
 	"${baseDir}/exint_plots"
 	script:
 	"""
-	Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} 
+	Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} "${relevant_exons}" 
 	"""
 }
+
+//process isolate_cluster_id {
+//	tag {"${geneID}"}
+//	input:
+//	val(my_geneID)
+//	file(gene_clusters)
+//	output:
+//	stdout into (gene_clusterID, gene_clusterID1, gene_clusterID2, gene_clusterID3)
+//	script:
+//	"""
+//	#!/usr/bin/env python
+//
+//	import pandas as pd
+//	
+//	my_df = pd.read_csv("${gene_clusters}", sep="\t", header=None, index_col=False)
+//	clusterID = list(my_df[my_df.iloc[:,2]=="${my_geneID}"].iloc[:,0])[0]
+//	print(clusterID, end='')
+//	"""
+//}

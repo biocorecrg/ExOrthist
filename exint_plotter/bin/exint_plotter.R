@@ -26,30 +26,24 @@ my_query_species = args[2]
 my_folder = args[3]
 my_script_folder = args[4]
 gene_clusters = args[5]
-my_ordered_species_raw = args[6] #Facultative. If the argument is not provided, I will take the species order from the cluster file.
-
-#### Define the order of the species:
-#If a comma delimited string is not provided as external argument, the order of the species is derived from the gene cluster file.
-# if (is.na(my_ordered_species_raw)) {
-#   species_orthologs_table = read.delim(gene_clusters, sep="\t", header=FALSE); colnames(species_orthologs_table)[1:4] = c("ClusterID", "Species", "GeneID", "GeneName")
-#   ordered_target_species = unique(as.vector(species_orthologs_table$Species))
-# } else {
-#   ordered_target_species = unlist(strsplit(my_ordered_species_raw, split=","))
-# }
+my_ordered_species_raw = args[6] #The order of the species is defined within the nextflow.
+my_interesting_exons = args[7] #Facultative. one column file containing the coordinates for the exons to highlight.
 
 ######## Set up
 my_input_folder = paste0(my_folder, "/processed_tables/")
 ordered_target_species = unlist(strsplit(my_ordered_species_raw, split=","))
 source(paste0(my_script_folder, "/exint_plotter_functions.R"))
+interesting_exons = as.vector(read.table(my_interesting_exons, header=FALSE)$V1) #generate vector with interesting exons
 
 ###### for testing
-# my_gene="ENSG00000171310"
+# my_gene="ENSG00000006788"
 # my_query_species="Hs2"
-# my_folder = "/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXINT_PLOTTER/output_exint/ENSG00000171310/"
-# gene_clusters = "/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXINT_PLOTTER/data/clusters/gene_clusters"
+# my_folder = paste0("/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/exint_plotter/output_exint/", my_gene, "/")
+# gene_clusters = "/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/exint_plotter/data/clusters/gene_clusters"
 # my_input_folder = paste0(my_folder, "/processed_tables/")
 # my_ordered_species_raw="Hs2,Mm2,Bta"
 # ordered_target_species = unlist(strsplit(my_ordered_species_raw, split=","))
+# interesting_exons = as.vector(read.table("/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/exint_plotter/data/clusters/interesting_exons.txt", header=FALSE)$V1)
 
 ######## Main code ##########
 ########### QUERY SPECIES SECTION ################
@@ -58,8 +52,8 @@ source(paste0(my_script_folder, "/exint_plotter_functions.R"))
 #In principle they should be ordered by evolutionary distance.
 
 ########
-#anyways this will have to be subsetted by the query geneID
 species_query_table = read.delim(paste0(my_input_folder, my_query_species, "_exons_cluster_info-fakecoords.tab"), sep="\t", header=TRUE, row=1)
+species_query_table = species_query_table[species_query_table$State!="",] #removing some weird spurious entries
 
 my_gene_table = subset(species_query_table, GeneID == my_gene) #select the gene of interest
 my_gene_table$FakeCoords = as.character(paste0(my_gene_table$FakeStart, ";", my_gene_table$FakeStop)) #generate coordinates ID
@@ -102,6 +96,7 @@ for (my_target_species in considered_species) {
   #upload target species table wihout fake coordinates
   target_species_table = read.delim(paste0(my_input_folder, my_target_species, "_exons_cluster_info-fakecoords.tab"), 
                                     sep="\t", header=TRUE, row=1, stringsAsFactors=FALSE)
+  target_species_table = target_species_table[target_species_table$State!="",] #removing some weird spurious entries
   
   #cycle on all the orthologoues genes in target species
   for (target_gene in my_gene_orthologs[names(my_gene_orthologs) == my_target_species]) {
@@ -123,10 +118,6 @@ for (my_target_species in considered_species) {
     best_hits_table$ExonID_target = rep(NA, nrow(best_hits_table))
     #This in theory is just to remove columns
     best_hits_table = subset(best_hits_table, select=-c(Score_C1, Score_I1, Score_I2, Score_C2))
-    #best_hits_table$Score_C1 = NULL
-    #best_hits_table$Score_I1 = NULL
-    #best_hits_table$Score_I2 = NULL
-    #best_hits_table$Score_C2 = NULL
     best_hits_table = unique(best_hits_table) #Check this. IDK why we should have duplicated rows.
     
     
@@ -247,7 +238,6 @@ for (my_target_species in considered_species) {
 ###########################################################
 ########### Prepare plotting input ########################
 ###########################################################
-
 plotting_table = final_table
 plotting_table$GeneID = as.vector(plotting_table$GeneID)
 plotting_table$Species = as.vector(plotting_table$Species)
@@ -280,17 +270,31 @@ plotting_table$Levels[plotting_table$Levels == 1] = NA #If there is only one exo
 plotting_table$ExonNumberPlot = paste0(plotting_table$GeneID, ";", plotting_table$ExonNumber)
 plotting_table$ExonNumberPlot = factor(plotting_table$ExonNumberPlot, levels=unique(plotting_table$ExonNumberPlot))
 
+####### Setting up the colors.
+#Adding special colors for the exons to highlight and their orthologs.
+all_colors_vector = terrain.colors(length(interesting_exons)+1)[1:length(interesting_exons)] #generate as many colors as interesting exons
+plotting_table$Filling_status = rep("default", nrow(plotting_table)) #set default filling for all exons
+group_colors_vector = c("default"="lightsteelblue3")
+index=1
+for (my_exon in interesting_exons) {
+  fake_coords = plotting_table$FakeCoords[plotting_table$ExonID == my_exon] #isolate the coords of each relevant ex.
+  groupID = paste0("group", index) #create a groupID
+  plotting_table$Filling_status[plotting_table$FakeCoords == fake_coords] = groupID #replace "default" by groupID for all the exons in the same coordinates
+  group_colors_vector = c(group_colors_vector, all_colors_vector[index]); names(group_colors_vector)[length(group_colors_vector)] = groupID #update color vector for plotting.
+  index=index+1
+}
+
 #All these functions are in the functions script
 internal_ex_df = subset(plotting_table, ExPosition=="Internal")
 if ("first" %in% unique(as.vector(plotting_table$ExPosition))) {
   first_ex_df = get_first_ex_df(plotting_table) } else {
-    first_ex_df = data.frame(matrix(ncol = 4, nrow = 0)); colnames(first_ex_df) = c("x", "y", "State", "ExonID")} #create empty dataframe.
+    first_ex_df = data.frame(matrix(ncol = 6, nrow = 0)); colnames(first_ex_df) = c("x", "y", "ExonID", "State", "Filling_status", "AnnotStatus")} #create empty dataframe.
 if("last" %in% unique(as.vector(plotting_table$ExPosition))) {
   last_ex_df = get_last_ex_df(plotting_table)} else {
-    last_ex_df = data.frame(matrix(ncol = 4, nrow = 0)); colnames(last_ex_df) = c("x", "y", "State", "ExonID")} #create empty dataframe.
+    last_ex_df = data.frame(matrix(ncol = 6, nrow = 0)); colnames(last_ex_df) = c("x", "y", "ExonID", "State", "Filling_status", "AnnotStatus")} #create empty dataframe.
 if ("first;last" %in% unique(as.vector(plotting_table$ExPosition))) {
   first_last_ex_df = get_first_last_ex_df(plotting_table)} else {
-  first_last_ex_df = data.frame(matrix(ncol = 4, nrow = 0)); colnames(first_last_ex_df) = c("x", "y", "State", "ExonID")} #create empty dataframe.
+  first_last_ex_df = data.frame(matrix(ncol = 6, nrow = 0)); colnames(first_last_ex_df) = c("x", "y", "ExonID", "State", "Filling_status", "AnnotStatus")} #create empty dataframe.
 
 #Only plot the exon length for the reference gene.
 plotting_table$ExonLength[plotting_table$GeneID != my_gene] = NA
@@ -299,16 +303,25 @@ plotting_table$ExonLength[plotting_table$GeneID != my_gene] = NA
 unique_table_for_names = unique(plotting_table[c("Species", "ExonNumberPlot", "GeneID", "Order")])
 unique_table_for_names = unique_table_for_names[rev(order(unique_table_for_names$Order)),]
 
+
 ##################################################
 ########### Make the plot ########################
 ##################################################
 
 my_plot = ggplot()  +
-  geom_rect(data=internal_ex_df, aes(xmin=FakeStart, xmax=FakeStop, ymin=Order, ymax=Order+0.5, alpha=State), fill="lightsteelblue3", color="dimgray") + #internal exons.
-  geom_polygon(data=first_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #first exons.
-  geom_polygon(data=last_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #last exons.
-  geom_polygon(data=first_last_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #exons which are both first and last.
-  scale_alpha_manual(values=c("Exon"=1, "Exon_added"=0.4)) + #different transparencies to exons actually matching or not the reference gene.
+  geom_rect(data=internal_ex_df, aes(xmin=FakeStart, xmax=FakeStop, ymin=Order, ymax=Order+0.5, alpha=AnnotStatus, fill=Filling_status, linetype=State), color="black") + #internal exons.
+  geom_polygon(data=first_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State), color="black") + #first exons.
+  geom_polygon(data=last_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State), color="black") + #last exons.
+  geom_polygon(data=first_last_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State), color="black") + #exons which are both first and last.
+  scale_fill_manual(values=group_colors_vector, name = "Interesting Exons", labels=c("default", paste0(interesting_exons, " (", my_query_species,")"))) + #the order of the labels should be the same as in group_colors_vector. 
+  #geom_rect(data=internal_ex_df, aes(xmin=FakeStart, xmax=FakeStop, ymin=Order, ymax=Order+0.5, alpha=State), fill="lightsteelblue3", color="dimgray") + #internal exons.
+  #geom_polygon(data=first_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #first exons.
+  #geom_polygon(data=last_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #last exons.
+  #geom_polygon(data=first_last_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #exons which are both first and last.
+  
+  #scale_alpha_manual(values=c("Exon"=1, "Exon_added"=0.4)) + #different transparencies to exons actually matching or not the reference gene.
+  scale_alpha_manual(values=c("annotated"=1, "not_annotated"=0)) + #color depending on the annotation status.
+  scale_linetype_manual(values=c("Exon"="solid", "Exon_added"="dashed")) +
   theme(axis.title = element_blank(),
         axis.text = element_blank(),
         panel.border = element_blank(),
@@ -318,7 +331,9 @@ my_plot = ggplot()  +
         axis.ticks=element_blank(),
         axis.line=element_blank() ,
         legend.position = "bottom",
-        plot.title = element_text(hjust=0, size=20)
+        legend.title = element_text(color="black", size=18),
+        legend.text = element_text(color="black", size=15),
+        plot.title = element_text(color="black", hjust=0, size=20)
   )  +
   xlim(-60,max(plotting_table$FakeStop)+5) + #limit axis +
   ggtitle(paste0(unique(subset(plotting_table, Species==my_query_species)$GeneID), " and Orthologs:\nGene Structure")) +
@@ -328,7 +343,7 @@ my_plot = ggplot()  +
                                                             sub(".*;", "", unique(unique_table_for_names$ExonNumberPlot)), " ex.\n",
                                                             unique_table_for_names$GeneID)), size=7) +
   geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.25, label=plotting_table$Levels), size=7) + #plot number of matching exons
-  geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.75, label=plotting_table$ExonLength+1), size=7) +
+  geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.75, label=plotting_table$ExonLength+1), size=7) + #plot the exon length
   geom_point(data=plotting_table, aes(x=FakeStart-1.5, y=Order+0.25, color=FinalPhaseUp), shape=8) +
   geom_point(data=plotting_table, aes(x=FakeStop+1.5, y=Order+0.25, color=FinalPhaseDown), shape=8) +
   scale_color_manual(values=c("0"="coral3","1"="forestgreen","2"="mediumblue", "shit"="shit"), name = "Intron Phases",  labels=c("0", "1", "2"), breaks=c("0", "1", "2"))
