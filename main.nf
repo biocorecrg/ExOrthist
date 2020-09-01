@@ -285,9 +285,12 @@ realigned_exons_4_merge.map{
 }.groupTuple().map{
     def pieces = "${it[0]}".split("_")
 	[pieces[0], it[1].first()]
-}.groupTuple().set{
-	data_4_merge
+}.groupTuple().into{
+	data_4_merge; data_4_merge1
 }
+
+data_4_merge1.println()
+
 
 /*
  * Join scores
@@ -396,7 +399,6 @@ process filter_redundant {
 
     output:
     file("Best_score_exon_hits_pairs.txt") into score_exon_hits_pairs
-    file("Overlap_exons_by_sp.tab") into output_to_save
 
 	script:
 	liftfile = ""
