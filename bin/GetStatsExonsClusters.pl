@@ -103,8 +103,8 @@ while (<EX_CLUSTERS>){
 }
 
 ### Gets the default cluster string:
-my $default_string1="";
-my $default_string2="";
+my $default_string1;
+my $default_string2;
 foreach (sort keys %tally_exons){
     $default_string1.="1";
     $default_string2.="2";
@@ -114,7 +114,7 @@ my %tally_strings=();
 my %tally_missing=();
 my $total_strings=0;
 foreach my $exon_cluster (sort keys %tally_by_exon_cluster){
-    my $string="";
+    my $string;
     foreach my $species (sort keys %tally_exons){
 	$tally_by_exon_cluster{$exon_cluster}{$species}=0 if !defined $tally_by_exon_cluster{$exon_cluster}{$species};
 	$tally_by_exon_cluster{$exon_cluster}{$species}=9 if $tally_by_exon_cluster{$exon_cluster}{$species}>9;
