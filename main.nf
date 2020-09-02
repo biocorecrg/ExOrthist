@@ -318,6 +318,7 @@ process merge_PROT_EX_INT_aln_info {
 	    mv FOLDERS_*/* ${comp_id}
 
     	B4_merge_PROT_EX_INT_aln_info.pl ${comp_id}
+	get_best_score_ex_pair.pl ${comp_id}/all_EX_aln_features.txt ${comp_id}/Best_scores_pair_exons.txt
 	"""
 }
 
@@ -345,7 +346,7 @@ process select_best_EX_match_by_targetgene {
     def species = comp_id.split("-")
 	"""
     B5_format_aln_info_by_best_isoform_match.pl ${species[0]} ${species[1]} \
-    ${comp_id}/all_PROT_aln_features.txt ${comp_id}/all_EX_aln_features.txt ${comp_id}/all_INT_aln_features.txt \
+    ${comp_id}/all_PROT_aln_features.txt ${comp_id}/Best_scores_pair_exons.txt ${comp_id}/all_INT_aln_features.txt \
     ${species[0]}/${species[0]}.exint ${species[1]}/${species[1]}.exint \
     ${species[0]}/${species[0]}_protein_ids_intron_pos_CDS.txt ${species[1]}/${species[1]}_protein_ids_intron_pos_CDS.txt \
     ${comp_id}/all_PROT_EX_INT_aln_features_${comp_id}.txt;
