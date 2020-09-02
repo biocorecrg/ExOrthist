@@ -238,23 +238,23 @@ ${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${s
 
 
 /*
- * Split realn exons
+ * Split exons pairs to realign
  */
 
 //10 times as many exon alignments as gene clusters in part
 //Channel.from("${params.clusternum}").toInteger().map{it*10}.set{ex_aln_per_part}
-process split_realn_exons {
+process split_EX_pairs_to_realign {
     tag { "${folders}" }
 
     input:
     set comp_id, file(sp1), file(sp2), path(folders), val(req_file) from aligned_subclusters_4_splitting
     //val(ex_aln_per_part)
     output:
-    set comp_id, file(sp1), file(sp2), path(folders), file("${folders}/exons_to_realign_part_*.txt") into aligned_subclusters_4_realign
+    set comp_id, file(sp1), file(sp2), path(folders), file("${folders}/EXs_to_realign_part_*.txt") into aligned_subclusters_4_realign
     script:
     """
-	#Split_realn_exons.pl ${folders} ${params.clusternum}
-	Split_realn_exons.pl ${folders} 1000
+	#B2_split_EX_pairs_to_realign.pl ${folders} ${params.clusternum}
+	B2_split_EX_pairs_to_realign.pl ${folders} 1000
     """
 }
 

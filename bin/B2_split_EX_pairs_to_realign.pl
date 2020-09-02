@@ -7,7 +7,7 @@ my $dir=$ARGV[0];
 my $p = $ARGV[1];
 
 my $file=$dir."/tmp.txt";
-`cat $dir/exons_to_split_part_* > $file`;
+`cat $dir/EXs_to_split_part_* > $file`;
 #`rm $dir/exons_to_realign_part_*`; # temporary files? Could be removed?
 
 my $h=0;
@@ -24,7 +24,7 @@ while (<FILE>){
     else { 
 	$c++; 
 	if ($c==1){
-	    $of=$dir."/exons_to_realign_part_".$t.".txt";
+	    $of=$dir."/EXs_to_realign_part_".$t.".txt";
 	    open (OUT, ">>$of");
 	    if (!$hd{$t}){
 		print OUT "$h\n";
@@ -34,7 +34,7 @@ while (<FILE>){
 	}
 	elsif ($c>$p){
 	    $t++; 
-	    $of=$dir."/exons_to_realign_part_".$t.".txt";
+	    $of=$dir."/EXs_to_realign_part_".$t.".txt";
 	    open (OUT, ">>$of");
 	    if (!$hd{$t}){
 		print OUT "$h\n";
@@ -44,16 +44,14 @@ while (<FILE>){
 	    $c=0;
 	}
 	else {
-	    $of=$dir."/exons_to_realign_part_".$t.".txt";
+	    $of=$dir."/EXs_to_realign_part_".$t.".txt";
 	    open (OUT, ">>$of");
 	    print OUT "$_\n";	
 	}	
     }
 }
 if ($nrow == 1) {
-    $of=$dir."/exons_to_realign_part_".$t.".txt";
+    $of=$dir."/EXs_to_realign_part_".$t.".txt";
     open (OUT, ">>$of");
     print OUT "$h\n";
 }
-
-
