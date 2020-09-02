@@ -136,7 +136,7 @@ while (<IN>){
 	open (TMPALN,">$texf");
 	print TMPALN ">$l[1]\n$sq1\n>$l[8]\n$sq2\n"; 
 	close (TMPALN);
-	`AlignIntronPos.pl $texf MAFFT $cpus`;
+	`B0_generate_IPA_prot_aln.pl $texf MAFFT $cpus`;
 	## 2) OPENING OUTPUT GDE FILE
 	$name="";
 	%seq=();

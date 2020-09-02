@@ -30,10 +30,10 @@ my %miss;
 my (@tn1, @tn2, @ln);
 system "mkdir $outf" unless (-e $outf);
 
-my $exsc=$outf."/score_exons_".$s1."_".$s2."_part_".$part.".txt";##outputfile for exon scores
-my $insc=$outf."/score_introns_".$s1."_".$s2."_part_".$part.".txt";
-my $prsc=$outf."/score_proteins_".$s1."_".$s2."_part_".$part.".txt";##outputfile for scores of whole protein alignment
-my $msf=$outf."/exons_to_split_part_".$part.".txt"; ##generating a file for those exons that need to be realigned
+my $exsc=$outf."/EX_aln_features_".$s1."_".$s2."_part_".$part.".txt";##outputfile for exon scores
+my $insc=$outf."/INT_aln_features_".$s1."_".$s2."_part_".$part.".txt";
+my $prsc=$outf."/PROT_aln_features_".$s1."_".$s2."_part_".$part.".txt";##outputfile for scores of whole protein alignment
+my $msf=$outf."/EXs_to_split_part_".$part.".txt"; ##generating a file for those exons that need to be realigned
 open (EXSC, ">$exsc") || die "It cannot open output file $exsc\n";
 open (INSC, ">$insc") || die "It cannot open output file $insc\n";
 open (PRSC, ">$prsc") || die "It cannot open output file $prsc\n";
@@ -366,7 +366,7 @@ foreach $el (@keys){
 	    print TMPALN "$seqs{$t1[$zj]}\n$seqs{$t2[$zi]}\n"; 
 	    close (TMPALN);
 	    # RUNNING ALIGN INTRON POS
-	    `AlignIntronPos.pl $te MAFFT $cpus`; 
+	    `B0_generate_IPA_prot_aln.pl $te MAFFT $cpus`; 
 	    # ADDS GDE TO MERGE 
 	    close MERGE_ALN;
 	    system "cat $tg >> $f_merged_aln"; # we could already print a post-processed aln instead

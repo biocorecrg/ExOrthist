@@ -209,7 +209,7 @@ cls_files_2_align.transpose().set{cls_files_2_align_t}
  * Align pairs
  */
 
-process score_exons_introns_pair {
+process parse_IPA_prot_aln {
     tag { "${cls_part_file}" }
     label 'big_cpus'
 
@@ -221,13 +221,13 @@ process score_exons_introns_pair {
    // set val("${sp1}-${sp2}"), file(sp1), file(sp2), file("${sp1}-${sp2}_*/exons_to_realign_part_*.txt") into aligned_subclusters_4_realign_A
    // set val("${sp1}-${sp2}"), file("${sp1}-${sp2}_*/exons_to_realign_part_*.txt") into file_4_realign_A
    // set val("${sp1}-${sp2}"), file("${sp1}-${sp2}_*") into aligned_subclusters_4_merge
-	set val("${sp1}-${sp2}"), file(sp1), file(sp2), file("${sp1}-${sp2}_*"), file("${sp1}-${sp2}_*/exons_to_split_part_*.txt") into aligned_subclusters_4_splitting
+	set val("${sp1}-${sp2}"), file(sp1), file(sp2), file("${sp1}-${sp2}_*"), file("${sp1}-${sp2}_*/EXs_to_split_part_*.txt") into aligned_subclusters_4_splitting
 
 	script:
     def cls_parts = "${cls_part_file}".split("_")
 	"""
 	echo ciao
-		Score_exons_introns_pair_sp.pl ${sp1} ${sp2} ${cls_part_file} \
+		B1_parse_IPA_prot_aln.pl ${sp1} ${sp2} ${cls_part_file} \
 ${sp1}/${sp1}_annot_exons_prot_ids.txt ${sp2}/${sp2}_annot_exons_prot_ids.txt \
 ${sp1}/${sp1}_protein_ids_exons_pos.txt ${sp2}/${sp2}_protein_ids_exons_pos.txt \
 ${sp1}/${sp1}_protein_ids_intron_pos_CDS.txt ${sp2}/${sp2}_protein_ids_intron_pos_CDS.txt \
