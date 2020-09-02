@@ -374,22 +374,23 @@ process filter_EX_matches_by_scores {
 }
 
 /*
- * join best scores
+ * join filtered scored EX matches
  */
-process join_best_filtered_scores {
+process join_filtered_EX_matches {
     publishDir "${params.output}/", mode: 'copy'
 
     input:
-    file ("best_score_*") from filterscore_per_joining.collect()
+    file ("filtered_best_scored_*") from filterscore_per_joining.collect()
 
     output:
-    file("Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab") into filtered_all_scores
+    file("filtered_best_scored_EX_matches_by_targetgene.tab") into filtered_all_scores
+    //file("Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab") into filtered_all_scores
 
 	script:
 	"""
     #cat best_score_* >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab
-    echo "GeneID_sp1\tExon_coords_sp1\tGeneID_sp2\tExon_coords_sp2\tSp1\tSp2" > Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab;
-    for i in best_score_*; do cat \$i | tail -n+2 >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab; done
+    echo "GeneID_sp1\tExon_coords_sp1\tGeneID_sp2\tExon_coords_sp2\tSp1\tSp2" > filtered_best_scored_EX_matches_by_targetgene.tab;
+    for i in filtered_best_scored_*; do cat \$i | tail -n+2 >> filtered_best_scored_EX_matches_by_targetgene.tab; done
     """
 }
 
