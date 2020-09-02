@@ -186,7 +186,7 @@ idfolders
  * split clusters
 */
 
-process split_clusters {
+process split_clusters_in_chunks {
     tag { id_comb }
 
     input:
@@ -198,7 +198,7 @@ process split_clusters {
 
 	script:
 	"""
-		Prepare_and_Submit_Aln_sp_pair_V2.pl --sp1 ${idfolder_A} --sp2 ${idfolder_B} --expath ./ --project_dir ./ --N_split ${params.clusternum} --gene_cluster ${id_comb}.cls.tab
+		A3_split_clusters_in_chunks.pl --sp1 ${idfolder_A} --sp2 ${idfolder_B} --expath ./ --project_dir ./ --N_split ${params.clusternum} --gene_cluster ${id_comb}.cls.tab
 	"""
 }
 
