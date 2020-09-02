@@ -155,7 +155,7 @@ while (<IN>){
 close (OUTONE);
 
 ### Creates second output file
-my $bhfile=$outf."/Best_score_hits_exons.txt";
+my $bhfile=$outf."/best_scored_EX_matches_by_targetgene.txt";
 open (OUT, ">$bhfile");
 my @keys=keys(%hex);
 @keys=sort(@keys);

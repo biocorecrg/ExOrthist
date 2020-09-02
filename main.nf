@@ -327,10 +327,11 @@ folder_jscores.join(anno_2_score_ex_int).map{
 
 
 /*
- * Score exon and introns together
+ * Score EX matches from aln info
  */
  
-process get_all_scores_exon_introns {
+//Select best match per target gene
+process select_best_EX_match_by_targetgene {
     tag { "${comp_id}" }
     label('big_mem')
 
@@ -338,18 +339,17 @@ process get_all_scores_exon_introns {
     set val(comp_id), file("*") from data_to_score
 
     output:
-    set val(comp_id), file("${comp_id}/Best_score_hits_exons.txt") into bestscore_per_filt
+    set val(comp_id), file("${comp_id}/best_scored_EX_matches_by_targetgene.txt") into bestscore_per_filt
 
 	script:
     def species = comp_id.split("-")
 	"""
-    get_scores_exons_introns.pl ${species[0]} ${species[1]} \
-    ${comp_id}/Aligned_proteins.txt ${comp_id}/Best_scores_pair_exons.txt ${comp_id}/Score_all_introns.txt \
+    B5_format_aln_info_by_best_isoform_match.pl ${species[0]} ${species[1]} \
+    ${comp_id}/all_PROT_aln_features.txt ${comp_id}/all_EX_aln_features.txt ${comp_id}/all_INT_aln_features.txt \
     ${species[0]}/${species[0]}.exint ${species[1]}/${species[1]}.exint \
     ${species[0]}/${species[0]}_protein_ids_intron_pos_CDS.txt ${species[1]}/${species[1]}_protein_ids_intron_pos_CDS.txt \
-    ${comp_id}/Final_aln_scores_${comp_id}.txt;
-    get_score_by_exon.pl ${comp_id}/Final_aln_scores_${comp_id}.txt ${comp_id}
-    #filter_exons_by_score.pl -b ${comp_id}/Best_score_hits_exons.txt -sps ${species[0]},${species[1]} -int ${params.intcons} -id ${params.exsim} -max_size ${params.maxsize}
+    ${comp_id}/all_PROT_EX_INT_aln_features_${comp_id}.txt;
+    C1_score_and_select_best_EX_match_by_targetgene.pl ${comp_id}/all_PROT_EX_INT_aln_features_${comp_id}.txt ${comp_id}
     """
 }
 
