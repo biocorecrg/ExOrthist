@@ -41,7 +41,8 @@ for ($i=0; $i<=$#ARGV; $i++){
 if (!$m){ $m=0.65}
 if (!$int){ $int=2; }
 if (!$id){ $id = 0.2; $A = 0.20*0.2; $C = 0.15*0.2; } else { $A=0.20*$id; $C=0.15*$id; } # prev weights: A = 0.18 and C = 0.16
-if (!$out){ $out="Best_score_exon_hits_filtered_$m-$int-$id".".tab"; }
+#if (!$out){ $out="Best_score_exon_hits_filtered_$m-$int-$id".".tab"; }
+if (!$out){ $out="filtered_best_scored_EX_matches_by_targetgene.tab"; }
 my (@line);
 my $c=0;
 my @sps=split(/\,/,$sps);

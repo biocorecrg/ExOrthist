@@ -354,9 +354,10 @@ process select_best_EX_match_by_targetgene {
 }
 
 /*
- * Score exon and introns together
+ * Filter the best matches above score cutoffs
  */
-process filter_scores {
+//I am leaving the parameters now, but they will change.
+process filter_EX_matches_by_scores {
     tag { "${comp_id}" }
 
     input:
@@ -367,8 +368,8 @@ process filter_scores {
 
 	script:
     def species = comp_id.split("-")
-	"""
-    filter_exons_by_score.pl -b ${best_score} -sps ${species[0]},${species[1]} -int ${params.intcons} -id ${params.exsim} -max_size ${params.maxsize}
+    """
+    C2_filter_EX_matches_by_scores.pl  -b ${best_score} -sps ${species[0]},${species[1]} -int ${params.intcons} -id ${params.exsim} -max_size ${params.maxsize}
     """
 }
 
