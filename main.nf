@@ -395,15 +395,15 @@ process join_filtered_EX_matches {
 }
 
 /*
- * Removing redundant hits
+ * Removing matches from overlapping exons
  */
-process filter_redundant {
+process collapse_overlapping_matches {
 
     input:
     file(scores) from filtered_all_scores
 
     output:
-    file("Best_score_exon_hits_pairs.txt") into score_exon_hits_pairs
+    file("filtered_best_scored_exon_matches_by_gene-NoOverlap.txt") into score_exon_hits_pairs
 
 	script:
 	liftfile = ""
@@ -413,9 +413,9 @@ process filter_redundant {
 
 	}
 	"""
-    get_count_exons.pl ${scores} Exon_count_hits_by_sp.tab ${liftfile}
-    get_overlap_exons.pl -i Exon_count_hits_by_sp.tab -o Overlap_exons_by_sp.tab
-    Filter_final_exons_pair.pl Overlap_exons_by_sp.tab ${scores} Best_score_exon_hits_pairs.txt ${liftfile}
+    C3_count_matches_by_EX.pl ${scores} EX_matches_count_by_species.tab ${liftfile}
+    C4_get_overlapping_EXs.pl -i EX_matches_count_by_species.tab -o overlapping_EXs_by_species.tab
+    C5_collapse_overlapping_matches.pl overlapping_EXs_by_species.tab ${scores} filtered_best_scored_exon_matches_by_gene-NoOverlap.txt ${liftfile}
     """
 }
 
