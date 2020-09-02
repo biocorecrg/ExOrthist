@@ -463,41 +463,7 @@ process cluster_EXs {
 }
 
 /*
-* Re-clustering of genes
-*/
-process recluster_genes_species {
-    publishDir "${params.output}/", mode: 'copy'
-    tag { "${combid}" }
-
-	when:
-	params.orthofolder != ""
-
-    input:
-    set combid, file(folderA), file(folderB) from species_to_recluster_genes
-    file(clusterfile)
-
-    output:
-    set combid, file("Recluster_genes_*.tab") into recl_genes_for_rec_exons
-    file("Table_recl_exons_*.tab") optional true
-
-	script:
-	def combid1 = combid.replace("-", "_")
-	def combid2 = combid.replace("-", ",")
-	def species_out_file = "Recluster_genes_${combid1}.tab"
-	def table_out_file = "Table_recl_exons_${combid1}.tab"
-	def vastbcmd = ""
-	if (params.vastdb!= "") {
-		vastbcmd = "Add_vastids_excls.pl ${params.vastdb} ${species_out_file} ${table_out_file}"
-	}
-	"""
- 		Recluster_genes_sps_pair.pl --cl_file ${clusterfile} --sps ${combid2} --outfile ${species_out_file} --of_path ${params.orthofolder}
-    	${vastbcmd}
-    """
-}
-
-
-/*
-* Final output
+* Final exon clusters
 */
 process format_EX_clusters_output {
     publishDir "${params.output}/", mode: 'copy'
@@ -508,12 +474,12 @@ process format_EX_clusters_output {
     output:
     file("EX_clusters.tab") into exon_cluster_for_reclustering
     file("EX_clusters_info.tab.gz")
-    file("table_EX_clusters.tab") optional true
+    file("EX_clusters_vastdb.tab") optional true
 
 	script:
 	def vastbcmd = ""
 	if (params.vastdb!= "") {
-		vastbcmd = "D3.1_add_vastid_to_EX_clusters.pl ${params.vastdb} EX_clusters.tab table_EX_clusters.tab"
+		vastbcmd = "D3.1_add_vastid_to_EX_clusters.pl ${params.vastdb} EX_clusters.tab EX_clusters_vastdb.tab"
 	}
 	"""
     D3_format_EX_clusters_output.pl
@@ -522,11 +488,47 @@ process format_EX_clusters_output {
 }
 
 /*
+* Re-clustering of genes
+*/
+process recluster_genes_species {
+    publishDir "${params.output}/reclustering", mode: 'copy'
+    tag { "${combid}" }
+
+    when:
+    params.orthofolder != ""
+
+    input:
+    set combid, file(folderA), file(folderB) from species_to_recluster_genes
+    file(clusterfile)
+
+    output:
+    set combid, file("reclustered_genes_*.tab") into recl_genes_for_rec_exons
+    //file("reclustered_EXs_*_vastdb.tab") optional true
+
+	script:
+	def combid1 = combid.replace("-", "_")
+	def combid2 = combid.replace("-", ",")
+	def species_out_file = "reclustered_genes_${combid1}.tab"
+	//def vastdb_out = "reclustered_EXs_${combid1}_vastdb.tab"
+	//def vastbcmd = ""
+	//if (params.vastdb!= "") {
+	//	vastbcmd = "D3.1_add_vastid_to_EX_clusters.pl ${params.vastdb} ${species_out_file} ${vastdb_out}"
+	//}
+	"""
+ 	D3.2_recluster_genes_by_species_pair.pl --cl_file ${clusterfile} --sps ${combid2} --outfile ${species_out_file} --of_path ${params.orthofolder}
+    	#${vastbcmd}
+    	"""
+}
+
+
+
+
+/*
 * Re-clustering of exons
 */
 
 process recluster_exons_species {
-    publishDir "${params.output}/", mode: 'copy'
+    publishDir "${params.output}/reclustering", mode: 'copy'
     tag { "${combid}" }
 
 	when:
@@ -537,16 +539,23 @@ process recluster_exons_species {
     file(exon_cluster_for_reclustering)
 
     output:
-    file("Recluster_exons_*.tab")
+    file("reclustered_EXs_*.tab")
+    file("reclustered_EXs_*_vastdb.tab") optional true
 
 	script:
 	def combid1 = combid.replace("-", "_")
-	def species_out_file = "Recluster_exons_${combid1}.tab"
-
+	def species_out_file = "reclustered_EXs_${combid1}.tab"
+	def vastdb_out = "reclustered_EXs_${combid1}_vastdb.tab"
+	def vastbcmd = ""
+	if (params.vastdb!= "") {
+		vastbcmd = "D3.1_add_vastid_to_EX_clusters.pl ${params.vastdb} ${species_out_file} ${vastdb_out}"
+	}
 	"""
- 		Recluster_exons_sps_pair.pl ${recl_genes} ${exon_cluster_for_reclustering} ${species_out_file}
-    """
+	D3.3_recluster_EXs_by_species_pair.pl ${recl_genes} ${exon_cluster_for_reclustering} ${species_out_file}
+	${vastbcmd}
+    	"""
 }
+
 
 /*
 * functions
