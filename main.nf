@@ -122,7 +122,7 @@ if (params.extraexons) {
 
 		script:
 		"""
-		generate_annotations_V3.pl -GTF ${annotation} -G ${genome} -sp ${genomeid} -add_exons ${extraexons}
+		A1_generate_annotations.pl -GTF ${annotation} -G ${genome} -sp ${genomeid} -add_exons ${extraexons}
 		"""
 	}
 } else {
@@ -138,7 +138,7 @@ if (params.extraexons) {
 
 		script:
 		"""
-		generate_annotations_V3.pl -GTF ${annotation} -G ${genome} -sp ${genomeid}
+		A1_generate_annotations.pl -GTF ${annotation} -G ${genome} -sp ${genomeid}
 		"""
 	}
 }
