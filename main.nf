@@ -506,6 +506,7 @@ process make_final_output {
 
     output:
     file("Exon_Clusters.tab") into exon_cluster_for_reclustering
+    file("Exon_Clusters_Info.tab.gz")
     file("Table_exon_clusters.tab") optional true
 
 	script:
