@@ -490,7 +490,7 @@ process format_EX_clusters_output {
 /*
 * Re-clustering of genes
 */
-process recluster_genes_species {
+process recluster_genes_by_species_pair {
     publishDir "${params.output}/reclustering", mode: 'copy'
     tag { "${combid}" }
 
@@ -527,7 +527,7 @@ process recluster_genes_species {
 * Re-clustering of exons
 */
 
-process recluster_exons_species {
+process recluster_EXs_by_species_pair {
     publishDir "${params.output}/reclustering", mode: 'copy'
     tag { "${combid}" }
 
