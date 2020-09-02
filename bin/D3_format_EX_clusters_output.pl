@@ -3,13 +3,13 @@ use warnings;
 use strict;
 
 ##Joining the parts
-open (T1, ">Exon_Clusters_Info.tab");
+open (T1, ">EX_clusters_info.tab");
 print T1 "ExonID\tClusterID\tOut_degree\tIn_degree\tSPECIES_exons_in_cluster\tTOT_exons_in_cluster\tN_reciprocals\tMembership_score\n";
 close T1;
-system "cat EXcls_* >> Exon_Clusters_Info.tab";
+system "cat EXcls_* >> EX_clusters_info.tab";
 
 open (TMP, ">tmp_excls.tab");
-open (INFILE, "Exon_Clusters_Info.tab");
+open (INFILE, "EX_clusters_info.tab");
 # Format: GF_000006|ENSG00000103266|chr16:680526-680684:+|Hs2 1 2 2 1 3 2 1
 while (<INFILE>){
     chomp($_);
@@ -24,10 +24,10 @@ while (<INFILE>){
 }
 close (TMP);
 
-open (O, ">Exon_Clusters.tab") || die "Cannot open the output file\n";
+open (O, ">EX_clusters.tab") || die "Cannot open the output file\n";
 print O "ExCluster_ID\tGeneID\tCoordinate\tSpecies\tMembership_score\n";
 close O;
 
-system ("cat tmp_excls.tab | sort -k1 >> Exon_Clusters.tab");
-system "gzip Exon_Clusters_Info.tab";
+system ("cat tmp_excls.tab | sort -k1 >> EX_clusters.tab");
+system "gzip EX_clusters_info.tab";
 system "rm tmp_excls.tab";

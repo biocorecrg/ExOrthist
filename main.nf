@@ -498,24 +498,24 @@ process recluster_genes_species {
 /*
 * Final output
 */
-process make_final_output {
+process format_EX_clusters_output {
     publishDir "${params.output}/", mode: 'copy'
 
     input:
     file("*") from ex_clusters.collect()
 
     output:
-    file("Exon_Clusters.tab") into exon_cluster_for_reclustering
-    file("Exon_Clusters_Info.tab.gz")
-    file("Table_exon_clusters.tab") optional true
+    file("EX_clusters.tab") into exon_cluster_for_reclustering
+    file("EX_clusters_info.tab.gz")
+    file("table_EX_clusters.tab") optional true
 
 	script:
 	def vastbcmd = ""
 	if (params.vastdb!= "") {
-		vastbcmd = "Add_vastids_excls.pl ${params.vastdb} Exon_Clusters.tab Table_exon_clusters.tab"
+		vastbcmd = "D3.1_add_vastid_to_EX_clusters.pl ${params.vastdb} EX_clusters.tab table_EX_clusters.tab"
 	}
 	"""
-    Get_pre_table_clusters.pl
+    D3_format_EX_clusters_output.pl
     ${vastbcmd}
     """
 }
