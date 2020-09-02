@@ -262,10 +262,10 @@ process split_EX_pairs_to_realign {
 
 
 /*
- * Realign target exons
+ * Realign exons pairs (with multiple hits)
  */
 
-process realign_exons {
+process realign_EX_pairs {
     tag { "${aligned_folder}/${exons_to_realign.simpleName}" }
     label 'incr_time_cpus'
 
@@ -281,7 +281,7 @@ process realign_exons {
     def infile = exons_to_realign.getFileName()
     def realigned_file = "realigned_" + exons_to_realign.getBaseName() + "_${cls_parts[1]}.txt"
 	"""
-		Realign_target_exons_by_part.pl ${sp1} ${sp2} ${aligned_folder}/${infile} \
+		B3_realign_EX_pairs.pl ${sp1} ${sp2} ${aligned_folder}/${infile} \
 		${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${aligned_folder}/${realigned_file} \
 		${sp1}_${sp2} ${blosumfile} ${task.cpus}
 	"""
