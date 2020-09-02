@@ -147,7 +147,7 @@ if (params.extraexons) {
  * split cluster file
  */
 //Copy the gene cluster file to output to use for the exint plotter
-process split_cluster_file_per_species {
+process split_clusters_by_species_pairs {
     tag { clusterfile }
     publishDir "${params.output}/", mode: 'copy', pattern: "gene_cluster_file.gz" 
 
@@ -162,13 +162,13 @@ process split_cluster_file_per_species {
 	"""
    if [ `echo ${clusterfile} | grep ".gz"` ]; then
        zcat ${clusterfile} > gene_cluster_file
-       get_gcl_sp_pair.pl -f gene_cluster_file
+       A2_split_clusters_by_species_pairs.pl -f gene_cluster_file
        gzip gene_cluster_file
        #rm cluster_file
     else
        cat ${clusterfile} > gene_cluster_file
-       #get_gcl_sp_pair.pl -f ${clusterfile}
-       get_gcl_sp_pair.pl -f gene_cluster_file
+       #A2_split_clusters_by_species_pairs.pl -f ${clusterfile}
+       A2_split_clusters_by_species_pairs.pl -f gene_cluster_file
        gzip gene_cluster_file
     fi
 	"""
