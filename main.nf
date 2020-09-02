@@ -297,10 +297,10 @@ realigned_exons_4_merge.map{
 }
 
 /*
- * Join scores
+ * Merge alignments information
  */
 
-process join_scores {
+process merge_PROT_EX_INT_aln_info {
     tag { "${comp_id}" }
 	stageInMode = 'copy'
 
@@ -313,12 +313,11 @@ process join_scores {
 	script:
 	"""
 	    mkdir ${comp_id}
-	    rm FOLDERS_*/exons_to_realign*
+	    rm FOLDERS_*/EXs_to_realign*
 	    rm FOLDERS_*/tmp.txt
 	    mv FOLDERS_*/* ${comp_id}
 
-    	join_score_files.pl ${comp_id}
-        get_best_score_ex_pair.pl ${comp_id}/Score_all_exons.txt ${comp_id}/Best_scores_pair_exons.txt
+    	B4_merge_PROT_EX_INT_aln_info.pl ${comp_id}
 	"""
 }
 
