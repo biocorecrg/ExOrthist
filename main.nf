@@ -447,7 +447,7 @@ process format_EX_clusters_input {
 /*
 * Split the file of exon pairs
 */
-process cluster_with_R {
+process cluster_EXs {
 
     input:
     file(cluster_part) from cluster_parts.flatten()
@@ -457,7 +457,7 @@ process cluster_with_R {
 
 	script:
 	"""
-    cluster.R ${cluster_part} EX${cluster_part}
+    D2_cluster_EXs.R ${cluster_part} EX${cluster_part}
     """
 }
 
