@@ -1,0 +1,3 @@
+Dme	Ame	medium
+Dme	Cdi	medium
+Ame	Cdi	medium

@@ -45,7 +45,8 @@ while (<IN>){
 }
 
 open (IN, $input_file) || die "It cannot open again File with Aln scores (Final_aln_scores_Sp1_Sp2.txt)\n";
-my $scorefile=$outf."/All_scores_by_exon.txt";
+#my $scorefile=$outf."/All_scores_by_exon.txt";
+my $scorefile=$outf."/all_scored_EX_matches.txt";
 open (OUTONE, ">$scorefile");
 print OUTONE "CID\tFeature\tExon_prot_loc\tProt_query\tExon_number_query\tExon_coords_query\tProt_Subject\tExon_number_subject\tExon_coords_subject";
 print OUTONE "\tScore_C1\tScore_I1\tScore_A\tScore_I2\tScore_C2\tTotal_exon_score\tSp_query\tSp_subject\n";

@@ -46,7 +46,7 @@ my $o3=$folder."/h3.txt";
 `cat $o3 $tmp > $s3`;  ## getting file of intron scores 
 
 print "4. Merging EXINT ALNs\n";
-system "cat $folder/*part_*.ALL.aln | gzip > $folder/Exint_Alignments.aln.gz";
+system "cat $folder/*part_*.ALL.aln | gzip > $folder/EXINT_aln.gz";
 
 print "5. Cleaning up intermediate files\n";
 `rm $o1 $o2 $o3 $tmp $tex`; ## removing temporal files

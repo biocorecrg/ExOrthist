@@ -39,9 +39,10 @@ log.info """
 annotations (GTF files)          : ${params.annotations}
 genomes (fasta files)            : ${params.genomes}
 cluster file (txt files)         : ${params.cluster}
-intcons (1 or 2)                 : ${params.intcons}
-exsim (from 0 to 1)            : ${params.exsim}
-maxsize                          : ${params.maxsize}
+pairwise evo distances           : ${params.evodists}
+long distance parameters         : ${params.long_dist}
+medium distance parameters       : ${params.medium_dist}
+short distance parameters        : ${params.short_dist}
 clusternum (number of clusters)  : ${params.clusternum}
 extraexons (e.g. from VastDB)    : ${params.extraexons}
 liftover                         : ${params.liftover}
@@ -51,12 +52,13 @@ output (output folder)           : ${params.output}
 email for notification           : ${params.email}
 
 INFORMATION ABOUT OPTIONS:
+The long, medium, short distance parameters are in the format: "incons,exsim,mazsize"
 - intcons (1 or 2): Whether to consider one or two introns 
-     bodering the exon when filtering by conservation.
-- exsim (from 0 to 1): Minimum % of similarity between the
-     pair of exons and their corresponding upstream and 
+     bordering the exon when filtering by conservation.
+- exsim (from 0 to 1): Minimum % of similarity between a
+     pair of orthologous exons and their corresponding upstream and 
      downstream exons.
-- maxsize: Maximum size difference between the two exons 
+- maxsize: Maximum size difference between two orthologous exons 
      (as a fraction of either exon).
      
      
@@ -178,7 +180,7 @@ idfolders
   .toList().map{ [it, it] .combinations().findAll{ a, b -> a[0] < b[0]} }
   .flatMap()
   .map { ["${it[0][0]}-${it[1][0]}".toString(), it[0][1], it[1][1]] }
-  .into{cluster_2_split; anno_2_score_ex_int; species_to_recluster_genes}
+  .into{cluster_2_split; anno_2_score_ex_int; species_to_recluster_genes; pairs_4_evodists}
 
 
 
@@ -254,7 +256,7 @@ process split_EX_pairs_to_realign {
     script:
     """
 	#B2_split_EX_pairs_to_realign.pl ${folders} ${params.clusternum}
-	B2_split_EX_pairs_to_realign.pl ${folders} 1000
+	B2_split_EX_pairs_to_realign.pl ${folders} 100
     """
 }
 
@@ -303,13 +305,17 @@ realigned_exons_4_merge.map{
 process merge_PROT_EX_INT_aln_info {
     tag { "${comp_id}" }
 	stageInMode = 'copy'
+    //this matches all_PROT_aln_features.txt, all_EX_aln_features.txt, all_INT_aln_features.txt, Exint_Alignments.aln.gz
+    publishDir "${params.output}", mode: "copy", pattern: "${comp_id}/all_*_aln_features.txt" 
+    publishDir "${params.output}", mode: "copy", pattern: "${comp_id}/EXINT_aln.gz"
 
     input:
     set comp_id, file("FOLDERS_*") from data_4_merge
 
     output:
     set val(comp_id), file("${comp_id}/") into folder_jscores
-
+    file("${comp_id}/all_*_aln_features.txt")
+    file("${comp_id}/EXINT_aln.gz")
 	script:
 	"""
 	    mkdir ${comp_id}
@@ -335,12 +341,16 @@ folder_jscores.join(anno_2_score_ex_int).map{
 process select_best_EX_match_by_targetgene {
     tag { "${comp_id}" }
     label('big_mem')
+    //I need to modify the name so that it has the species pair in the output.
+    publishDir "${params.output}", mode: "copy"
 
     input:
     set val(comp_id), file("*") from data_to_score
 
     output:
     set val(comp_id), file("${comp_id}/best_scored_EX_matches_by_targetgene.txt") into bestscore_per_filt
+    file("${comp_id}/all_PROT_EX_INT_aln_features_*")
+    file("${comp_id}/all_scored_EX_matches.txt")
 
 	script:
     def species = comp_id.split("-")
@@ -357,20 +367,44 @@ process select_best_EX_match_by_targetgene {
 /*
  * Filter the best matches above score cutoffs
  */
-//I am leaving the parameters now, but they will change.
+
+//Create a channel for the evo distances
+Channel
+    .fromPath("${params.evodists}")
+    .splitText()
+    .map{"${it}".trim().split("\t")}.map{[it[0]+"-"+it[1], it[2]]}.set{sp1_sp2_dist}
+
+Channel
+    .fromPath("${params.evodists}")
+    .splitText()
+    .map{"${it}".trim().split("\t")}.map{[it[1]+"-"+it[0], it[2]]}.set{sp2_sp1_dist}
+
+sp1_sp2_dist.concat(sp2_sp1_dist).set{species_pairs_dist}
+//Only the species pairs with a common index will be kept
+pairs_4_evodists.join(species_pairs_dist).map{[it[0], it[3]]}.set{dist_ranges_ch}
+
 process filter_EX_matches_by_scores {
     tag { "${comp_id}" }
 
     input:
-    set val(comp_id), file(best_score) from bestscore_per_filt
+    set val(comp_id), file(best_score), val(dist_range) from bestscore_per_filt.join(dist_ranges_ch)
 
     output:
     file("*.tab") into filterscore_per_joining
 
-	script:
+    script:
     def species = comp_id.split("-")
+    //def dist_range_par = "${params.long_dist}".split(",")
+    if (dist_range == "long")
+	dist_range_par = "${params.long_dist}".split(",")
+    if (dist_range == "medium")
+	dist_range_par = "${params.medium_dist}".split(",") 
+    if (dist_range == "short")
+	dist_range_par = "${params.short_dist}".split(",")
+
+    //def single_range_par = dist_range_par.split(",")
     """
-    C2_filter_EX_matches_by_scores.pl  -b ${best_score} -sps ${species[0]},${species[1]} -int ${params.intcons} -id ${params.exsim} -max_size ${params.maxsize}
+    C2_filter_EX_matches_by_scores.pl  -b ${best_score} -sps ${species[0]},${species[1]} -int ${dist_range_par[0]} -id ${dist_range_par[1]} -max_size ${dist_range_par[2]}
     """
 }
 

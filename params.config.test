@@ -7,9 +7,13 @@ params {
     liftover     = ""
     orthofolder  = ""
     vastdb       = ""
-    intcons      = 2
-    exsim      = 0.2
-    maxsize      = 0.65
+    evodists     = "$baseDir/test/evodists.txt" 
+    long_dist    = "1,0.15,0.45"
+    medium_dist  = "2,0.20,0.55"
+    short_dist   = "2,0.25,0.65"
+    //intcons      = 2
+    //exsim      = 0.2
+    //maxsize      = 0.65
     output       = "$baseDir/output_small"
     email        = "yourmail@yourdomain"
 }
