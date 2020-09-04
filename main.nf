@@ -204,20 +204,38 @@ process split_clusters_in_chunks {
 	"""
 }
 
-cls_files_2_align.transpose().set{cls_files_2_align_t}
+//cls_files_2_align.transpose().set{cls_files_2_align_t}
+cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}.into{cls_files_2_align_t; my_test}
 
+//Create a channel for the evo distances
+Channel
+    .fromPath("${params.evodists}")
+    .splitText()
+    .map{"${it}".trim().split("\t")}.map{[it[0]+"-"+it[1], it[2]]}.set{sp1_sp2_dist}
+
+Channel
+    .fromPath("${params.evodists}")
+    .splitText()
+    .map{"${it}".trim().split("\t")}.map{[it[1]+"-"+it[0], it[2]]}.set{sp2_sp1_dist}
+
+sp1_sp2_dist.concat(sp2_sp1_dist).set{species_pairs_dist}
+//Only the species pairs with a common index will be kept
+pairs_4_evodists.join(species_pairs_dist).map{[it[0], it[3]]}.into{dist_ranges_ch; dist_ranges_ch1; dist_ranges_ch2}
+
+my_test.join(dist_ranges_ch2).println()
 
 /*
  * Align pairs
  */
-
+//the second to last argument is the protein similarity alignment.
 process parse_IPA_prot_aln {
     tag { "${cls_part_file}" }
     label 'big_cpus'
 
     input:
     file(blosumfile)
-    set file(sp1), file(sp2), file(cls_part_file) from cls_files_2_align_t
+    //set file(sp1), file(sp2), file(cls_part_file) from cls_files_2_align_t
+    set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from cls_files_2_align_t.join(dist_ranges_ch1)    
 
     output:
    // set val("${sp1}-${sp2}"), file(sp1), file(sp2), file("${sp1}-${sp2}_*/exons_to_realign_part_*.txt") into aligned_subclusters_4_realign_A
@@ -227,17 +245,22 @@ process parse_IPA_prot_aln {
 
 	script:
     def cls_parts = "${cls_part_file}".split("_")
+    if (dist_range == "long")
+	dist_range_par = "${params.long_dist}".split(",")
+    if (dist_range == "medium")
+	dist_range_par = "${params.medium_dist}".split(",") 
+    if (dist_range == "short")
+	dist_range_par = "${params.short_dist}".split(",")
+
 	"""
 	echo ciao
 		B1_parse_IPA_prot_aln.pl ${sp1} ${sp2} ${cls_part_file} \
 ${sp1}/${sp1}_annot_exons_prot_ids.txt ${sp2}/${sp2}_annot_exons_prot_ids.txt \
 ${sp1}/${sp1}_protein_ids_exons_pos.txt ${sp2}/${sp2}_protein_ids_exons_pos.txt \
 ${sp1}/${sp1}_protein_ids_intron_pos_CDS.txt ${sp2}/${sp2}_protein_ids_intron_pos_CDS.txt \
-${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${sp2}_${cls_parts[1]} ${task.cpus}
+${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${sp2}_${cls_parts[1]} ${dist_range_par[3]} ${task.cpus}
 	"""
 }
-
-
 
 /*
  * Split exons pairs to realign
@@ -368,21 +391,6 @@ process select_best_EX_match_by_targetgene {
  * Filter the best matches above score cutoffs
  */
 
-//Create a channel for the evo distances
-Channel
-    .fromPath("${params.evodists}")
-    .splitText()
-    .map{"${it}".trim().split("\t")}.map{[it[0]+"-"+it[1], it[2]]}.set{sp1_sp2_dist}
-
-Channel
-    .fromPath("${params.evodists}")
-    .splitText()
-    .map{"${it}".trim().split("\t")}.map{[it[1]+"-"+it[0], it[2]]}.set{sp2_sp1_dist}
-
-sp1_sp2_dist.concat(sp2_sp1_dist).set{species_pairs_dist}
-//Only the species pairs with a common index will be kept
-pairs_4_evodists.join(species_pairs_dist).map{[it[0], it[3]]}.set{dist_ranges_ch}
-
 process filter_EX_matches_by_scores {
     tag { "${comp_id}" }
 
@@ -394,15 +402,12 @@ process filter_EX_matches_by_scores {
 
     script:
     def species = comp_id.split("-")
-    //def dist_range_par = "${params.long_dist}".split(",")
     if (dist_range == "long")
 	dist_range_par = "${params.long_dist}".split(",")
     if (dist_range == "medium")
 	dist_range_par = "${params.medium_dist}".split(",") 
     if (dist_range == "short")
 	dist_range_par = "${params.short_dist}".split(",")
-
-    //def single_range_par = dist_range_par.split(",")
     """
     C2_filter_EX_matches_by_scores.pl  -b ${best_score} -sps ${species[0]},${species[1]} -int ${dist_range_par[0]} -id ${dist_range_par[1]} -max_size ${dist_range_par[2]}
     """
