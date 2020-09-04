@@ -205,7 +205,7 @@ process split_clusters_in_chunks {
 }
 
 //cls_files_2_align.transpose().set{cls_files_2_align_t}
-cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}.into{cls_files_2_align_t; my_test}
+cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}.set{cls_files_2_align_t}
 
 //Create a channel for the evo distances
 Channel
@@ -220,9 +220,7 @@ Channel
 
 sp1_sp2_dist.concat(sp2_sp1_dist).set{species_pairs_dist}
 //Only the species pairs with a common index will be kept
-pairs_4_evodists.join(species_pairs_dist).map{[it[0], it[3]]}.into{dist_ranges_ch; dist_ranges_ch1; dist_ranges_ch2}
-
-my_test.join(dist_ranges_ch2).println()
+pairs_4_evodists.join(species_pairs_dist).map{[it[0], it[3]]}.into{dist_ranges_ch; dist_ranges_ch1}
 
 /*
  * Align pairs
