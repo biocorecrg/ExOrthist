@@ -18,21 +18,27 @@ Fede's attempt at exint plotter
 log.info  """
 Executing with the following parameters:
 
-annotations (GTF files)			: ${params.annotations}
-exon overlap info			: ${params.overlap}
-ref proteins info (pipeline output)	: ${params.refprot}
-exon clusters (pipeline output)		: ${params.exonclusters}
-exon best scores (pipeline output)	: ${params.bestscores}
-gene clusters (same as pipeline input)	: ${params.geneclusters}
+output main				: ${params.output_main}
 geneID					: ${params.geneID}
+isoformID				: ${params.isoformID}
 relevant exons				: ${params.relevant_exs}
 reclustered gene orthology file:	: ${params.sub_orthologs}
 """
 
 /*
- * Create channels for input data
+ * Define params starting from the main.nf output folder
  */
 
+params.geneclusters = "${params.output_main}/gene_cluster_file.gz"
+params.annotations = "${params.output_main}/*/*_annot_fake.gtf.gz"
+params.overlap = "${params.output_main}/*/*_overlap_CDS_exons.txt"
+params.refprot = "${params.output_main}/*/*_ref_proteins.txt"
+params.exonclusters = "${params.output_main}/EX_clusters.tab"
+params.bestscores = "${params.output_main}/*/best_scored_EX_matches_by_targetgene.txt" //This are all unfiltered scores. I need to identify exons matched by sequence conservation but not phased conservation.
+
+/*
+ * Create channels for input data
+ */
 
 //This channel will contain a list of the GTF files, in theory each with a key
 //The key corresponds to the value assumed by the wildcard in the annotation variable (which is defined in the params.config)
@@ -42,6 +48,7 @@ Channel
     .fromFilePairs(params.annotations, size: 1)
     .ifEmpty{error "Cannot find any annotation matching: ${params.annotations}"}
     .set{annotations}
+
 //I need more channels because I use the same input in more processes
 //Create channel for overlapping exon information
 //The key is the species, same as for the annotations channel
@@ -57,12 +64,19 @@ Channel
     .set{refprot_info}
 
 //create a joint channel where each key is paired with the corresponding files
-annotations.join(overlap_info).join(refprot_info).set{all_input_info_raw}
+//annotations.join(overlap_info).join(refprot_info).into{all_input_info_raw; all_input_info_raw1}
+annotations.join(overlap_info).join(refprot_info)map{it.flatten()}.set{all_input_info_raw}
+
+Channel
+    .fromPath(params.bestscores)
+    .toList()
+    .ifEmpty{error "Cannot find any overlap info: ${params.bestscores}"}
+    .set{best_hits_input}
 
 my_geneID = "${params.geneID}"
 if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
 process isolate_cluster_id {
-	tag {"${geneID}"}
+	tag {"${my_geneID}"}
 	input:
 	val(my_geneID)
 	file(gene_clusters)
@@ -99,9 +113,9 @@ process select_species_with_orthologs {
 	import re
 
 	my_df = pd.read_table("${my_exon_clusters}", sep="\t", header=0, index_col=False)
-	my_df["GeneClusterID"] = [re.sub("\\..*", "", element) for element in my_df["ClusterID"]]
-	selected_species = list(set(list(my_df[my_df.GeneClusterID=="${clusterID}"]["Sps"])))
-	print(selected_species)
+	my_df["GeneClusterID"] = [re.sub("\\..*", "", element) for element in my_df["ExCluster_ID"]]
+	selected_species = list(set(list(my_df[my_df.GeneClusterID=="${clusterID}"]["Species"])))
+	#print(selected_species)
 	for element in selected_species:
 	  print(str(element), end=',')
 	"""
@@ -109,7 +123,6 @@ process select_species_with_orthologs {
 
 selected_species.map{it -> it.split(",")}.flatMap().set{single_species}
 all_input_info_raw.join(single_species).set{all_input_info}
-
 
 /*
  * Filter input files for genes belonging to the gene cluster of interest
@@ -126,6 +139,7 @@ process subset_input_files {
 	set species, file(annotations), file(overlap_info), file(ref_proteins) from all_input_info
 	output:
 	set species, file("*_subsetted_annot.gtf"), file("*_subsetted_overlap_info.txt") into annotations_overlap_info
+	set species, file("*_subsetted_overlap_info.txt") into overlap_4_isoform_exs
 	set species, file("*_subsetted_annot.gtf") into (annotations_4_strand, annotations_4_refphases, annotations_4_exphases, annotations_4_isoforms, annotations_4_annots)
 	set species, file("*_subsetted_ref_proteins.txt") into ref_prot_info
 
@@ -137,22 +151,42 @@ process subset_input_files {
 
 //Depending on how big this file is, we might need different RAM requirements.
 //I am using bash because it's much faster than python here.
-best_hits_input = file(params.bestscores)
+//best_hits_input = file(params.bestscores)
 process subset_best_hits {
 	tag {"${gene_clusterID}"}
 	label 'big_mem'
 	publishDir "${params.output}/${params.geneID}/inputs", mode: 'symlink'
 	input:
 	val(gene_clusterID) from gene_clusterID1
-	file(best_hits_input)
+	file("best_hits_species_pairs_*") from best_hits_input
 	output:
 	file(Best_hits_subsetted) into best_hits
 	script:
 """
-awk 'NR==1' ${best_hits_input} > Best_hits_subsetted
-cat ${best_hits_input} | awk '\$1=="${gene_clusterID}"' >> Best_hits_subsetted
+cat best_hits_species_pairs_* > best_hits.tmp
+awk 'NR==1' best_hits.tmp > Best_hits_subsetted
+cat best_hits.tmp | awk '\$1=="${gene_clusterID}"' >> Best_hits_subsetted
+rm best_hits.tmp
 """
 }
+
+
+//best_hits_input = file(params.bestscores)
+//process subset_best_hits {
+//	tag {"${gene_clusterID}"}
+//	label 'big_mem'
+//	publishDir "${params.output}/${params.geneID}/inputs", mode: 'symlink'
+//	input:
+//	val(gene_clusterID) from gene_clusterID1
+//	file(best_hits_input)
+//	output:
+//	file(Best_hits_subsetted) into best_hits
+//	script:
+//"""
+//awk 'NR==1' ${best_hits_input} > Best_hits_subsetted
+//cat ${best_hits_input} | awk '\$1=="${gene_clusterID}"' >> Best_hits_subsetted
+//"""
+//}
 
 
 /*
@@ -279,7 +313,7 @@ process add_updown_phases {
  * Add exon annotation status
  */
 process add_exon_annotation_status {
-	tag {"${$species}"}
+	tag {"${species}"}
 	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
 	input:
 	set species, file(annotations), file(exons) from annotations_4_annots.join(updown_phases)
@@ -343,12 +377,12 @@ my_geneID = "${params.geneID}"
 //gene_clusters = file(params.geneclusters)
 if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
 process isolate_query_species {
-	tag {"${geneID}"}
+	tag {"${my_geneID}"}
 	input:
 	val(my_geneID)
 	file(gene_clusters)
 	output:
-	stdout into (query_species, query_species1)
+	stdout into (query_species, query_species1, query_species2)
 	script:
 	"""
 	#!/usr/bin/env python
@@ -366,7 +400,7 @@ process isolate_query_species {
 //def my_query = "${query_species1}".toString()
 Channel
     .fromFilePairs( params.annotations, size: 1).map{it[0]}.flatMap()
-    //.toList().map{  def my_query = "${query_species1}" [it, it].combinations().findAll{a,b -> a!=b && a==my_query}}
+    //.toList().map{[it, it].combinations().findAll{def query="$query_species1}".toString(), a,b -> a!=b && a==query}}
     .toList().map{[it, it].combinations().findAll{a,b -> a!=b && a=="Hs2"}}
     .flatMap()
     .map{"${it[0]}_${it[1]}".toString()}
@@ -384,10 +418,10 @@ process break_besthits_speciespair {
 	
 	script:
 	def single_species = "${species_pair}".split("_")
-	"""
-	awk 'NR==1' ${best_hits} > ${species_pair}-best_scores_hits_exons.txt
-	cat ${best_hits} | awk '\$16=="${single_species[0]}" && \$17=="${single_species[1]}"' >> ${species_pair}-best_scores_hits_exons.txt	
-	"""
+"""
+awk 'NR==1' ${best_hits} > ${species_pair}-best_scores_hits_exons.txt
+cat ${best_hits} | awk '\$16=="${single_species[0]}" && \$17=="${single_species[1]}"' >> ${species_pair}-best_scores_hits_exons.txt	
+"""
 }
 
 //Generate input channel. This part is quite ugly.
@@ -424,7 +458,7 @@ process isoform_info {
 	set species, file(GTF) from annotations_4_isoforms
 	output:
 	set species, file("*_exon_number_by_isoform") into isoform_tot_ex
-	set species, file("*_exon_number_in_isoform") into isoform_ex_index
+	set species, file("*_exon_number_in_isoform") into isoform_ex_index, isoform_exs
 	script:
 	"""
 	python ${baseDir}/bin/isoform_info.py -i $GTF -o1 "${species}"_exon_number_by_isoform -o2 "${species}"_exon_number_in_isoform
@@ -463,7 +497,7 @@ else {
 	    .map{"${it[0]}".toString()}.flatMap().collect().map{it -> it.join(",")}.set{all_species}
 	//gene_clusters = file(params.geneclusters)
 	if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
-	process derived_ordered_species {
+	process derive_ordered_species {
 		input:
 		file(gene_clusters)
 		val(all_species)
@@ -485,47 +519,83 @@ else {
 	}
 }
 
+
 //R script to actually make the plot.
 my_geneID = "${params.geneID}"
 //gene_clusters = file(params.geneclusters)
 if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
-if (params.relevant_exs) {relevant_exons = file("${params.relevant_exs}")} else {
-	relevant_exons = ""
-}
- 
-process plot_exint {
-	tag{"${species}"}
-	publishDir "${params.output}/${params.geneID}", mode: 'copy'
-	input:
-	val(my_geneID)
-	val(my_query_species) from query_species1 
-	val(ordered_target)
-	file(gene_clusters)
-	file(relevant_exons)
-	file("*") from plot_input
-	output:
-	"${baseDir}/exint_plots"
-	script:
-	"""
-	Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} "${relevant_exons}" 
-	"""
+//if (params.relevant_exs) {relevant_exons = file("${params.relevant_exs}")} else {
+//	relevant_exons = ""
+//}
+
+if (params.isoformID) {
+	isoformID = params.isoformID
+	process get_isoform_exons {
+		tag{"${isoformID}"}
+		publishDir "${params.output}/${params.geneID}/processed_table", mode: 'copy'
+		input:
+		val(isoformID)
+		set species, file(exons_info), file(overlap_info) from isoform_exs.join(overlap_4_isoform_exs).join(query_species2)
+		output:
+		stdout into (isoform_interesting_exs) 
+		script:
+		"""
+		#!/usr/bin/env python
+		import pandas as pd
+		import re
+
+		my_df = pd.read_csv("${exons_info}", sep="\t", header=None, index_col=False, names=["ExonID", "ExonNum", "GeneID", "TranscriptID"])
+		interesting_exons = list(my_df.loc[my_df["TranscriptID"]=="${isoformID}"]["ExonID"])
+		#select all the exons from the same overlapping group
+		my_chr = [re.sub(":.*", "", element) for element in interesting_exons][0]
+		my_overlap_df = pd.read_csv("${overlap_info}", sep="\t", header=None, index_col=False, names=["OverlapID", "GeneID", "Start_Stop"])
+		my_overlap_df["Coords"] = [my_chr+":"+element for element in list(my_overlap_df["Start_Stop"])]
+		overlapping_groups = list(my_overlap_df.loc[my_overlap_df["Coords"].isin(interesting_exons)]["OverlapID"])
+		all_interesting_exons = list(my_overlap_df.loc[my_overlap_df["OverlapID"].isin(overlapping_groups)]["Coords"])
+		print(",".join(str(element) for element in all_interesting_exons), end='')
+		"""
+ }
+} else {
+	Channel.from("None").into{isoform_interesting_exs}
 }
 
-//process isolate_cluster_id {
-//	tag {"${geneID}"}
-//	input:
-//	val(my_geneID)
-//	file(gene_clusters)
-//	output:
-//	stdout into (gene_clusterID, gene_clusterID1, gene_clusterID2, gene_clusterID3)
-//	script:
-//	"""
-//	#!/usr/bin/env python
-//
-//	import pandas as pd
-//	
-//	my_df = pd.read_csv("${gene_clusters}", sep="\t", header=None, index_col=False)
-//	clusterID = list(my_df[my_df.iloc[:,2]=="${my_geneID}"].iloc[:,0])[0]
-//	print(clusterID, end='')
-//	"""
-//}
+if (params.relevant_exs) {
+	relevant_exons = file("${params.relevant_exs}")
+	process plot_exint_rel_exs {
+		tag{"${my_geneID}"}
+		containerOptions '-B $PWD:/tmp'
+		publishDir "${params.output}/${params.geneID}", mode: 'copy'
+		input:
+		val(my_geneID)
+		val(my_query_species) from query_species1 
+		val(ordered_target)
+		file(gene_clusters)
+		file(relevant_exons)
+		val(isoform_interesting_exs)
+		file("*") from plot_input
+		output:
+		"${baseDir}/exint_plots"
+		script:
+		"""
+		Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} ${isoform_interesting_exs} "${relevant_exons}"  
+		"""
+	}
+} else {
+	process plot_exint {
+		tag{"${my_geneID}"}
+		publishDir "${params.output}/${params.geneID}", mode: 'copy'
+		input:
+		val(my_geneID)
+		val(my_query_species) from query_species1 
+		val(ordered_target)
+		file(gene_clusters)
+		val(isoform_interesting_exs)
+		file("*") from plot_input
+		output:
+		"${baseDir}/exint_plots"
+		script:
+		"""
+		Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} ${isoform_interesting_exs}
+		"""
+	}
+}
