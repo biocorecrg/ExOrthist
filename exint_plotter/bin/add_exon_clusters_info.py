@@ -21,11 +21,11 @@ my_species = args.species
 #read input
 my_df = pd.read_table(str(my_input), header=None, names=["GeneID", "ExonID", "Strand", "UpPhase", "DownPhase", "AnnotStatus"])
 exon_clusters_df = pd.read_table(str(my_clusters), header=0, index_col=False, sep="\t")
-exon_clusters_df_species = exon_clusters_df.loc[exon_clusters_df["Sps"] == my_species]
+exon_clusters_df_species = exon_clusters_df.loc[exon_clusters_df["Species"] == my_species]
 
 #create dictionary with key=exon_coords, value=exon_cluster_id
 #it also considers only start or only stop coords
-coords_cluster_dict = pd.Series(exon_clusters_df_species.ClusterID.values, index=exon_clusters_df_species.Exon_coords).to_dict()
+coords_cluster_dict = pd.Series(exon_clusters_df_species.ExCluster_ID.values, index=exon_clusters_df_species.Coordinate).to_dict()
 for my_id in list(coords_cluster_dict.keys()):
   start_coord = re.sub('-.*', '', my_id)
   stop_coord = re.sub(':.*-', ':', my_id)
