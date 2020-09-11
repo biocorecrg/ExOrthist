@@ -171,24 +171,6 @@ rm best_hits.tmp
 }
 
 
-//best_hits_input = file(params.bestscores)
-//process subset_best_hits {
-//	tag {"${gene_clusterID}"}
-//	label 'big_mem'
-//	publishDir "${params.output}/${params.geneID}/inputs", mode: 'symlink'
-//	input:
-//	val(gene_clusterID) from gene_clusterID1
-//	file(best_hits_input)
-//	output:
-//	file(Best_hits_subsetted) into best_hits
-//	script:
-//"""
-//awk 'NR==1' ${best_hits_input} > Best_hits_subsetted
-//cat ${best_hits_input} | awk '\$1=="${gene_clusterID}"' >> Best_hits_subsetted
-//"""
-//}
-
-
 /*
  * Select only one exon from each group of overlapping exons
  */
@@ -374,15 +356,15 @@ process add_fake_coords {
 //But the best hits scores files are too big to be read every single time
 
 my_geneID = "${params.geneID}"
-//gene_clusters = file(params.geneclusters)
 if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
+
 process isolate_query_species {
 	tag {"${my_geneID}"}
 	input:
 	val(my_geneID)
 	file(gene_clusters)
 	output:
-	stdout into (query_species, query_species1, query_species2)
+	stdout into (query_species, query_species1, query_species2, query_species3)
 	script:
 	"""
 	#!/usr/bin/env python
@@ -397,15 +379,15 @@ process isolate_query_species {
 
 //Generate a channel with all combinations of species query with each species target
 //Take the species from GTFs name
-//def my_query = "${query_species1}".toString()
 Channel
-    .fromFilePairs( params.annotations, size: 1).map{it[0]}.flatMap()
-    //.toList().map{[it, it].combinations().findAll{def query="$query_species1}".toString(), a,b -> a!=b && a==query}}
-    .toList().map{[it, it].combinations().findAll{a,b -> a!=b && a=="Hs2"}}
+    .fromFilePairs( params.annotations, size: 1).map{it[0]}
+    .toList()
+    .map{[it, it].combinations().findAll{a,b -> a!=b}}
     .flatMap()
+    .groupTuple()
+    .join(query_species).transpose()
     .map{"${it[0]}_${it[1]}".toString()}
     .into{all_species_pairs; all_species_pairs1}
-
 
 process break_besthits_speciespair {
 	tag {"${species_pair}"}
@@ -431,14 +413,15 @@ all_species_pairs1.map{"${it}".split("_")}.map{["${it[0]}_${it[1]}".toString(), 
 first_channel.join(best_hits_speciespairs).map{[it[1], it[0], it[2], it[3]]}.into{second_channel; second_channel1}
 second_channel.combine(processed_overlap_info1).filter{it[0]==it[4]}.into{intermediate; intermediate1}
 intermediate.combine(selected_exons_4_strand1).filter{it[0]==it[6]}.map{[it[2], it[0], it[1], it[3], it[5], it[7]]}.into{third_channel; third_channel1}
-third_channel.combine(processed_overlap_info2).filter{it[0]==it[6]}.combine(selected_exons_4_strand2).filter{it[0]==it[8]}.map{[it[2], it[3], it[4], it[5], it[7], it[9]]}.into{add_besthits_input; add_besthits_input1}
+third_channel.combine(processed_overlap_info2).filter{it[0]==it[6]}.combine(selected_exons_4_strand2).filter{it[0]==it[8]}.map{[it[2], it[3], it[4], it[5], it[7], it[9]]}.set{add_besthits_input}
+
 
 //Add the besthits scores
 process add_best_hits_scores {
 	tag {"${species_pair}"}
 	publishDir "${params.output}/${params.geneID}/processed_tables", mode: 'copy'
 	input:
-	set species_pair, file(best_hits_scores), file(over_query), file(over_target), file(selected_over_query), file(selected_over_target) from add_besthits_input
+	set species_pair, file(best_hits_scores), file(over_query), file(selected_over_query), file(over_target), file(selected_over_target) from add_besthits_input
 	output:
 	file("*-best_scores_hits_exons.translated_coords") into (translated_coords)
 	script:
@@ -467,7 +450,6 @@ process isoform_info {
 
 
 //There was a small bug before. Now it should be fixed.
-//gene_clusters = file(params.geneclusters)
 if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
 process exon_position_info {
 	tag {"${species}"}
@@ -501,6 +483,7 @@ else {
 		input:
 		file(gene_clusters)
 		val(all_species)
+		val(query_species) from query_species3
 		val(gene_clusterID) from gene_clusterID2
 		output:
 		stdout into ordered_target
@@ -512,7 +495,7 @@ else {
 		my_df = pd.read_csv("${gene_clusters}", sep="\t", header=None, index_col=False)
 		species_list = list(my_df[my_df.iloc[:,0]=="${gene_clusterID}"].iloc[:,1])
 		interesting_species = list(set([element for element in species_list if element in str("${all_species}").split(",")]))
-		interesting_species.insert(0, interesting_species.pop(interesting_species.index("Hs2")))
+		interesting_species.insert(0, interesting_species.pop(interesting_species.index("${query_species}")))
 		final_species_list = ",".join(str(element) for element in interesting_species)
 		print(final_species_list, end='')
 		"""
@@ -522,11 +505,7 @@ else {
 
 //R script to actually make the plot.
 my_geneID = "${params.geneID}"
-//gene_clusters = file(params.geneclusters)
 if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
-//if (params.relevant_exs) {relevant_exons = file("${params.relevant_exs}")} else {
-//	relevant_exons = ""
-//}
 
 if (params.isoformID) {
 	isoformID = params.isoformID
@@ -535,7 +514,7 @@ if (params.isoformID) {
 		publishDir "${params.output}/${params.geneID}/processed_table", mode: 'copy'
 		input:
 		val(isoformID)
-		set species, file(exons_info), file(overlap_info) from isoform_exs.join(overlap_4_isoform_exs).join(query_species2)
+		set species, file(exons_info), file(overlap_info) from isoform_exs.join(overlap_4_isoform_exs).join(query_species1)
 		output:
 		stdout into (isoform_interesting_exs) 
 		script:
@@ -552,6 +531,7 @@ if (params.isoformID) {
 		my_overlap_df["Coords"] = [my_chr+":"+element for element in list(my_overlap_df["Start_Stop"])]
 		overlapping_groups = list(my_overlap_df.loc[my_overlap_df["Coords"].isin(interesting_exons)]["OverlapID"])
 		all_interesting_exons = list(my_overlap_df.loc[my_overlap_df["OverlapID"].isin(overlapping_groups)]["Coords"])
+		all_interesting_exons = ["${isoformID}"] + all_interesting_exons
 		print(",".join(str(element) for element in all_interesting_exons), end='')
 		"""
  }
@@ -567,7 +547,7 @@ if (params.relevant_exs) {
 		publishDir "${params.output}/${params.geneID}", mode: 'copy'
 		input:
 		val(my_geneID)
-		val(my_query_species) from query_species1 
+		val(my_query_species) from query_species2 
 		val(ordered_target)
 		file(gene_clusters)
 		file(relevant_exons)
@@ -586,7 +566,7 @@ if (params.relevant_exs) {
 		publishDir "${params.output}/${params.geneID}", mode: 'copy'
 		input:
 		val(my_geneID)
-		val(my_query_species) from query_species1 
+		val(my_query_species) from query_species2 
 		val(ordered_target)
 		file(gene_clusters)
 		val(isoform_interesting_exs)

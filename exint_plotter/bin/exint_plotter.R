@@ -28,7 +28,9 @@ my_script_folder = args[4]
 gene_clusters = args[5]
 my_ordered_species_raw = args[6] #The order of the species is defined within the nextflow.
 my_isoform_exons_raw = args[7]
-my_isoform_exons = as.vector(unlist(strsplit(my_isoform_exons_raw, ",")))
+my_isorform_id = as.vector(unlist(strsplit(my_isoform_exons_raw, ",")))[1]
+if (nchar(my_isorform_id) == 0) {my_isorform_id = "None"}
+my_isoform_exons = as.vector(unlist(strsplit(my_isoform_exons_raw, ",")))[2:length(as.vector(unlist(strsplit(my_isoform_exons_raw, ","))))]
 
 if (length(args)==8) {
   my_interesting_exons = args[8]
@@ -336,9 +338,9 @@ unique_table_for_names = unique_table_for_names[rev(order(unique_table_for_names
 
 my_plot = ggplot()  +
   geom_rect(data=internal_ex_df, aes(xmin=FakeStart, xmax=FakeStop, ymin=Order, ymax=Order+0.5, alpha=AnnotStatus, fill=Filling_status, linetype=State, size=IsoformExs), color=internal_ex_df$IsoformExs) + #internal exons.
-  geom_polygon(data=first_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State, size=IsoformExs), color="black") + #first exons.
-  geom_polygon(data=last_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State, size=IsoformExs), color="black") + #last exons.
-  geom_polygon(data=first_last_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State, size=IsoformExs), color="black") + #exons which are both first and last.
+  geom_polygon(data=first_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State, size=IsoformExs), color=first_ex_df$IsoformExs) + #first exons.
+  geom_polygon(data=last_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State, size=IsoformExs), color=last_ex_df$IsoformExs) + #last exons.
+  geom_polygon(data=first_last_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State, size=IsoformExs), color=first_last_ex_df$IsoformExs) + #exons which are both first and last.
   scale_fill_manual(values=group_colors_vector, name = "Exs", labels=c("default", paste0(interesting_exons, " (", my_query_species,")"))) + #the order of the labels should be the same as in group_colors_vector. 
   #geom_rect(data=internal_ex_df, aes(xmin=FakeStart, xmax=FakeStop, ymin=Order, ymax=Order+0.5, alpha=State), fill="lightsteelblue3", color="dimgray") + #internal exons.
   #geom_polygon(data=first_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #first exons.
@@ -363,7 +365,7 @@ my_plot = ggplot()  +
         plot.title = element_text(color="black", hjust=0, size=20)
   )  +
   xlim(-60,max(plotting_table$FakeStop)+5) + #limit axis +
-  ggtitle(paste0(unique(subset(plotting_table, Species==my_query_species)$GeneID), " and Orthologs:\nGene Structure")) +
+  ggtitle(paste0(unique(subset(plotting_table, Species==my_query_species)$GeneID), " and Orthologs:\nHighlighted isoform: ", my_isorform_id)) +
   guides(alpha=FALSE, size=FALSE) +
   geom_text(data=(unique_table_for_names), aes(x=-50, y=unique(unique_table_for_names$Order)+0.25, 
                                                label=paste0(unique_table_for_names$Species, ", ",
