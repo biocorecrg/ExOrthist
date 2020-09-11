@@ -539,43 +539,42 @@ if (params.isoformID) {
 	Channel.from("None").into{isoform_interesting_exs}
 }
 
-if (params.relevant_exs) {
-	relevant_exons = file("${params.relevant_exs}")
-	process plot_exint_rel_exs {
-		tag{"${my_geneID}"}
-		containerOptions '-B $PWD:/tmp'
-		publishDir "${params.output}/${params.geneID}", mode: 'copy'
-		input:
-		val(my_geneID)
-		val(my_query_species) from query_species2 
-		val(ordered_target)
-		file(gene_clusters)
-		file(relevant_exons)
-		val(isoform_interesting_exs)
-		file("*") from plot_input
-		output:
-		"${baseDir}/exint_plots"
-		script:
-		"""
-		Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} ${isoform_interesting_exs} "${relevant_exons}"  
-		"""
-	}
-} else {
-	process plot_exint {
-		tag{"${my_geneID}"}
-		publishDir "${params.output}/${params.geneID}", mode: 'copy'
-		input:
-		val(my_geneID)
-		val(my_query_species) from query_species2 
-		val(ordered_target)
-		file(gene_clusters)
-		val(isoform_interesting_exs)
-		file("*") from plot_input
-		output:
-		"${baseDir}/exint_plots"
-		script:
-		"""
-		Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} ${isoform_interesting_exs}
-		"""
-	}
+if (params.relevant_exs) {relevant_exons = "${params.relevant_exs}"} else {relevant_exons = "None"}
+process plot_exint {
+	tag{"${my_geneID}"}
+	containerOptions '-B $PWD:/tmp'
+	publishDir "${params.output}/${params.geneID}", mode: 'copy'
+	input:
+	val(my_geneID)
+	val(my_query_species) from query_species2 
+	val(ordered_target)
+	file(gene_clusters)
+	val(relevant_exons)
+	val(isoform_interesting_exs)
+	file("*") from plot_input
+	output:
+	"${baseDir}/exint_plots"
+	script:
+	"""
+	Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} ${isoform_interesting_exs} ${relevant_exons} 
+	"""
 }
+//} else {
+//	process plot_exint {
+//		tag{"${my_geneID}"}
+//		publishDir "${params.output}/${params.geneID}", mode: 'copy'
+//		input:
+//		val(my_geneID)
+//		val(my_query_species) from query_species2
+//		file(gene_clusters) 
+//		val(ordered_target)
+//		val(isoform_interesting_exs)
+//		file("*") from plot_input
+//		output:
+//		"${baseDir}/exint_plots"
+//		script:
+//		"""
+//		Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} ${isoform_interesting_exs}
+//		"""
+//	}
+//}

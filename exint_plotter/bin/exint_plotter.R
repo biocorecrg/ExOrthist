@@ -29,15 +29,18 @@ gene_clusters = args[5]
 my_ordered_species_raw = args[6] #The order of the species is defined within the nextflow.
 my_isoform_exons_raw = args[7]
 my_isorform_id = as.vector(unlist(strsplit(my_isoform_exons_raw, ",")))[1]
-if (nchar(my_isorform_id) == 0) {my_isorform_id = "None"}
+#if (nchar(my_isorform_id) == 0) {my_isorform_id = "None"}
 my_isoform_exons = as.vector(unlist(strsplit(my_isoform_exons_raw, ",")))[2:length(as.vector(unlist(strsplit(my_isoform_exons_raw, ","))))]
+my_interesting_exons = args[8]
+interesting_exons = as.vector(unlist(strsplit(my_interesting_exons, ",")))
 
-if (length(args)==8) {
-  my_interesting_exons = args[8]
-  interesting_exons = as.vector(read.table(my_interesting_exons, header=FALSE)$V1)
-  } else {
-    interesting_exons = ""
-    }
+#if (length(args)==8) {
+  #my_interesting_exons = args[8]
+  #interesting_exons = as.vector(read.table(my_interesting_exons, header=FALSE)$V1)
+  #interesting_exons = as.vector(unlist(strsplit(my_interesting_exons, ",")))
+  #} else {
+  #  interesting_exons = ""
+#}
 
 
 ######## Set up
@@ -91,9 +94,9 @@ my_gene_table$ExPosition[is.na(my_gene_table$ExPosition)] = "Internal" #whatever
 
 ####### ORTHOLOGS #########
 #Get orthologs either from the general clusters or from the files provided by the user.
-species_orthologs_table = read.delim(gene_clusters,
-                                     sep="\t", header=FALSE)
-colnames(species_orthologs_table)[1:4] = c("ClusterID", "Species", "GeneID", "GeneName")
+species_orthologs_table = read.delim(gene_clusters, sep="\t", header=FALSE)
+colnames(species_orthologs_table)[1:3] = c("ClusterID", "Species", "GeneID")
+if (ncol(species_orthologs_table) >= 4) {colnames(species_orthologs_table)[4] = "GeneName"}
 
 my_clusterID = unique(as.vector(subset(species_orthologs_table, GeneID == my_gene)$ClusterID)) #isolate clusterID
 my_gene_orthologs = as.vector(subset(species_orthologs_table, ClusterID == my_clusterID & Species != my_query_species)$GeneID) #generate named vector with all the one2one orthologs of the gene of interest.
@@ -330,7 +333,17 @@ plotting_table$ExonLength[plotting_table$GeneID != my_gene] = NA
 ######### Get unique table for names
 unique_table_for_names = unique(plotting_table[c("Species", "ExonNumberPlot", "GeneID", "Order")])
 unique_table_for_names = unique_table_for_names[rev(order(unique_table_for_names$Order)),]
-
+title_geneID = unique(subset(plotting_table, Species==my_query_species)$GeneID) #geneID for the title
+#Add gene name to the plot, if gene name is provided.
+if (ncol(species_orthologs_table) >=4 ) {
+  GeneID_GeneName_dict = hashmap(as.vector(species_orthologs_table$GeneID), as.vector(species_orthologs_table$GeneName))
+  unique_table_for_names$GeneName = GeneID_GeneName_dict$find(unique_table_for_names$GeneID)
+  title_gene_name = paste0(" ", GeneID_GeneName_dict$find(title_geneID)) #the space to keep the ggtitle uniform in case the GeneName is provided or not.
+} else {
+  unique_table_for_names$GeneName = rep("", nrow(unique_table_for_names))
+  title_gene_name = ""
+}
+                                 
 
 ##################################################
 ########### Make the plot ########################
@@ -341,16 +354,23 @@ my_plot = ggplot()  +
   geom_polygon(data=first_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State, size=IsoformExs), color=first_ex_df$IsoformExs) + #first exons.
   geom_polygon(data=last_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State, size=IsoformExs), color=last_ex_df$IsoformExs) + #last exons.
   geom_polygon(data=first_last_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State, size=IsoformExs), color=first_last_ex_df$IsoformExs) + #exons which are both first and last.
-  scale_fill_manual(values=group_colors_vector, name = "Exs", labels=c("default", paste0(interesting_exons, " (", my_query_species,")"))) + #the order of the labels should be the same as in group_colors_vector. 
-  #geom_rect(data=internal_ex_df, aes(xmin=FakeStart, xmax=FakeStop, ymin=Order, ymax=Order+0.5, alpha=State), fill="lightsteelblue3", color="dimgray") + #internal exons.
-  #geom_polygon(data=first_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #first exons.
-  #geom_polygon(data=last_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #last exons.
-  #geom_polygon(data=first_last_ex_df, aes(x=x, y=y, alpha=State, group=ExonID), fill="lightsteelblue3", color="dimgray") + #exons which are both first and last.
+  geom_point(data=plotting_table, aes(x=FakeStart-1.5, y=Order+0.25, color=FinalPhaseUp), shape=8) +
+  geom_point(data=plotting_table, aes(x=FakeStop+1.5, y=Order+0.25, color=FinalPhaseDown), shape=8) +
+  geom_text(data=(unique_table_for_names), aes(x=-50, y=unique(unique_table_for_names$Order)+0.25, 
+                                               label=paste0(unique_table_for_names$Species, " ",
+                                                            unique_table_for_names$GeneName, ", ",
+                                                            sub(".*;", "", unique(unique_table_for_names$ExonNumberPlot)), " ex.\n",
+                                                            unique_table_for_names$GeneID)), size=7) +
+  geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.25, label=plotting_table$Levels), size=7) + #plot number of matching exons
+  geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.75, label=plotting_table$ExonLength+1), size=7) + #plot the exon length
   
-  #scale_alpha_manual(values=c("Exon"=1, "Exon_added"=0.4)) + #different transparencies to exons actually matching or not the reference gene.
+  scale_fill_manual(values=group_colors_vector, name = "Exs", labels=c("default", paste0(interesting_exons, " (", my_query_species,")"))) + #the order of the labels should be the same as in group_colors_vector.
+  #scale_fill_manual(values=group_colors_vector, name = "Exs", breaks=paste0(interesting_exons, " (", my_query_species,")")) + #the order of the labels should be the same as in group_colors_vector.
   scale_alpha_manual(values=c("annotated"=1, "not_annotated"=0)) + #color depending on the annotation status.
   scale_linetype_manual(values=c("Exon"="solid", "Exon_added"="dashed")) +
   scale_size_manual(values=c("brown2"=2, "black"=0.5)) +
+  scale_color_manual(values=c("0"="coral3","1"="forestgreen","2"="mediumblue", "shit"="shit"), name = "Intron Phases",  labels=c("0", "1", "2"), breaks=c("0", "1", "2")) +
+  
   theme(axis.title = element_blank(),
         axis.text = element_blank(),
         panel.border = element_blank(),
@@ -362,25 +382,20 @@ my_plot = ggplot()  +
         legend.position = "bottom",
         legend.title = element_text(color="black", size=18),
         legend.text = element_text(color="black", size=15),
-        plot.title = element_text(color="black", hjust=0, size=20)
+        plot.title = element_text(color="black", hjust=0, size=20, face="bold")
   )  +
   xlim(-60,max(plotting_table$FakeStop)+5) + #limit axis +
-  ggtitle(paste0(unique(subset(plotting_table, Species==my_query_species)$GeneID), " and Orthologs:\nHighlighted isoform: ", my_isorform_id)) +
-  guides(alpha=FALSE, size=FALSE) +
-  geom_text(data=(unique_table_for_names), aes(x=-50, y=unique(unique_table_for_names$Order)+0.25, 
-                                               label=paste0(unique_table_for_names$Species, ", ",
-                                                            sub(".*;", "", unique(unique_table_for_names$ExonNumberPlot)), " ex.\n",
-                                                            unique_table_for_names$GeneID)), size=7) +
-  geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.25, label=plotting_table$Levels), size=7) + #plot number of matching exons
-  geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.75, label=plotting_table$ExonLength+1), size=7) + #plot the exon length
-  geom_point(data=plotting_table, aes(x=FakeStart-1.5, y=Order+0.25, color=FinalPhaseUp), shape=8) +
-  geom_point(data=plotting_table, aes(x=FakeStop+1.5, y=Order+0.25, color=FinalPhaseDown), shape=8) +
-  scale_color_manual(values=c("0"="coral3","1"="forestgreen","2"="mediumblue", "shit"="shit"), name = "Intron Phases",  labels=c("0", "1", "2"), breaks=c("0", "1", "2"))
+  #ggtitle(paste0(unique(subset(plotting_table, Species==my_query_species)$GeneID), " and Orthologs:\nHighlighted isoform: ", my_isorform_id)) +
+  ggtitle(paste0("Query gene: ", my_query_species, title_gene_name, ", ", title_geneID,  "\nHighlighted isoform: ", my_isorform_id)) +
+  guides(alpha=FALSE, size=FALSE, linetype=FALSE)
+  
 
+  
 #Save pdf to output file (in a folder called exint plot)
 #This is generate the right proportions in the plot.
 my_width = as.numeric(nrow(subset(plotting_table, GeneID==my_gene)))+10 #number of exons 
 my_height = length(unique(as.vector(plotting_table$GeneID))) #Number of orthologs
-pdf(paste0(my_folder, "exint_plot.pdf"), width=my_width, height=my_height)
+if (my_isorform_id == "None") {output_file = "exint_plot.pdf"} else {output_file = paste0("exint_plot_", my_isorform_id, ".pdf")}
+pdf(paste0(my_folder, output_file), width=my_width, height=my_height)
 my_plot
 dev.off()
