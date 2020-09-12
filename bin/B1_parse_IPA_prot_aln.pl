@@ -447,7 +447,7 @@ foreach $el (@keys){
 		### 6.1) GETTING RESIDUES ALIGNMENT
 		my $PP1=$pos{$n1}; my $PP2=$pos{$n2};
 		if ($seq1 && $seq2 && $n1 && $n2 && $PP1 && $PP2){
-		    my $tmp2=score_exons($seq1,$seq2,$n1,$n2,$sp1,$sp2,$glsc1,$sim1,$sim2,$idt,$Gclid,$PP1,$PP2); # idt not really used
+		    my $tmp2=score_exons($seq1,$seq2,$n1,$n2,$sp1,$sp2,$glt,$sim1,$sim2,$idt,$Gclid,$PP1,$PP2); # idt not really used
 		}
 		else {} # print "3)$Gclid\t$n1\t$n2\t$seq1\t$seq2\t$PP1\t$PP2\n"; }
 		$score{$n1.",".$n2}=1;
