@@ -43,7 +43,7 @@ open (MISS, ">$msf") || die "It cannot open output file $msf\n";
 
 ##Printing headers 
 #Header protein score file
-print PRSC "CID\tALN\tQuery\tSubject\t\%Sim_qry_sbj\t\%Sim_sbj_qry\t\%Identity\tGlobal_Score\tSp_query\tSp_subject\n";
+print PRSC "CID\tALN\tQuery\tSubject\t\%Sim_qry_sbj\t\%Sim_sbj_qry\t\%Min_Identity\tGlobal_Score\tSp_query\tSp_subject\n";
 #Header exon score file
 print EXSC "CID\tProt_query\tExon_number_query\tAA_pos_exon_query\tChr_query\tExon_coords_query\tStrand\tExon_hits_subject\tProt_subject\tAln_AA_pos_subject\t\%Sim_aln_qry_sbj\t\%Id_aln_qry_sbj\tGap_number\t\%Gaps\tProt_subject\tExon_number_subject\tAA_pos_exon_subject\tChr_subject\tExon_coords_subject\tStrand\tSp_query\tSp_subject\n";
 #Header exons to realign file
@@ -401,9 +401,12 @@ foreach $el (@keys){
 	    $sp2=$spid{$n2};	        
 
 	    ## 3) CALLING SUBROUTINE FOR SCORING PROTEINS
-	    my ($sim1,$sim2,$id1,$glsc1)=(0,0,0,0);
-	    ($sim1,$sim2,$id1,$glsc1)=score_proteins($n1,$n2,$seq1,$seq2);
-	    print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; ##printing in the protein scoring file the scores of similarity
+#	    my ($sim1,$sim2,$id1,$glsc1)=(0,0,0,0);
+#	    ($sim1,$sim2,$id1,$glsc1)=score_proteins($n1,$n2,$seq1,$seq2);
+	    my ($sim1,$sim2,$idt,$glt)=(0,0,0,0);
+	    ($sim1,$sim2,$idt,$glt)=score_proteins($n1,$n2,$seq1,$seq2);
+	    print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$idt\t$glt\t$sp1\t$sp2\n"; ##printing in the protein scoring file the scores of similarity
+	    print PRSC "$Gclid\tProtein\t$n2\t$n1\t$sim2\t$sim1\t$idt\t$glt\t$sp2\t$sp1\n"; ##printing in the protein scoring file the scores of similarity
 
 	    ## 4) OPENING OUTPUT INTALN FILE
 	    open (INTALN, "$int_aln");
@@ -435,7 +438,7 @@ foreach $el (@keys){
 #	    if (($sim1>=20 && $sim2>=20) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
 	    if ((($sim1>=$min_sim_prots*100 && $sim2>=$min_sim_prots*100) || $sim1 >= $min_sim_prots*100*2 || $sim2 >= $min_sim_prots*100*2) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
 		##5) CALLING SUBROUTINE FOR SCORING INTRONS
-		print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n";
+#		print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; # redundant
 		if ($is1 && $is2 && $ialn && $inn1 && $inn2){ # added $inn1 and $inn2
 		    my $tsp1=$spid{$inn1}; my $tsp2=$spid{$inn2};
 		    my $tmp1=score_introns($is1,$ialn,$is2,$inn1,$inn2,$tsp1,$tsp2,$Gclid);
@@ -444,7 +447,7 @@ foreach $el (@keys){
 		### 6.1) GETTING RESIDUES ALIGNMENT
 		my $PP1=$pos{$n1}; my $PP2=$pos{$n2};
 		if ($seq1 && $seq2 && $n1 && $n2 && $PP1 && $PP2){
-		    my $tmp2=score_exons($seq1,$seq2,$n1,$n2,$sp1,$sp2,$glsc1,$sim1,$sim2,$id1,$Gclid,$PP1,$PP2);
+		    my $tmp2=score_exons($seq1,$seq2,$n1,$n2,$sp1,$sp2,$glsc1,$sim1,$sim2,$idt,$Gclid,$PP1,$PP2); # idt not really used
 		}
 		else {} # print "3)$Gclid\t$n1\t$n2\t$seq1\t$seq2\t$PP1\t$PP2\n"; }
 		$score{$n1.",".$n2}=1;
@@ -531,7 +534,7 @@ sub score_proteins {
 	if ($sim1<$sim2) { $simt=$sim1; } else { $simt=$sim2; }
 	if ($id1<$id2) { $idt=$id1; } else { $idt=$id2; }
 	if ($global_score1<$global_score2) { $glt=$global_score1; } else { $glt=$global_score2; }
-    
+	
 	#RETURNING RESULTS OF SIMILARITY
 	return ($sim1,$sim2,$idt,$glt);
     }
@@ -970,7 +973,7 @@ sub score_exons {
 		$e=0;
 		$pr="$n1";		    
 		if (!$print{$pr}){
-		    print PRSC "$el\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; ##Adding species info in the last 2 columns
+#		    print PRSC "$el\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; ##Adding species info in the last 2 columns => it was redundant
 		    %cin=();
 		    $print{$pr}=1;
 		}
@@ -1064,7 +1067,7 @@ sub score_exons {
 		$pr="$n2";		    
 		if (!$print{$pr}){
 		    %cin=();
-		    print PRSC  "$el\tProtein\t$n2\t$n1\t$sim1\t$sim2\t$id1\t$glsc1\t$sp2\t$sp1\n"; ##Adding species info in the last 2 columns
+#		    print PRSC  "$el\tProtein\t$n2\t$n1\t$sim2\t$sim1\t$id1\t$glsc1\t$sp2\t$sp1\n"; ##Adding species info in the last 2 columns => corrected sim1 and sim2, but also eliminated as redundant
 		    $print{$pr}=1;
 		}		    
 		@l=split(/\-/,$line[2]);		    
