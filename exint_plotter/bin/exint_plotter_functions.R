@@ -62,13 +62,14 @@ get_last_ex_df = function(plotting_table) {
   last_ex_df$third_point = paste0(as.character(last_ex_df$FakeStop), 
                                     ";", as.character(last_ex_df$Order))
 
-  last_ex_df$my_ID = paste0(last_ex_df$ExonID,  ";", last_ex_df$State, ";", last_ex_df$Filling_status, ";", last_ex_df$AnnotStatus)
+  last_ex_df$my_ID = paste0(last_ex_df$ExonID,  ";", last_ex_df$State, ";", last_ex_df$Filling_status, ";", last_ex_df$AnnotStatus, ";", last_ex_df$IsoformExs)
   last_ex_df = last_ex_df[,c("my_ID", "first_point", "second_point",  "third_point")]
   last_ex_df_long = melt(last_ex_df, id="my_ID")
   last_ex_df_long$ExonID = sapply(strsplit(last_ex_df_long $my_ID,";"), `[`, 1)
   last_ex_df_long$State = sapply(strsplit(last_ex_df_long $my_ID,";"), `[`, 2)
   last_ex_df_long$Filling_status = sapply(strsplit(last_ex_df_long $my_ID,";"), `[`, 3)
   last_ex_df_long$AnnotStatus = sapply(strsplit(last_ex_df_long $my_ID,";"), `[`, 4)
+  last_ex_df_long$IsoformExs = sapply(strsplit(last_ex_df_long $my_ID,";"), `[`, 5)
   #last_ex_df_long$ExonID = sub(";.*", "", last_ex_df_long$my_ID)
   #last_ex_df_long$State  = sub(".*;", "", last_ex_df_long$my_ID)
   last_ex_df_long$x = as.numeric(sub(";.*", "", last_ex_df_long$value))
@@ -89,13 +90,14 @@ get_first_ex_df = function(plotting_table) {
   first_ex_df$third_point = paste0(as.character(first_ex_df$FakeStop), 
                                    ";", as.character(first_ex_df$Order+0.25))
   
-  first_ex_df$my_ID = paste0(first_ex_df$ExonID,  ";", first_ex_df$State, ";", first_ex_df$Filling_status, ";", first_ex_df$AnnotStatus)
+  first_ex_df$my_ID = paste0(first_ex_df$ExonID,  ";", first_ex_df$State, ";", first_ex_df$Filling_status, ";", first_ex_df$AnnotStatus, ";", first_ex_df$IsoformExs)
   first_ex_df = first_ex_df[,c("my_ID", "first_point", "second_point", "third_point")]
   first_ex_df_long = melt(first_ex_df, id="my_ID")
   first_ex_df_long$ExonID = sapply(strsplit(first_ex_df_long$my_ID,";"), `[`, 1)
   first_ex_df_long$State = sapply(strsplit(first_ex_df_long$my_ID,";"), `[`, 2)
   first_ex_df_long$Filling_status = sapply(strsplit(first_ex_df_long$my_ID,";"), `[`, 3)
   first_ex_df_long$AnnotStatus = sapply(strsplit(first_ex_df_long$my_ID,";"), `[`, 4)
+  first_ex_df_long$IsoformExs = sapply(strsplit(first_ex_df_long$my_ID,";"), `[`, 5)
   #first_ex_df_long$ExonID = sub(";.*", "", first_ex_df_long$my_ID)
   #first_ex_df_long$State  = sub(".*;", "", first_ex_df_long$my_ID)
   first_ex_df_long$x = as.numeric(sub(";.*", "", first_ex_df_long$value))
@@ -116,13 +118,14 @@ get_first_last_ex_df = function(plotting_table) {
                                         ";", as.character(first_last_ex_df$Order+0.25))
   first_last_ex_df$fourth_point = paste0(as.character(first_last_ex_df$FakeStart + (abs(first_last_ex_df$FakeStop - first_last_ex_df$FakeStart))/2),
                                          ";", as.character(first_last_ex_df$Order))
-  first_last_ex_df$my_ID = paste0(first_last_ex_df$ExonID,  ";", first_last_ex_df$State, ";", first_last_ex_df$Filling_status, ";", first_last_ex_df$AnnotStatus)
+  first_last_ex_df$my_ID = paste0(first_last_ex_df$ExonID,  ";", first_last_ex_df$State, ";", first_last_ex_df$Filling_status, ";", first_last_ex_df$AnnotStatus, ";", first_last_ex_df$IsoformExs)
   first_last_ex_df = first_last_ex_df[,c("my_ID", "first_point", "second_point", "third_point", "fourth_point")]
   first_last_ex_df_long = melt(first_last_ex_df, id="my_ID")
   first_last_ex_df_long$ExonID = sapply(strsplit(first_last_ex_df_long $my_ID,";"), `[`, 1)
   first_last_ex_df_long$State = sapply(strsplit(first_last_ex_df_long $my_ID,";"), `[`, 2)
   first_last_ex_df_long$Filling_status = sapply(strsplit(first_last_ex_df_long $my_ID,";"), `[`, 3)
   first_last_ex_df_long$AnnotStatus = sapply(strsplit(first_last_ex_df_long $my_ID,";"), `[`, 4)
+  first_last_ex_df_long$IsoformExs = sapply(strsplit(first_last_ex_df_long $my_ID,";"), `[`, 5)
   #first_last_ex_df_long$ExonID = sub(";.*", "", first_last_ex_df_long$my_ID)
   #first_last_ex_df_long$State  = sub(".*;", "", first_last_ex_df_long$my_ID)
   first_last_ex_df_long$x = as.numeric(sub(";.*", "", first_last_ex_df_long$value))

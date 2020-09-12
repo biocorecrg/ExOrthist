@@ -220,7 +220,7 @@ Channel
 
 sp1_sp2_dist.concat(sp2_sp1_dist).set{species_pairs_dist}
 //Only the species pairs with a common index will be kept
-pairs_4_evodists.join(species_pairs_dist).map{[it[0], it[3]]}.into{dist_ranges_ch; dist_ranges_ch1}
+pairs_4_evodists.join(species_pairs_dist).map{[it[0], it[3]]}.into{dist_ranges_ch; dist_ranges_ch1; dist_ranges_ch2}
 
 /*
  * Align pairs
@@ -593,6 +593,34 @@ process recluster_EXs_by_species_pair {
     	"""
 }
 
+/*
+ * Log file
+ */
+//print run information
+dist_ranges = file(params.evodists)
+long_dist = params.long_dist
+medium_dist = params.medium_dist
+short_dist = params.short_dist 
+process run_info_file {
+	publishDir "${params.output}", mode: 'copy'
+	input:
+	file(dist_ranges)
+	long_dist
+	medium_dist
+	short_dist
+	output:
+	file("run_info.log")
+	script:
+	"""
+	echo -e "Evolutionary distance parameters:" > run_info.log
+	echo "long distance: ${long_dist}" >> run_info.log
+	echo "medium distance: ${medium_dist}" >> run_info.log
+	echo "short distance: ${short_dist}" >> run_info.log
+	echo >> run_info.log
+	echo "Pairwise evolutionary distances:" >> run_info.log
+	cat ${dist_ranges} >> run_info.log 
+	"""
+}
 
 /*
 * functions
@@ -611,6 +639,7 @@ def unzipBash(filename) {
     }
     return cmd
 }
+
 
 /*
  * Mail notification

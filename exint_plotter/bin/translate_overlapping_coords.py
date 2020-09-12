@@ -32,25 +32,27 @@ my_subsetted_df = my_df.loc[:,['CID', 'Species_query', 'GeneID_query', 'ExonID_q
 #remove the protein isoform
 my_subsetted_df["GeneID_query"] = pd.Series([re.sub(".*\|", "", element) for element in list(my_subsetted_df.GeneID_query)])
 my_subsetted_df["GeneID_target"] = pd.Series([re.sub(".*\|", "", element) for element in list(my_subsetted_df.GeneID_target)])
+
 #remove the strand information from the exon coords
 my_subsetted_df["ExonID_query"] = pd.Series([re.sub(":-", "", re.sub(":\+", "", str(element))) for element in list(my_subsetted_df.ExonID_query)])
 my_subsetted_df["ExonID_target"] =  pd.Series([re.sub(":-", "", re.sub(":\+", "", str(element))) for element in list(my_subsetted_df.ExonID_target)])
+
 #get dictionary for query and target species with key=ExonID, value=OverlappingID (meaning choords)
 query_overlapping = pd.read_csv(str(my_overlapping_query), sep="\t", index_col=False, header=None, names=["GeneID", "OverlappingID", "ExonID", "Frequency", "Length"])
 target_overlapping = pd.read_csv(str(my_overlapping_target), sep="\t", index_col=False, header=None, names=["GeneID", "OverlappingID", "ExonID", "Frequency", "Length"])
 query_overlapping_dict = pd.Series(query_overlapping.OverlappingID.values, index=query_overlapping.ExonID).to_dict()
 target_overlapping_dict = pd.Series(target_overlapping.OverlappingID.values, index=target_overlapping.ExonID).to_dict()
+
 #add column with overlappingID for both query and target
-my_subsetted_df["OverlappingID_query"] = my_subsetted_df["ExonID_query"]
-my_subsetted_df["OverlappingID_query"] = my_subsetted_df["OverlappingID_query"].map(query_overlapping_dict) #map is much faster than replace
-my_subsetted_df["OverlappingID_target"] = my_subsetted_df["ExonID_target"]
-my_subsetted_df["OverlappingID_target"] = my_subsetted_df["OverlappingID_target"].map(target_overlapping_dict)
+my_subsetted_df["OverlappingID_query"] = my_subsetted_df["ExonID_query"].map(query_overlapping_dict) #map is much faster than replace
+my_subsetted_df["OverlappingID_target"] = my_subsetted_df["ExonID_target"].map(target_overlapping_dict)
 #get dictionary for query and target species with key=OverlappingID, value=ExonID
 #it is the ExonID of the exon representing each overlapping group.
 query_chosen_overlapping = pd.read_csv(str(my_selected_overlapping_query), sep="\t", index_col=False, header=0, names=["GeneID", "OverlappingID", "ExonID", "Frequency", "Length"])
 target_chosen_overlapping = pd.read_csv(str(my_selected_overlapping_target), sep="\t", index_col=False, header=0, names=["GeneID", "OverlappingID", "ExonID", "Frequency", "Length"])
 query_chosen_dict = pd.Series(query_chosen_overlapping.ExonID.values, index=query_chosen_overlapping.OverlappingID).to_dict()
 target_chosen_dict = pd.Series(target_chosen_overlapping.ExonID.values, index=target_chosen_overlapping.OverlappingID).to_dict()
+
 #replace the OverlappingIDs with the relative ExonIDs
 my_subsetted_df["OverlappingID_query"] = my_subsetted_df["OverlappingID_query"].map(query_chosen_dict)
 my_subsetted_df["OverlappingID_target"] = my_subsetted_df["OverlappingID_target"].map(target_chosen_dict)
