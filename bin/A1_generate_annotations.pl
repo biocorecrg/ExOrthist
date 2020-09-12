@@ -175,7 +175,7 @@ if ($do_all_steps){
     $codons{"GAT"}="D";    $codons{"GAC"}="D";    $codons{"GAA"}="E";    $codons{"GAG"}="E";
     $codons{"GGT"}="G";    $codons{"GGC"}="G";    $codons{"GGA"}="G";    $codons{"GGG"}="G";
     
-    my @keys=keys(%ntseq);
+    my @keys=sort(keys(%ntseq));
     my $p;
     my ($l, $triplet, $protein, $nseq, $name);
     my $c=0;
@@ -883,7 +883,7 @@ if ($do_all_steps){
 	close (FAKEGTF);
 	
 #2) Get exint file for fake transcripts
-	my @keys2=keys(%ntseq2);
+	my @keys2=sort(keys(%ntseq2));
 	verbPrint("Generating exint files with added exons for $species\n");
 	open (EXINT_OUT, ">$tmp_exint_output") || die "Cannot open $exint_output (loop 1)\n";
 	foreach my $el(@keys2){ 
@@ -1016,7 +1016,7 @@ if ($do_all_steps){ # done to re-declare variables
     my $out2 = "$exons_db_folder/$species/$species"."_tr_coords_CDS.txt";
     my $out3 = "$exons_db_folder/$species/$species"."_trid_protid.txt";
     my $out4 = "$exons_db_folder/$species/$species"."_annot_exons_prot_ids.txt";
-    my @keys=keys(%tr1);
+    my @keys=sort(keys(%tr1));
     my $element;
     verbPrint("Generating $species"."_tr_coords.txt\n");
     open (OUTFILE1, ">$out1") || die "Cannot open $out1 (loop 2)\n";
@@ -1035,7 +1035,7 @@ if ($do_all_steps){ # done to re-declare variables
     }
     close OUTFILE1;
     
-    my @keys2=keys(%tr2);
+    my @keys2=sort(keys(%tr2));
     my $element2;
     my %print;
     verbPrint("Generating $species"."_tr_coords_CDS.txt and $species"."_trid_protid.txt\n");
@@ -1065,8 +1065,8 @@ if ($do_all_steps){ # done to re-declare variables
     close OUTFILE2;
     close OUTFILE4;
     
-    my @keys3=keys(%tpid);
-    @keys=sort(@keys3);
+    my @keys3=sort(keys(%tpid));
+#    @keys=sort(@keys3);
     my $tp;
     verbPrint("Generating $species"."_annot_exons_prot_ids.txt\n");
     open (OUTFILE3, ">$out3") || die "Cannot open $out3 (loop 2)\n";
@@ -1344,7 +1344,7 @@ if ($do_all_steps){
     }
     close (GTF);
     
-    my @keys=keys(%header);
+    my @keys=sort(keys(%header));
     my $p;
     my ($l, $triplet, $protein, $nseq, $name);
     my $c=0;
@@ -1459,7 +1459,7 @@ if ($do_all_steps){
 	    $ov{$l[0]}.=",".$l[2];
 	}
     }
-    my @k=keys(%cov);
+    my @k=sort(keys(%cov));
     foreach my $el (@k){
 	if ($cov{$el}>=4){
 	    @ints=split(/\,/,$ov{$el});
@@ -1547,7 +1547,7 @@ if ($do_all_steps){
     close (INTWO);
     
     my %rmtr;
-    my @k=keys(%mex);
+    my @k=sort(keys(%mex));
     my @t;
     foreach my $el (@k){
 	# $el => FBgn0003429  24698269-24703021
