@@ -74,9 +74,29 @@ if (params.resume) exit 1, "Are you making the classical --resume typo? Be caref
 clusterfile       = file(params.cluster)
 outputQC          = "${params.output}/QC"
 blosumfile        = file("${baseDir}/files/blosum62.txt")
+evodisfile		  = file(params.evodists)
 
 if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
 if ( !clusterfile.exists() ) exit 1, "Missing clusterfile file: ${clusterfile}!"
+if ( !evodisfile.exists() ) exit 1, "Missing evodists file: ${evodisfile}!"
+
+
+/*
+ * Process for validating the input
+ */
+ 
+ 	process check_input {
+
+		input:
+		file(evodisfile)
+
+		script:
+		"""
+		check_input.pl -e ${evodisfile} -g \"${params.annotations}\" -f \"${params.genomes}\"
+		"""
+}
+
+
 
 /*
  * Create channels for sequences data
