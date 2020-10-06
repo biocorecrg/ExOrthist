@@ -342,7 +342,7 @@ if ($prev_folder){ # option is provided
     if (-e $pre_EX_file && -e $pre_INT_file && -e $pre_PROT_file && -e $pre_ALN_file){ # all must exist
 	### EXON DATA
 	open (PRE_EX, $pre_EX_file) || die "It cannot open $pre_EX_file\n";
-#	<PRE_EX>;
+	<PRE_EX>;
 	while (<PRE_EX>){ 
 	    chomp;
 	    my @t=split(/\t/);
@@ -362,7 +362,7 @@ if ($prev_folder){ # option is provided
 	close PRE_EX;
 	### INTRON DATA
 	open (PRE_INT, $pre_INT_file) || die "It cannot open $pre_INT_file\n";
-#	<PRE_INT>;
+	<PRE_INT>;
 	while (<PRE_INT>){ 
 	    chomp;
 	    my @t=split(/\t/);
@@ -382,7 +382,7 @@ if ($prev_folder){ # option is provided
 	close PRE_INT;
 	### PROT DATA
 	open (PRE_PROT, $pre_PROT_file) || die "It cannot open $pre_PROT_file\n";
-#	<PRE_PROT>;
+	<PRE_PROT>;
 	while (<PRE_PROT>){ 
 	    chomp;
 	    my @t=split(/\t/);
