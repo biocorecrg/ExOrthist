@@ -342,7 +342,7 @@ if ($prev_folder){ # option is provided
     if (-e $pre_EX_file && -e $pre_INT_file && -e $pre_PROT_file && -e $pre_ALN_file){ # all must exist
 	### EXON DATA
 	open (PRE_EX, $pre_EX_file) || die "It cannot open $pre_EX_file\n";
-	<PRE_EX>;
+#	<PRE_EX>;
 	while (<PRE_EX>){ 
 	    chomp;
 	    my @t=split(/\t/);
@@ -350,8 +350,9 @@ if ($prev_folder){ # option is provided
 	    my $prot_sp2 = $t[8];
 	    my ($gene_sp1) = $prot_sp1 =~/.+\|(.+)/;
 	    my ($gene_sp2) = $prot_sp2 =~/.+\|(.+)/;
-	    my $temp_cl_sp1 = $gn{$gene_sp1};
-	    my $temp_cl_sp2 = $gn{$gene_sp2};
+	    my $temp_cl_sp1; my $temp_cl_sp2;
+	    $temp_cl_sp1 = $gn{$gene_sp1} if defined $gn{$gene_sp1};
+	    $temp_cl_sp2 = $gn{$gene_sp2} if defined $gn{$gene_sp2};
 	    
 	    if ($temp_cl_sp1 && $temp_cl_sp1 eq $temp_cl_sp2){
 		my $string = join("\t",$temp_cl_sp1,@t[1..$#t]);
@@ -361,7 +362,7 @@ if ($prev_folder){ # option is provided
 	close PRE_EX;
 	### INTRON DATA
 	open (PRE_INT, $pre_INT_file) || die "It cannot open $pre_INT_file\n";
-	<PRE_INT>;
+#	<PRE_INT>;
 	while (<PRE_INT>){ 
 	    chomp;
 	    my @t=split(/\t/);
@@ -369,8 +370,9 @@ if ($prev_folder){ # option is provided
 	    my $prot_sp2 = $t[5];
 	    my ($gene_sp1) = $prot_sp1 =~/.+\|(.+)/;
 	    my ($gene_sp2) = $prot_sp2 =~/.+\|(.+)/;
-	    my $temp_cl_sp1 = $gn{$gene_sp1};
-	    my $temp_cl_sp2 = $gn{$gene_sp2};
+	    my $temp_cl_sp1; my $temp_cl_sp2;
+	    $temp_cl_sp1 = $gn{$gene_sp1} if defined $gn{$gene_sp1};
+	    $temp_cl_sp2 = $gn{$gene_sp2} if defined $gn{$gene_sp2};
 	    
 	    if ($temp_cl_sp1 && $temp_cl_sp1 eq $temp_cl_sp2){
 		my $string = join("\t",$temp_cl_sp1,@t[1..$#t]);
@@ -380,7 +382,7 @@ if ($prev_folder){ # option is provided
 	close PRE_INT;
 	### PROT DATA
 	open (PRE_PROT, $pre_PROT_file) || die "It cannot open $pre_PROT_file\n";
-	<PRE_PROT>;
+#	<PRE_PROT>;
 	while (<PRE_PROT>){ 
 	    chomp;
 	    my @t=split(/\t/);
@@ -388,8 +390,9 @@ if ($prev_folder){ # option is provided
 	    my $prot_sp2 = $t[3];
 	    my ($gene_sp1) = $prot_sp1 =~/.+\|(.+)/;
 	    my ($gene_sp2) = $prot_sp2 =~/.+\|(.+)/;
-	    my $temp_cl_sp1 = $gn{$gene_sp1};
-	    my $temp_cl_sp2 = $gn{$gene_sp2};
+	    my $temp_cl_sp1; my $temp_cl_sp2;
+	    $temp_cl_sp1 = $gn{$gene_sp1} if defined $gn{$gene_sp1};
+	    $temp_cl_sp2 = $gn{$gene_sp2} if defined $gn{$gene_sp2};
 	    
 	    if ($temp_cl_sp1 && $temp_cl_sp1 eq $temp_cl_sp2){
 		my $string = join("\t",$temp_cl_sp1,@t[1..$#t]);
@@ -400,7 +403,6 @@ if ($prev_folder){ # option is provided
 	### ALN DATA
 	my ($prot_sp1_A,$prot_sp2_A, $gene_sp1_A, $gene_sp2_A, $valid_cl);
 	open (PRE_ALN, "gunzip -c $pre_ALN_file |") || die "It cannot open $pre_ALN_file\n";
-	<PRE_ALN>;
 	while (<PRE_ALN>){ 
 	    chomp;
 	    if (/^\>\>\>/){
@@ -409,8 +411,9 @@ if ($prev_folder){ # option is provided
 		$prot_sp2_A = $t[4];
 		($gene_sp1_A) = $prot_sp1_A =~/.+\|(.+)/;
 		($gene_sp2_A) = $prot_sp2_A =~/.+\|(.+)/;
-		my $temp_cl_sp1 = $gn{$gene_sp1_A};
-		my $temp_cl_sp2 = $gn{$gene_sp2_A};
+		my $temp_cl_sp1; my $temp_cl_sp2;
+		$temp_cl_sp1 = $gn{$gene_sp1} if defined $gn{$gene_sp1};
+		$temp_cl_sp2 = $gn{$gene_sp2} if defined $gn{$gene_sp2};
 		
 		if ($temp_cl_sp1 && $temp_cl_sp1 eq $temp_cl_sp2){
 		    $valid_cl = 1;
