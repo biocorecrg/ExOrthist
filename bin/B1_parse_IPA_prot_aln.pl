@@ -401,23 +401,23 @@ if ($prev_folder){ # option is provided
 	}
 	close PRE_PROT;
 	### ALN DATA
-	my ($prot_sp1_A,$prot_sp2_A, $gene_sp1_A, $gene_sp2_A, $valid_cl);
+	my ($prot_sp1,$prot_sp2, $gene_sp1, $gene_sp2, $valid_cl);
 	open (PRE_ALN, "gunzip -c $pre_ALN_file |") || die "It cannot open $pre_ALN_file\n";
 	while (<PRE_ALN>){ 
 	    chomp;
 	    if (/^\>\>\>/){
 		my @t = split(/ /,$_);
-		$prot_sp1_A = $t[3];
-		$prot_sp2_A = $t[4];
-		($gene_sp1_A) = $prot_sp1_A =~/.+\|(.+)/;
-		($gene_sp2_A) = $prot_sp2_A =~/.+\|(.+)/;
+		$prot_sp1 = $t[3];
+		$prot_sp2 = $t[4];
+		($gene_sp1) = $prot_sp1 =~/.+\|(.+)/;
+		($gene_sp2) = $prot_sp2 =~/.+\|(.+)/;
 		my $temp_cl_sp1; my $temp_cl_sp2;
 		$temp_cl_sp1 = $gn{$gene_sp1} if defined $gn{$gene_sp1};
 		$temp_cl_sp2 = $gn{$gene_sp2} if defined $gn{$gene_sp2};
 		
 		if ($temp_cl_sp1 && $temp_cl_sp1 eq $temp_cl_sp2){
 		    $valid_cl = 1;
-		    $pre_ALN_data{$prot_sp1_A}{$prot_sp2_A}.="$_\n";
+		    $pre_ALN_data{$prot_sp1}{$prot_sp2}.="$_\n";
 		} 
 		else {
 		    $valid_cl = 0;
@@ -425,7 +425,7 @@ if ($prev_folder){ # option is provided
 	    }
 	    else {
 		if ($valid_cl){ # i.e. data from before
-		    $pre_ALN_data{$prot_sp1_A}{$prot_sp2_A}.="$_\n";
+		    $pre_ALN_data{$prot_sp1}{$prot_sp2}.="$_\n";
 		}
 	    }
 	}
