@@ -469,7 +469,7 @@ foreach $el (@keys){
 	for ($zi=0; $zi<scalar(@t2); $zi++) {  ##opening FOR 2
 	    my $prot_sp1 = $t1[$zj];
 	    my $prot_sp2 = $t2[$zi];
-	    if ($pre_EX_data{$prot_sp1}{$prot_sp2} || $pre_EX_data{$prot_sp2}{$prot_sp1}){
+	    if ($pre_PROT_data{$prot_sp1}{$prot_sp2} || $pre_PROT_data{$prot_sp2}{$prot_sp1}){
 		print EXSC $pre_EX_data{$prot_sp1}{$prot_sp2} if $pre_EX_data{$prot_sp1}{$prot_sp2};
 		print EXSC $pre_EX_data{$prot_sp2}{$prot_sp1} if $pre_EX_data{$prot_sp2}{$prot_sp1};
 		print INSC $pre_INT_data{$prot_sp1}{$prot_sp2} if $pre_INT_data{$prot_sp1}{$prot_sp2};
