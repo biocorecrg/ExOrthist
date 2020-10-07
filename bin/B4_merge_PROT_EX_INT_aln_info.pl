@@ -22,7 +22,8 @@ my $o2=$folder."/h2.txt";
 my $tex=$folder."/tex.txt";
 my $s2=$folder."/all_EX_aln_features.txt";
 `head -1 $i2*part_1.txt > $o2`; ##getting header
-`cat $i2*_part_* $i3* | grep -v 'CID' | sort -k1 | uniq  > $tex`;
+#`cat $i2*_part_* $i3* | grep -v 'CID' | sort -k1 | uniq  > $tex`;
+`cat $i2*_part_* $i3* | grep -v 'CID' | sort -k1,1 -k2,2 -k6,6 -k9,9 -k15,15 -k19,19 | uniq  > $tex`;
 
 open (FILE, "$tex") || die "It cannot open the file with aligned exons ($tex)\n";
 open (TMP, ">$tmp") || die "It cannot open the temporary file ($tmp)\n"; # tmp.txt
@@ -42,7 +43,7 @@ my $i4=$folder."/INT_aln_features_";
 my $s3=$folder."/all_INT_aln_features.txt";
 my $o3=$folder."/h3.txt";
 `cat $i4*_part_1.txt | head -1 > $o3`; ##getting header (new tmp file)
-`cat $i4*_part_* | grep -v 'CID' | sort -k1 | uniq  > $tmp`; # re-creating tmp.txt
+`cat $i4*_part_* | grep -v 'CID' | sort -k1,1 -k2,2 -k6,6 | uniq  > $tmp`; # re-creating tmp.txt
 `cat $o3 $tmp > $s3`;  ## getting file of intron scores 
 
 print "4. Merging EXINT ALNs\n";
