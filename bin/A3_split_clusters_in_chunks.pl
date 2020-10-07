@@ -37,8 +37,6 @@ GetOptions( "gene_cluster=s" => \$f_gene_cluster, ##gene clusters for sp1 and sp
 ### Help
 if (!defined ($f_gene_cluster) || !defined($project_dir) || !defined($sp1) || !defined($sp2)|| defined ($help)){
     die "
-Usage: Prepare_and_Submit_Aln_sp_pair.pl -s1 sp1 -s2 sp2 --gene_cluster FILE --expath Exons_DB_folder  --project_dir Output_folder [options]
-
 OPTIONS
     --clean            Force removal of previous data [def OFF]
     --N_split int      Number of alignments in subfile [def 10000]
@@ -149,7 +147,7 @@ sub split_cluster {
     while (<CL>){
     	chomp($_);
     	my @l=split(/\t/,$_);
-    	$nt{$l[0]}{$l[1]}+=$trs{$l[2]};
+    	$nt{$l[0]}{$l[1]}+=$trs{$l[2]}; # number of proteins per gene for spX
     	$cid{$l[0]}=1;
     }
     close CL;
@@ -161,7 +159,7 @@ sub split_cluster {
     foreach $el (@k){
     	my $naln=$nt{$el}{$sp1}*$nt{$el}{$sp2};
     	$taln+=$naln;
-    	if ($naln>$N){  
+    	if ($naln>$N){ # if it has more than 10000 ($N) potential alignments,   
 	    print NALN "$el\t$naln\tThis cluster exceed $N alignments: Reduce number of total transcripts in exint file for this cluster or increase number of alignments!!!\n";
 	    $warn{$el}=1;
 	    $w++;
@@ -174,11 +172,10 @@ sub split_cluster {
     print NALN "\nTotal alignments\t$taln\t$max\nNumber of clusters with warnings\t$w\n";
     if ($w){ 
 	print STDERR "\n\nWARNING!!! $w clusters exceed the maximum number of alignments: $N  !!!!\n\n"; 
-	#print STDERR "WARNING!!! Skipping $w clusters in the splitted files !!!\n\n"; 
     }	
+
     my $sum=0;
     my %prcid;
-    $part=1;
     open (CL, "$full_cluster") || die "It cannot open clusters file\n";
     while (<CL>){
 	chomp($_);
