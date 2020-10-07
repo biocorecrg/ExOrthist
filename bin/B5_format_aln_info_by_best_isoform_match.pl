@@ -190,7 +190,7 @@ close EX_ANNOT_2;
 
 ##### Starts the actual processing and putting together
 my @keys;
-@keys=keys(%aln);
+@keys=sort(keys(%aln));
 my $el;
 my $prots;
 my $nex;

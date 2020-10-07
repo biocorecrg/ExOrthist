@@ -19,8 +19,7 @@ my $bl=$ARGV[12]; ##blosum62  matrix
 my $outf=$ARGV[13]; ## output folder
 my $min_sim_prots=$ARGV[14]; ##minimum prot sim in decimal format.
 my $cpus=$ARGV[15];
-#my $cpus=$ARGV[14]; ## CPUs for MAFFT
-#my $min_sim_prots=15; # default as SHORT for now. 
+my $prev_folder=$ARGV[16]; # OPTIONAL. Folder with subfolders with pairwise pre-computed info.
 
 $cpus=1 if !$cpus;
 
@@ -225,11 +224,9 @@ while (<IN>){
     @n=split(/\|/,$line[0]);    
     if ($chpr{$line[0]}){
 	if (!$pos{$line[0]}) { $pos{$line[0]}=$_; } else { $pos{$line[0]}.="\n".$_; }
-
 	for ($rs1=$l[0];  $rs1<=$l[1]; $rs1++){ 
 	    $exon{$line[0]."_".$rs1}=$_;
 	}
-
     }
 }
 close IN;
@@ -331,6 +328,115 @@ while (<EXTWO>){
 }
 close (EXTWO);
 
+##OPTIONAL: upload pre-computed data to avoid repeating ALNs
+my $pre_EX_file="$prev_folder/$s1-$s2/all_EX_aln_features.txt";
+my $pre_INT_file="$prev_folder/$s1-$s2/all_INT_aln_features.txt";
+my $pre_PROT_file="$prev_folder/$s1-$s2/all_PROT_aln_features.txt";
+my $pre_ALN_file="$prev_folder/$s1-$s2/EXINT_aln.gz";
+my %pre_EX_data;
+my %pre_INT_data;
+my %pre_PROT_data;
+my %pre_ALN_data;
+
+if ($prev_folder){ # option is provided
+    if (-e $pre_EX_file && -e $pre_INT_file && -e $pre_PROT_file && -e $pre_ALN_file){ # all must exist
+	### EXON DATA
+	open (PRE_EX, $pre_EX_file) || die "It cannot open $pre_EX_file\n";
+	<PRE_EX>;
+	while (<PRE_EX>){ 
+	    chomp;
+	    my @t=split(/\t/);
+	    my $prot_sp1 = $t[1];
+	    my $prot_sp2 = $t[8];
+	    my ($gene_sp1) = $prot_sp1 =~/.+\|(.+)/;
+	    my ($gene_sp2) = $prot_sp2 =~/.+\|(.+)/;
+	    my $temp_cl_sp1; my $temp_cl_sp2;
+	    $temp_cl_sp1 = $gn{$gene_sp1} if defined $gn{$gene_sp1};
+	    $temp_cl_sp2 = $gn{$gene_sp2} if defined $gn{$gene_sp2};
+	    
+	    if ($temp_cl_sp1 && $temp_cl_sp1 eq $temp_cl_sp2){
+		my $string = join("\t",$temp_cl_sp1,@t[1..$#t]);
+		$pre_EX_data{$prot_sp1}{$prot_sp2}.= "$string\n";
+	    } # else: the two genes no longer belong to the same cluster
+	}
+	close PRE_EX;
+	### INTRON DATA
+	open (PRE_INT, $pre_INT_file) || die "It cannot open $pre_INT_file\n";
+	<PRE_INT>;
+	while (<PRE_INT>){ 
+	    chomp;
+	    my @t=split(/\t/);
+	    my $prot_sp1 = $t[1];
+	    my $prot_sp2 = $t[5];
+	    my ($gene_sp1) = $prot_sp1 =~/.+\|(.+)/;
+	    my ($gene_sp2) = $prot_sp2 =~/.+\|(.+)/;
+	    my $temp_cl_sp1; my $temp_cl_sp2;
+	    $temp_cl_sp1 = $gn{$gene_sp1} if defined $gn{$gene_sp1};
+	    $temp_cl_sp2 = $gn{$gene_sp2} if defined $gn{$gene_sp2};
+	    
+	    if ($temp_cl_sp1 && $temp_cl_sp1 eq $temp_cl_sp2){
+		my $string = join("\t",$temp_cl_sp1,@t[1..$#t]);
+		$pre_INT_data{$prot_sp1}{$prot_sp2}.= "$string\n";
+	    } # else: the two genes no longer belong to the same cluster
+	}
+	close PRE_INT;
+	### PROT DATA
+	open (PRE_PROT, $pre_PROT_file) || die "It cannot open $pre_PROT_file\n";
+	<PRE_PROT>;
+	while (<PRE_PROT>){ 
+	    chomp;
+	    my @t=split(/\t/);
+	    my $prot_sp1 = $t[2];
+	    my $prot_sp2 = $t[3];
+	    my ($gene_sp1) = $prot_sp1 =~/.+\|(.+)/;
+	    my ($gene_sp2) = $prot_sp2 =~/.+\|(.+)/;
+	    my $temp_cl_sp1; my $temp_cl_sp2;
+	    $temp_cl_sp1 = $gn{$gene_sp1} if defined $gn{$gene_sp1};
+	    $temp_cl_sp2 = $gn{$gene_sp2} if defined $gn{$gene_sp2};
+	    
+	    if ($temp_cl_sp1 && $temp_cl_sp1 eq $temp_cl_sp2){
+		my $string = join("\t",$temp_cl_sp1,@t[1..$#t]);
+		$pre_PROT_data{$prot_sp1}{$prot_sp2}.= "$string\n";
+	    } # else: the two genes no longer belong to the same cluster
+	}
+	close PRE_PROT;
+	### ALN DATA
+	my ($prot_sp1,$prot_sp2, $gene_sp1, $gene_sp2, $valid_cl);
+	open (PRE_ALN, "gunzip -c $pre_ALN_file |") || die "It cannot open $pre_ALN_file\n";
+	while (<PRE_ALN>){ 
+	    chomp;
+	    if (/^\>\>\>/){
+		my @t = split(/ /,$_);
+		$prot_sp1 = $t[3];
+		$prot_sp2 = $t[4];
+		($gene_sp1) = $prot_sp1 =~/.+\|(.+)/;
+		($gene_sp2) = $prot_sp2 =~/.+\|(.+)/;
+		my $temp_cl_sp1; my $temp_cl_sp2;
+		$temp_cl_sp1 = $gn{$gene_sp1} if defined $gn{$gene_sp1};
+		$temp_cl_sp2 = $gn{$gene_sp2} if defined $gn{$gene_sp2};
+		
+		if ($temp_cl_sp1 && $temp_cl_sp1 eq $temp_cl_sp2){
+		    $valid_cl = 1;
+		    $pre_ALN_data{$prot_sp1}{$prot_sp2}.="$_\n";
+		} 
+		else {
+		    $valid_cl = 0;
+		}
+	    }
+	    else {
+		if ($valid_cl){ # i.e. data from before
+		    $pre_ALN_data{$prot_sp1}{$prot_sp2}.="$_\n";
+		}
+	    }
+	}
+	close PRE_ALN;
+    }
+    else {
+	die "*** Some of the precomputed files for $s1-$s2 are missing in $prev_folder\n";
+    }
+}
+
+
 ##SCORING EXONS OF PROTEIN PAIRS
 my @keys=keys(%pid1);
 @keys=sort(@keys);
@@ -361,101 +467,112 @@ foreach $el (@keys){
     my $Gclid=$el;
     for ($zj=0; $zj<scalar(@t1); $zj++){ ##opening FOR 1
 	for ($zi=0; $zi<scalar(@t2); $zi++) {  ##opening FOR 2
-	    ## 0) ADDS HEADING TO MERGE FILE
-	    print MERGE_ALN ">>> $s1 $s2 $t1[$zj] $t2[$zi]\n\n";
-	    ## 1) MAKING TEMPORAL EXINT FILE
-	    open (TMPALN,">$te");
-	    print TMPALN "$seqs{$t1[$zj]}\n$seqs{$t2[$zi]}\n"; 
-	    close (TMPALN);
-	    # RUNNING ALIGN INTRON POS
-	    `B0_generate_IPA_prot_aln.pl $te MAFFT $cpus`; 
-	    # ADDS GDE TO MERGE 
-	    close MERGE_ALN;
-	    system "cat $tg >> $f_merged_aln"; # we could already print a post-processed aln instead
-	    system "cat $int_aln >> $f_merged_aln"; # I have no idea where this is used
-	    open (MERGE_ALN, ">>$f_merged_aln");
-#	    print "  > $t1[$zj] $t2[$zi]\n";
-	    ## 2) OPENING OUTPUT GDE FILE
-	    $n1=""; $n2="";
-	    %seq=();
-	    open (ALN, "$tg");
-	    while (<ALN>){		
-		chomp($_);
-		if ($_=~/\%/){ 
-		    @l=split(/\s+/,$_);
-		    $name=$l[0]; 
-		    $name=~s/\%//;
-		}
-		else {
-		    $seq{$name}.=$_;
-		}
+	    my $prot_sp1 = $t1[$zj];
+	    my $prot_sp2 = $t2[$zi];
+	    if ($pre_PROT_data{$prot_sp1}{$prot_sp2} || $pre_PROT_data{$prot_sp2}{$prot_sp1}){
+		print EXSC $pre_EX_data{$prot_sp1}{$prot_sp2} if $pre_EX_data{$prot_sp1}{$prot_sp2};
+		print EXSC $pre_EX_data{$prot_sp2}{$prot_sp1} if $pre_EX_data{$prot_sp2}{$prot_sp1};
+		print INSC $pre_INT_data{$prot_sp1}{$prot_sp2} if $pre_INT_data{$prot_sp1}{$prot_sp2};
+		print INSC $pre_INT_data{$prot_sp2}{$prot_sp1} if $pre_INT_data{$prot_sp2}{$prot_sp1};
+		print PRSC $pre_PROT_data{$prot_sp1}{$prot_sp2} if $pre_PROT_data{$prot_sp1}{$prot_sp2};
+		print PRSC $pre_PROT_data{$prot_sp2}{$prot_sp1} if $pre_PROT_data{$prot_sp2}{$prot_sp1};
+		print MERGE_ALN $pre_ALN_data{$prot_sp1}{$prot_sp2} if $pre_ALN_data{$prot_sp1}{$prot_sp2}; # should always be
+		print MERGE_ALN $pre_ALN_data{$prot_sp2}{$prot_sp1} if $pre_ALN_data{$prot_sp2}{$prot_sp1}; # should not be
 	    }
-	    close (ALN);
-	    my @nkeys=keys(%seq);
-	    my ($seq1,$seq2);
-	    $n1=$nkeys[0];
-	    $n2=$nkeys[1];
-	    $seq1=$seq{$n1};
-	    $seq2=$seq{$n2};
-	    $sp1=$spid{$n1};
-	    $sp2=$spid{$n2};	        
-
-	    ## 3) CALLING SUBROUTINE FOR SCORING PROTEINS
-#	    my ($sim1,$sim2,$id1,$glsc1)=(0,0,0,0);
-#	    ($sim1,$sim2,$id1,$glsc1)=score_proteins($n1,$n2,$seq1,$seq2);
-	    my ($sim1,$sim2,$idt,$glt)=(0,0,0,0);
-	    ($sim1,$sim2,$idt,$glt)=score_proteins($n1,$n2,$seq1,$seq2);
-	    print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$idt\t$glt\t$sp1\t$sp2\n"; ##printing in the protein scoring file the scores of similarity
-	    print PRSC "$Gclid\tProtein\t$n2\t$n1\t$sim2\t$sim1\t$idt\t$glt\t$sp2\t$sp1\n"; ##printing in the protein scoring file the scores of similarity
-
-	    ## 4) OPENING OUTPUT INTALN FILE
-	    open (INTALN, "$int_aln");
-	    my ($ialn, $inn1, $inn2, $iseq1, $iseq2, $is1, $is2);
-	    my (@w1);
-	    my $c=-1;
-	    while (<INTALN>){
-		chomp($_);
-		if ($_=~/\|/){ 
-		    $c++; 
-		    if ($c==0){ $inn1=$_; }
-		    if ($c==1){ $inn2=$_; }
-		}
-		elsif ($_=~/\>/){ $c=-1; }
-		elsif ($_=~/\w+/) {  
-		    @w1=split(/\t/,$_); 
-		    if (scalar(@w1)==3){ 
-			$c++;
-			if ($c==0){  $is1.=$w1[1]; }
-			elsif ($c==1) { $is2.=$w1[1];  }
-		    } 
-		    elsif (scalar(@w1)!=3 && $w1[1]){
-			$ialn.=$w1[1];
+	    else { # business as usual
+		## 0) ADDS HEADING TO MERGE FILE
+		print MERGE_ALN ">>> $s1 $s2 $t1[$zj] $t2[$zi]\n\n";
+		## 1) MAKING TEMPORAL EXINT FILE
+		open (TMPALN,">$te");
+		print TMPALN "$seqs{$t1[$zj]}\n$seqs{$t2[$zi]}\n"; 
+		close (TMPALN);
+		# RUNNING ALIGN INTRON POS
+		`B0_generate_IPA_prot_aln.pl $te MAFFT $cpus`; 
+		# ADDS GDE TO MERGE 
+		close MERGE_ALN;
+		system "cat $tg >> $f_merged_aln"; # we could already print a post-processed aln instead
+		system "cat $int_aln >> $f_merged_aln"; # I have no idea where this is used
+		open (MERGE_ALN, ">>$f_merged_aln");
+#		print "  > $t1[$zj] $t2[$zi]\n";
+		## 2) OPENING OUTPUT GDE FILE
+		$n1=""; $n2="";
+		%seq=();
+		open (ALN, "$tg");
+		while (<ALN>){		
+		    chomp($_);
+		    if ($_=~/\%/){ 
+			@l=split(/\s+/,$_);
+			$name=$l[0]; 
+			$name=~s/\%//;
+		    }
+		    else {
+			$seq{$name}.=$_;
 		    }
 		}
-		else { $c=-1; }
-	    } ## closing INTALN file
-
+		close (ALN);
+		my @nkeys=keys(%seq);
+		my ($seq1,$seq2);
+		$n1=$nkeys[0];
+		$n2=$nkeys[1];
+		$seq1=$seq{$n1};
+		$seq2=$seq{$n2};
+		$sp1=$spid{$n1};
+		$sp2=$spid{$n2};	        
+		
+		## 3) CALLING SUBROUTINE FOR SCORING PROTEINS
+		my ($sim1,$sim2,$idt,$glt)=(0,0,0,0);
+		($sim1,$sim2,$idt,$glt)=score_proteins($n1,$n2,$seq1,$seq2);
+		print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$idt\t$glt\t$sp1\t$sp2\n"; ##printing in the protein scoring file the scores of similarity
+		print PRSC "$Gclid\tProtein\t$n2\t$n1\t$sim2\t$sim1\t$idt\t$glt\t$sp2\t$sp1\n"; ##printing in the protein scoring file the scores of similarity
+		
+		## 4) OPENING OUTPUT INTALN FILE
+		open (INTALN, "$int_aln");
+		my ($ialn, $inn1, $inn2, $iseq1, $iseq2, $is1, $is2);
+		my (@w1);
+		my $c=-1;
+		while (<INTALN>){
+		    chomp($_);
+		    if ($_=~/\|/){ 
+			$c++; 
+			if ($c==0){ $inn1=$_; }
+			if ($c==1){ $inn2=$_; }
+		    }
+		    elsif ($_=~/\>/){ $c=-1; }
+		    elsif ($_=~/\w+/) {  
+			@w1=split(/\t/,$_); 
+			if (scalar(@w1)==3){ 
+			    $c++;
+			    if ($c==0){  $is1.=$w1[1]; }
+			    elsif ($c==1) { $is2.=$w1[1];  }
+			} 
+			elsif (scalar(@w1)!=3 && $w1[1]){
+			    $ialn.=$w1[1];
+			}
+		    }
+		    else { $c=-1; }
+		} ## closing INTALN file
+		
 #	    if (($sim1>=20 && $sim2>=20) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
-	    if ((($sim1>=$min_sim_prots*100 && $sim2>=$min_sim_prots*100) || $sim1 >= $min_sim_prots*100*2 || $sim2 >= $min_sim_prots*100*2) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
-		##5) CALLING SUBROUTINE FOR SCORING INTRONS
+		if ((($sim1>=$min_sim_prots*100 && $sim2>=$min_sim_prots*100) || $sim1 >= $min_sim_prots*100*2 || $sim2 >= $min_sim_prots*100*2) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
+		    ##5) CALLING SUBROUTINE FOR SCORING INTRONS
 #		print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; # redundant
-		if ($is1 && $is2 && $ialn && $inn1 && $inn2){ # added $inn1 and $inn2
-		    my $tsp1=$spid{$inn1}; my $tsp2=$spid{$inn2};
-		    my $tmp1=score_introns($is1,$ialn,$is2,$inn1,$inn2,$tsp1,$tsp2,$Gclid);
-		}
-		##  6) SCORING EACH EXON PAIR
-		### 6.1) GETTING RESIDUES ALIGNMENT
-		my $PP1=$pos{$n1}; my $PP2=$pos{$n2};
-		if ($seq1 && $seq2 && $n1 && $n2 && $PP1 && $PP2){
-		    my $tmp2=score_exons($seq1,$seq2,$n1,$n2,$sp1,$sp2,$glt,$sim1,$sim2,$idt,$Gclid,$PP1,$PP2); # idt not really used
-		}
-		else {} # print "3)$Gclid\t$n1\t$n2\t$seq1\t$seq2\t$PP1\t$PP2\n"; }
-		$score{$n1.",".$n2}=1;
-	    } 
+		    if ($is1 && $is2 && $ialn && $inn1 && $inn2){ # added $inn1 and $inn2
+			my $tsp1=$spid{$inn1}; my $tsp2=$spid{$inn2};
+			my $tmp1=score_introns($is1,$ialn,$is2,$inn1,$inn2,$tsp1,$tsp2,$Gclid);
+		    }
+		    ##  6) SCORING EACH EXON PAIR
+		    ### 6.1) GETTING RESIDUES ALIGNMENT
+		    my $PP1=$pos{$n1}; my $PP2=$pos{$n2};
+		    if ($seq1 && $seq2 && $n1 && $n2 && $PP1 && $PP2){
+			my $tmp2=score_exons($seq1,$seq2,$n1,$n2,$sp1,$sp2,$glt,$sim1,$sim2,$idt,$Gclid,$PP1,$PP2); # idt not really used
+		    }
+		    else {} # print "3)$Gclid\t$n1\t$n2\t$seq1\t$seq2\t$PP1\t$PP2\n"; }
+		    $score{$n1.",".$n2}=1;
+		} 
+	    } # CLOSING ELSE
 	}##CLOSING FOR 2
     }##CLOSING FOR 1
 } ##closing MAIN KEYS
-
 #######SUB-ROUTINES######
 
 # I) SCORING PROTEIN ALIGNMENTS
