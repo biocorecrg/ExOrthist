@@ -43,6 +43,7 @@ pairwise evo distances           : ${params.evodists}
 long distance parameters         : ${params.long_dist}
 medium distance parameters       : ${params.medium_dist}
 short distance parameters        : ${params.short_dist}
+pre-computed alignments		 : ${params.prevaln}
 clusternum (number of clusters)  : ${params.clusternum}
 extraexons (e.g. from VastDB)    : ${params.extraexons}
 liftover                         : ${params.liftover}
@@ -74,7 +75,7 @@ if (params.resume) exit 1, "Are you making the classical --resume typo? Be caref
 clusterfile       = file(params.cluster)
 outputQC          = "${params.output}/QC"
 blosumfile        = file("${baseDir}/files/blosum62.txt")
-evodisfile		  = file(params.evodists)
+evodisfile	  = file(params.evodists)
 
 if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
 if ( !clusterfile.exists() ) exit 1, "Missing clusterfile file: ${clusterfile}!"
@@ -246,22 +247,22 @@ pairs_4_evodists.join(species_pairs_dist).map{[it[0], it[3]]}.into{dist_ranges_c
  * Align pairs
  */
 //the second to last argument is the protein similarity alignment.
+//if a prevaln folder is provided, the protein alignments present in each species pair subfolder will not be repeated.
 process parse_IPA_prot_aln {
     tag { "${cls_part_file}" }
     label 'big_cpus'
 
     input:
     file(blosumfile)
-    //set file(sp1), file(sp2), file(cls_part_file) from cls_files_2_align_t
     set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from cls_files_2_align_t.join(dist_ranges_ch1)    
 
     output:
-   // set val("${sp1}-${sp2}"), file(sp1), file(sp2), file("${sp1}-${sp2}_*/exons_to_realign_part_*.txt") into aligned_subclusters_4_realign_A
-   // set val("${sp1}-${sp2}"), file("${sp1}-${sp2}_*/exons_to_realign_part_*.txt") into file_4_realign_A
-   // set val("${sp1}-${sp2}"), file("${sp1}-${sp2}_*") into aligned_subclusters_4_merge
 	set val("${sp1}-${sp2}"), file(sp1), file(sp2), file("${sp1}-${sp2}_*"), file("${sp1}-${sp2}_*/EXs_to_split_part_*.txt") into aligned_subclusters_4_splitting
 
 	script:
+    def prev_alignments = ""
+    if (params.prevaln) {prev_alignments = "${params.prevaln}"}
+ 
     def cls_parts = "${cls_part_file}".split("_")
     if (dist_range == "long")
 	dist_range_par = "${params.long_dist}".split(",")
@@ -276,7 +277,7 @@ process parse_IPA_prot_aln {
 ${sp1}/${sp1}_annot_exons_prot_ids.txt ${sp2}/${sp2}_annot_exons_prot_ids.txt \
 ${sp1}/${sp1}_protein_ids_exons_pos.txt ${sp2}/${sp2}_protein_ids_exons_pos.txt \
 ${sp1}/${sp1}_protein_ids_intron_pos_CDS.txt ${sp2}/${sp2}_protein_ids_intron_pos_CDS.txt \
-${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${sp2}_${cls_parts[1]} ${dist_range_par[3]} ${task.cpus}
+${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${sp2}_${cls_parts[1]} ${dist_range_par[3]} ${task.cpus} ${prev_alignments}
 	"""
 }
 
