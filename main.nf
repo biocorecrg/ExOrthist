@@ -44,7 +44,7 @@ long distance parameters         : ${params.long_dist}
 medium distance parameters       : ${params.medium_dist}
 short distance parameters        : ${params.short_dist}
 pre-computed alignments		 : ${params.prevaln}
-clusternum (number of clusters)  : ${params.clusternum}
+alignment number		 : ${params.alignmentnum}
 extraexons (e.g. from VastDB)    : ${params.extraexons}
 liftover                         : ${params.liftover}
 orthofolder                      : ${params.orthofolder}
@@ -221,7 +221,7 @@ process split_clusters_in_chunks {
 
 	script:
 	"""
-		A3_split_clusters_in_chunks.pl --sp1 ${idfolder_A} --sp2 ${idfolder_B} --expath ./ --project_dir ./ --N_split ${params.clusternum} --gene_cluster ${id_comb}.cls.tab
+		A3_split_clusters_in_chunks.pl --sp1 ${idfolder_A} --sp2 ${idfolder_B} --expath ./ --project_dir ./ --N_split ${params.alignmentnum} --gene_cluster ${id_comb}.cls.tab
 	"""
 }
 
@@ -286,7 +286,7 @@ ${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${s
  */
 
 //10 times as many exon alignments as gene clusters in part
-//Channel.from("${params.clusternum}").toInteger().map{it*10}.set{ex_aln_per_part}
+//Channel.from("${params.alignmentnum}").toInteger().map{it*10}.set{ex_aln_per_part}
 process split_EX_pairs_to_realign {
     tag { "${folders}" }
 
@@ -297,7 +297,7 @@ process split_EX_pairs_to_realign {
     set comp_id, file(sp1), file(sp2), path(folders), file("${folders}/EXs_to_realign_part_*.txt") into aligned_subclusters_4_realign
     script:
     """
-	#B2_split_EX_pairs_to_realign.pl ${folders} ${params.clusternum}
+	#B2_split_EX_pairs_to_realign.pl ${folders} ${params.alignmentnum}
 	B2_split_EX_pairs_to_realign.pl ${folders} 100
     """
 }
