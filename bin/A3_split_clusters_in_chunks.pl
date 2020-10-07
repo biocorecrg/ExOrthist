@@ -171,7 +171,7 @@ sub split_cluster {
     }
     print NALN "\nTotal alignments\t$taln\t$max\nNumber of clusters with warnings\t$w\n";
     if ($w){ 
-	print STDERR "\n\nWARNING!!! $w clusters exceed the maximum number of alignments: $N  !!!!\n\n"; 
+	print STDERR "\n\nWARNING!!! $w clusters exceed the maximum number of alignments: $N !!!!\n\n"; 
     }	
 
     my $sum=0;
@@ -207,6 +207,10 @@ sub split_cluster {
 
     ##printing files of clusters with > N alignments
     my %print;
+    unless (-e "$cluster_root-part_1"){
+	$part=0 if $part == 1;
+	print STDERR "WARNING!!! We have a part_2 without a part_1\n\n" if (-e "$cluster_root-part_2");
+    }
     open (CL, "$full_cluster") || die "It cannot open clusters file\n";
     while (<CL>){
 	chomp($_);
