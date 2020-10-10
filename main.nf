@@ -225,8 +225,9 @@ process split_clusters_in_chunks {
 	"""
 }
 
+
 //cls_files_2_align.transpose().set{cls_files_2_align_t}
-cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}.set{cls_files_2_align_t}
+cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}.into{cls_files_2_align_t}
 
 //Create a channel for the evo distances
 Channel
@@ -243,18 +244,23 @@ sp1_sp2_dist.concat(sp2_sp1_dist).set{species_pairs_dist}
 //Only the species pairs with a common index will be kept
 pairs_4_evodists.join(species_pairs_dist).map{[it[0], it[3]]}.into{dist_ranges_ch; dist_ranges_ch1; dist_ranges_ch2}
 
+
 /*
  * Align pairs
  */
-//the second to last argument is the protein similarity alignment.
+//the last argument is the protein similarity alignment.
 //if a prevaln folder is provided, the protein alignments present in each species pair subfolder will not be repeated.
+
+cls_files_2_align_t.groupTuple().join(dist_ranges_ch1).transpose().set{alignment_input}
+
 process parse_IPA_prot_aln {
     tag { "${cls_part_file}" }
     label 'big_cpus'
 
     input:
     file(blosumfile)
-    set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from cls_files_2_align_t.join(dist_ranges_ch1)    
+    //set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from cls_files_2_align_t.join(dist_ranges_ch1)
+    set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from alignment_input 
 
     output:
 	set val("${sp1}-${sp2}"), file(sp1), file(sp2), file("${sp1}-${sp2}_*"), file("${sp1}-${sp2}_*/EXs_to_split_part_*.txt") into aligned_subclusters_4_splitting
