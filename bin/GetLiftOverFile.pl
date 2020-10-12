@@ -160,8 +160,8 @@ while (<INTERSECTS>){
     if ($t[7] ne "-1"){
 	my ($gene1,$exon1) = $t[3] =~ /(.+?)\=(.+)/;
 	my $gene2 = $t[9];
-        if ($gene1 && $gene2){
-     	    if ($gene_to_cluster{$gene1} eq $gene_to_cluster{$gene2} && defined ($gene_to_cluster{$gene1}) && defined ($gene_to_cluster{$gene2})){
+        if (defined ($gene_to_cluster{$gene1}) && defined ($gene_to_cluster{$gene2})){
+     	    if ($gene_to_cluster{$gene1} eq $gene_to_cluster{$gene2}){
 	        $t[1]++;
 	        my $exon2 = "$t[0]:$t[1]-$t[2]:$t[5]";
  	        print O "$gene1\t$exon1\t$gene2\t$exon2\t$sp1\t$sp2\n";
