@@ -59,12 +59,12 @@ foreach my $exon_file (@exon_files){
 	if (!defined $exon_catalog{$l[0]}){
 	    $tally_exons_all{$species}++;
 	    if ($gene_to_cluster{$gene}){
-		$exon_catalog{$l[0]} = 1;
 		$tally_exons{$species}++;
 	    }
-	    my $exon_ID="$gene=$l[2]";
-	    $exon_conversion{$exon_ID}=$l[0];
+	    $exon_catalog{$l[0]} = 1;
 	} 
+	my $exon_ID="$gene=$l[2]";
+	$exon_conversion{$exon_ID}=$l[0];
     }
     close EXONS;
 }
