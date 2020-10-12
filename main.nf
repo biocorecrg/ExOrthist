@@ -43,7 +43,8 @@ pairwise evo distances           : ${params.evodists}
 long distance parameters         : ${params.long_dist}
 medium distance parameters       : ${params.medium_dist}
 short distance parameters        : ${params.short_dist}
-clusternum (number of clusters)  : ${params.clusternum}
+pre-computed alignments		 : ${params.prevaln}
+alignment number		 : ${params.alignmentnum}
 extraexons (e.g. from VastDB)    : ${params.extraexons}
 liftover                         : ${params.liftover}
 orthofolder                      : ${params.orthofolder}
@@ -74,7 +75,7 @@ if (params.resume) exit 1, "Are you making the classical --resume typo? Be caref
 clusterfile       = file(params.cluster)
 outputQC          = "${params.output}/QC"
 blosumfile        = file("${baseDir}/files/blosum62.txt")
-evodisfile		  = file(params.evodists)
+evodisfile	  = file(params.evodists)
 
 if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
 if ( !clusterfile.exists() ) exit 1, "Missing clusterfile file: ${clusterfile}!"
@@ -220,12 +221,13 @@ process split_clusters_in_chunks {
 
 	script:
 	"""
-		A3_split_clusters_in_chunks.pl --sp1 ${idfolder_A} --sp2 ${idfolder_B} --expath ./ --project_dir ./ --N_split ${params.clusternum} --gene_cluster ${id_comb}.cls.tab
+		A3_split_clusters_in_chunks.pl --sp1 ${idfolder_A} --sp2 ${idfolder_B} --expath ./ --project_dir ./ --N_split ${params.alignmentnum} --gene_cluster ${id_comb}.cls.tab
 	"""
 }
 
+
 //cls_files_2_align.transpose().set{cls_files_2_align_t}
-cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}.set{cls_files_2_align_t}
+cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}.into{cls_files_2_align_t}
 
 //Create a channel for the evo distances
 Channel
@@ -242,26 +244,31 @@ sp1_sp2_dist.concat(sp2_sp1_dist).set{species_pairs_dist}
 //Only the species pairs with a common index will be kept
 pairs_4_evodists.join(species_pairs_dist).map{[it[0], it[3]]}.into{dist_ranges_ch; dist_ranges_ch1; dist_ranges_ch2}
 
+
 /*
  * Align pairs
  */
-//the second to last argument is the protein similarity alignment.
+//the last argument is the protein similarity alignment.
+//if a prevaln folder is provided, the protein alignments present in each species pair subfolder will not be repeated.
+
+cls_files_2_align_t.groupTuple().join(dist_ranges_ch1).transpose().set{alignment_input}
+
 process parse_IPA_prot_aln {
     tag { "${cls_part_file}" }
     label 'big_cpus'
 
     input:
     file(blosumfile)
-    //set file(sp1), file(sp2), file(cls_part_file) from cls_files_2_align_t
-    set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from cls_files_2_align_t.join(dist_ranges_ch1)    
+    //set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from cls_files_2_align_t.join(dist_ranges_ch1)
+    set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from alignment_input 
 
     output:
-   // set val("${sp1}-${sp2}"), file(sp1), file(sp2), file("${sp1}-${sp2}_*/exons_to_realign_part_*.txt") into aligned_subclusters_4_realign_A
-   // set val("${sp1}-${sp2}"), file("${sp1}-${sp2}_*/exons_to_realign_part_*.txt") into file_4_realign_A
-   // set val("${sp1}-${sp2}"), file("${sp1}-${sp2}_*") into aligned_subclusters_4_merge
 	set val("${sp1}-${sp2}"), file(sp1), file(sp2), file("${sp1}-${sp2}_*"), file("${sp1}-${sp2}_*/EXs_to_split_part_*.txt") into aligned_subclusters_4_splitting
 
 	script:
+    def prev_alignments = ""
+    if (params.prevaln) {prev_alignments = "${params.prevaln}"}
+ 
     def cls_parts = "${cls_part_file}".split("_")
     if (dist_range == "long")
 	dist_range_par = "${params.long_dist}".split(",")
@@ -276,7 +283,7 @@ process parse_IPA_prot_aln {
 ${sp1}/${sp1}_annot_exons_prot_ids.txt ${sp2}/${sp2}_annot_exons_prot_ids.txt \
 ${sp1}/${sp1}_protein_ids_exons_pos.txt ${sp2}/${sp2}_protein_ids_exons_pos.txt \
 ${sp1}/${sp1}_protein_ids_intron_pos_CDS.txt ${sp2}/${sp2}_protein_ids_intron_pos_CDS.txt \
-${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${sp2}_${cls_parts[1]} ${dist_range_par[3]} ${task.cpus}
+${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${sp2}_${cls_parts[1]} ${dist_range_par[3]} ${task.cpus} ${prev_alignments}
 	"""
 }
 
@@ -285,7 +292,7 @@ ${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${s
  */
 
 //10 times as many exon alignments as gene clusters in part
-//Channel.from("${params.clusternum}").toInteger().map{it*10}.set{ex_aln_per_part}
+//Channel.from("${params.alignmentnum}").toInteger().map{it*10}.set{ex_aln_per_part}
 process split_EX_pairs_to_realign {
     tag { "${folders}" }
 
@@ -296,7 +303,7 @@ process split_EX_pairs_to_realign {
     set comp_id, file(sp1), file(sp2), path(folders), file("${folders}/EXs_to_realign_part_*.txt") into aligned_subclusters_4_realign
     script:
     """
-	#B2_split_EX_pairs_to_realign.pl ${folders} ${params.clusternum}
+	#B2_split_EX_pairs_to_realign.pl ${folders} ${params.alignmentnum}
 	B2_split_EX_pairs_to_realign.pl ${folders} 100
     """
 }
@@ -365,7 +372,7 @@ process merge_PROT_EX_INT_aln_info {
 	    mv FOLDERS_*/* ${comp_id}
 
     	B4_merge_PROT_EX_INT_aln_info.pl ${comp_id}
-	get_best_score_ex_pair.pl ${comp_id}/all_EX_aln_features.txt ${comp_id}/Best_scores_pair_exons.txt
+	#get_best_score_ex_pair.pl ${comp_id}/all_EX_aln_features.txt ${comp_id}/Best_scores_pair_exons.txt
 	"""
 }
 
@@ -397,13 +404,15 @@ process select_best_EX_match_by_targetgene {
     def species = comp_id.split("-")
 	"""
     B5_format_aln_info_by_best_isoform_match.pl ${species[0]} ${species[1]} \
-    ${comp_id}/all_PROT_aln_features.txt ${comp_id}/Best_scores_pair_exons.txt ${comp_id}/all_INT_aln_features.txt \
+    ${comp_id}/all_PROT_aln_features.txt ${comp_id}/all_EX_aln_features.txt ${comp_id}/all_INT_aln_features.txt \
     ${species[0]}/${species[0]}.exint ${species[1]}/${species[1]}.exint \
     ${species[0]}/${species[0]}_protein_ids_intron_pos_CDS.txt ${species[1]}/${species[1]}_protein_ids_intron_pos_CDS.txt \
     ${comp_id}/all_PROT_EX_INT_aln_features_${comp_id}.txt;
     C1_score_and_select_best_EX_match_by_targetgene.pl ${comp_id}/all_PROT_EX_INT_aln_features_${comp_id}.txt ${comp_id}
     """
 }
+
+//${comp_id}/all_PROT_aln_features.txt ${comp_id}/Best_scores_pair_exons.txt ${comp_id}/all_INT_aln_features.txt \
 
 /*
  * Filter the best matches above score cutoffs
@@ -438,7 +447,7 @@ process join_filtered_EX_matches {
     publishDir "${params.output}/", mode: 'copy'
 
     input:
-    file ("filtered_best_scored_*") from filterscore_per_joining.collect()
+    file ("filtered_best_scored-*") from filterscore_per_joining.collect()
 
     output:
     file("filtered_best_scored_EX_matches_by_targetgene.tab") into filtered_all_scores
@@ -448,7 +457,7 @@ process join_filtered_EX_matches {
 	"""
     #cat best_score_* >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab
     echo "GeneID_sp1\tExon_coords_sp1\tGeneID_sp2\tExon_coords_sp2\tSp1\tSp2" > filtered_best_scored_EX_matches_by_targetgene.tab;
-    for i in filtered_best_scored_*; do cat \$i | tail -n+2 >> filtered_best_scored_EX_matches_by_targetgene.tab; done
+    for file in \$(ls filtered_best_scored-*); do cat \$file | tail -n+2 >> filtered_best_scored_EX_matches_by_targetgene.tab; done
     """
 }
 
