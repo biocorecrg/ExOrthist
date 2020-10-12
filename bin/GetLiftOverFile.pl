@@ -8,7 +8,8 @@ my $chain_file;
 my $gene_clusters;
 my $annot_sp1;
 my $annot_sp2;
-my $canonical_ss;
+#my $canonical_ss;
+my $line_to_parse="CDS";
 my $help;
 
 Getopt::Long::Configure("no_auto_abbrev");
@@ -16,7 +17,7 @@ GetOptions(  "annot_sp1=s" => \$annot_sp1,
 	     "annot_sp2=s" => \$annot_sp2,
 	     "gene_clusters=s" => \$gene_clusters,
 	     "chain_file=s" => \$chain_file,
-	     "canonical_ss=s" => \$canonical_ss,
+	     "type=s" => \$line_to_parse,
 	     "help" => \$help
     );
 
@@ -31,8 +32,7 @@ Options:
    -chain_file FILE        LiftOver chain alignment from Sp1ToSp2.
    -gene_clusters FILE     Gene orthology clusters including Sp1 and Sp2. 
                               Format (tsv): ClusterID   Species    GeneID
-#   -canonical_ss X         Number of requires splice sites [requires gDNAs!]
-#                              Takes: none, one, both.
+   -type CDS/exon          If a GTF is provided for annot_sp1, parses either CDS or exon lines (def = CDS)
 
 
 *** Questions \& Bug Reports: Manuel Irimia (mirimia\@gmail.com)
@@ -84,7 +84,7 @@ while (<GTF_SP1>){
     my @t = split(/\t/,$_);
     
     if ((defined $t[3] && $t[3]=~/\d/) || $annot_sp1=~/\.gtf/){
-    if ($t[2] eq "exon"){
+    if (($t[2] eq "exon" && $line_to_parse eq "exon") || ($t[2] eq "CDS" && $line_to_parse eq "CDS")){
 	my ($gene)=$_=~/gene_id \"(.+?)\"/;
 	my $exon="$gene=$t[0]:$t[3]-$t[4]:$t[6]"; # chr:start-end:strand
 
@@ -172,4 +172,4 @@ while (<INTERSECTS>){
 close O;
 close INTERSECTS;
 
-#system "rm temp*$sp1-$sp2*";
+system "rm temp*$sp1-$sp2*";
