@@ -1027,8 +1027,8 @@ sub score_exons {
     close (POS);
     $sp1=$spid{$n1}; $sp2=$spid{$n2};    
     ####SCORING EXONS OF EACH PROTEIN PAIR
-    my ($res1,$res2,$res)=(0,0);
-    my ($k1,$k2, $s2)=(0,0,0);
+    my ($res1,$res2,$res)=(0,0,0);
+    my ($k1,$k2,$s2)=(0,0,0);
     my $r2;
     my %Iscore_exons=();
     my %Sscore_exons=();
@@ -1044,10 +1044,10 @@ sub score_exons {
     my $png;
     my @l1;
     
-    for ($i=0; $i<scalar(@s1); $i++){
+    for ($i=0; $i<scalar(@s1); $i++){ # @s1 and @s2 contain the alignment by position. So now we're looping through the aln
 	if ($s2[$i] ne "-") { $res2++; $k2=$res2; }
-	if ($s1[$i] ne "-"){ $res++; $res1++; }
-	$s1_s2_res{$res1}=$res2; $s2_s1_res{$res2}=$res1;	    
+	if ($s1[$i] ne "-"){ $res++; $res1++; } # res1 => N of residues in prot 1
+	$s1_s2_res{$res1}=$res2; $s2_s1_res{$res2}=$res1; # correspondance between residues in Sp1 <=> Sp2 
 	##similarity score
 	if ($sim{$s1[$i].$s2[$i]}){  $s1_scores_sim{$res1}=$sim{$s1[$i].$s2[$i]}; $s2_scores_sim{$res2}=$sim{$s1[$i].$s2[$i]}; }	    
 	##identity score
@@ -1055,11 +1055,15 @@ sub score_exons {
 	if ($s1[$i]=~/[A-Z]/ && $s2[$i] eq "-"){ $s1_scores_sim{$res1}="gap"; $s1_scores_id{$res1}="gap"; }
 	if ($s1[$i]eq "-" && $s2[$i]=~/[A-Z]/ ){ $s2_scores_sim{$res2}="gap"; $s2_scores_id{$res2}="gap"; }
     }    
-    my $fres1=$res1;
+    my $fres1=$res1; # final residue count prot 1
     my $fres2=$res2;
     
     ##Opening temporal position file
-    my (%check,%print, %cin);
+    # ...
+    # ENSP00000483019|ENSG00000100121  exon_5   179-226  chr2  222647595-22647738 +
+    # ENSMUSP00000123017|ENSMUSG00000006345 exon_1 1-22  chr10 75581370-75581433  +
+    # ...
+    my (%check, %print, %cin);
     my ($tex, $ex, $in1, $in2, $pr, $size, $ne, $x, $tstr);
     my (@tmp, @nex);
     my $id_score=0;
@@ -1072,13 +1076,13 @@ sub score_exons {
     my $g=0;
     my $e=0;
     my $nr1=-1;    
-    if ($fres1!=0 && $fres2!=0){ ##first if
+    if ($fres1!=0 && $fres2!=0){ ##first if (i.e. there is at least one aa in the proteins)
 	open (POS, "$tp");
 	while (<POS>){
 	    chomp($_);
 	    @line=split(/\s+/,$_);
 	    ##checking N1
-	    if ($line[0] eq $n1){
+	    if ($line[0] eq $n1){ # n1 is the geneID|proteinID of species 1
 		$id_score=0;
 		$f_score=0;
 		$sim_score=0;
@@ -1088,17 +1092,19 @@ sub score_exons {
 		$ng=0; 
 		$g=0;
 		$e=0;
-		$pr="$n1";		    
+		$pr="$n1"
+		$rs2="";
 		if (!$print{$pr}){
 #		    print PRSC "$el\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; ##Adding species info in the last 2 columns => it was redundant
 		    %cin=();
 		    $print{$pr}=1;
 		}
-		@l=split(/\-/,$line[2]);		    
-		if ($l[1] && $l[0]) { $size=($l[1]-$l[0])+1; } else { $size=1000000; }		    
+		### Get SIM and ID SCORES
+		@l=split(/\-/,$line[2]); # splitting the protein coordinate of the exon in question
+		if ($l[0] && $l[1]) { $size=($l[1]-$l[0])+1; } else { $size=1000000; }		    
 		$nr1=-1;
-		for ($r=$l[0]; $r<=$l[1]; $r++){
-		    if ($s1_scores_sim{$r}){ 
+		for ($r=$l[0]; $r<=$l[1]; $r++){ # looping from initial to final position of the exon to get the sim and id values
+		    if ($s1_scores_sim{$r}){ # For SIM values
 			if ($s1_scores_sim{$r} ne "gap"){
 			    $sim_score++;
 			    $nr1=$r;
@@ -1107,14 +1113,14 @@ sub score_exons {
 			    $ng++;  $nr1=$r; 
 			}
 		    }
-		    if ($s1_scores_id{$r}){
+		    if ($s1_scores_id{$r}){ # For ID values
 			if ($s1_scores_id{$r} ne "gap" ){
 			    $id_score++; 
 			}
 		    }
-		    if ($s1_s2_res{$r}){ $rs2=$s1_s2_res{$r}; }
+		    if ($s1_s2_res{$r}){ $rs2=$s1_s2_res{$r}; } # this will store and keep only the last position in SP2
 		}
-		$rs1=$s1_s2_res{$l[0]}; 
+		$rs1=$s1_s2_res{$l[0]}; # the actual residue position of SP2 corresponding to the actual position of SP1 protein for the start of the exon
 		if ($size!=0){
 		    $id_score=sprintf("%.2f",(($id_score/$size)*100));
 		    $sim_score=sprintf("%.2f",(($sim_score/$size)*100));
@@ -1123,10 +1129,11 @@ sub score_exons {
 		else { 
 		    $id_score=-1; $sim_score=-1; $png=-1;  ###when there was nothing aligned to the given exon
 		}
+		#### Up to here calculated ID and SIM values
 		$tex="";
 		%check=();
 		if ($sim_score>=0){ ##modified to print all exons that aligned even when sim_score is low, they will be filtered in other programs
-		    if (defined $rs1 && defined $rs2){
+		    if ($rs1 && $rs2){ # start and end in SP2 protein 
 			for ($k=$rs1; $k<=$rs2; $k++){
 			    if ($exon{$n2."_".$k}){
 				$ex=$exon{$n2."_".$k};
@@ -1181,7 +1188,8 @@ sub score_exons {
 		$ng=0; 
 		$g=0;
 		$e=0;		    
-		$pr="$n2";		    
+		$pr="$n2";
+		$rs2="";
 		if (!$print{$pr}){
 		    %cin=();
 #		    print PRSC  "$el\tProtein\t$n2\t$n1\t$sim2\t$sim1\t$id1\t$glsc1\t$sp2\t$sp1\n"; ##Adding species info in the last 2 columns => corrected sim1 and sim2, but also eliminated as redundant
@@ -1222,7 +1230,7 @@ sub score_exons {
 		$tex="";
 		%check=();
 		if ($sim_score>=0){ ###modified to print all exons that aligned event when sim_score is low, they will be filtered in other programs
-		    if (defined $rs1 && defined $rs2){
+		    if ($rs1 && $rs2){
 			for ($k=$rs1; $k<=$rs2; $k++){
 			    if ($exon{$n1."_".$k}){ # $n1 => prot|gene
 				$ex=$exon{$n1."_".$k};
@@ -1270,7 +1278,7 @@ sub score_exons {
 ##printing file of exons to realign##
 my @ks=sort(keys(%miss));
 my $mex;
-foreach $mex(@ks){
+foreach $mex (@ks){
     @ln=split(/\t/,$mex);
     @tn1=split(/\|/,$ln[1]);
     @tn2=split(/\|/,$ln[8]);
