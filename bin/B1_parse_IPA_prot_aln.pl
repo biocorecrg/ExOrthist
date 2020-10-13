@@ -1134,10 +1134,10 @@ sub score_exons {
 		$tex="";
 		%check=();
 		if ($sim_score>=0){ ##modified to print all exons that aligned even when sim_score is low, they will be filtered in other programs
-		    if ($rs2){ # start and end in SP2 protein 
-			for ($k=$rs1; $k<=$rs2; $k++){ # this is matchin exon in Sp1 to all exons in Sp2
-			    if ($exon{$n2."_".$k}){
-				$ex=$exon{$n2."_".$k}; # ex is ALL the info of the exon in Sp2 => ENSP00000483019|ENSG00000100121 exon_1 1-59 chr2 222646346-22646521 +
+		    if ($rs2){ #  end in SP2 protein (a numeric value for start is given for granted)
+			for ($k=$rs1; $k<=$rs2; $k++){ # we loop through the positions matched in Sp2
+			    if ($exon{$n2."_".$k}){ # all the positions should match an exon in Sp2
+				$ex=$exon{$n2."_".$k}; # ex is ALL the info of the exon in Sp2 => ENSP00000483019|ENSG00000100121 exon_1 1-59 chr2 222646346-22646521 
 				if (!$check{$ex}){
 				    $check{$ex}=1;				    
 				    if (!$tex){
@@ -1152,6 +1152,10 @@ sub score_exons {
 			if ($tex){ # which means, there is at least a match
 			    if ($rs1==0){ $rs1=1; }
 			    if ($tex=~/\,/){ ## if the exon need to be realign is written in a special file for further processing
+				# if we loop through $l[0] and $l[1] (start and end of Sp1 exon)
+				# and we match each of these to $s1_s2_res{$r} [pseudo_rs]
+				# tally_per_exon per unique pseudo_rs [remember doing it for Sp2 too]
+
 				@nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format ($ne => number of exons)
 				for ($x=0; $x<scalar(@nex); $x++){
 				    $tstr=$el."\t".$_."\t".$ne."\t".$n2."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp1."\t".$sp2;
