@@ -131,6 +131,7 @@ if ($do_all_steps){
 		    $res=$size%3;
 		    $nuc=$nuc+$size;
 		    $aa=int(1+$nuc/3); 
+                    $aa=1 if $aa <= 0; # in some incorrect GTF annotations an offset can lead to negative nuc values
 		    $pid{$prot}=1;
 		    $header{$prot}="$prot|$gid ";
 		}
@@ -857,6 +858,7 @@ if ($do_all_steps){
 			$res=$size%3;
 			$nuc=$nuc+$size;
 			$aa=int(1+$nuc/3); 
+                        $aa=1 if $aa <= 0; # in some incorrect GTF annotations an offset can lead to negative nuc values
 			$pid{$prot}=1;
 			$header{$prot}="$prot|$gid ";
 		    }
@@ -1147,7 +1149,8 @@ if ($do_all_steps){ # done to re-declare variables
 		    $size=$size-$m;
 		    $res=$size%3;
 		    $nuc=$nuc+$size;
-		    $aa=int(1+$nuc/3); 
+		    $aa=int(1+$nuc/3);
+                    $aa=1 if $aa <= 0; # in some incorrect GTF annotations an offset can lead to negative nuc values
 		    print OUT "$prot|$gid\texon_$e\t1-$aa\t$line[0]\t$line[3]-$line[4]\t$line[6]\n"; ###exon numbering according to CDS not to transcript, otherwise $ex variable shoud be use
 		}
 		else {
