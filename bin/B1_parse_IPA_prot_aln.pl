@@ -23,6 +23,11 @@ my $prev_folder=$ARGV[16]; # OPTIONAL. Folder with subfolders with pairwise pre-
 
 $cpus=1 if !$cpus;
 
+die "
+Usage: B1_parse_IPA_prot_aln.pl Sp1 Sp2 Gene_clusters ProtIDs_sp1 ProtIDs_sp2 Exon_pos_sp1 Exon_pos_sp2
+                                Intron_pos_sp1 Intron_pos_sp2 Exint_sp1 Exint_sp2 part blosum62 out_folder prot_sim\n\n" if !$ARGV[14];
+                                    
+
 my ($dir,$project_dir)=$outf=~/(.+)\/(.+?)\/.+?\//;
 my ($sp1,$sp2)=($s1,$s2);
 my $idex;
@@ -329,16 +334,21 @@ while (<EXTWO>){
 close (EXTWO);
 
 ##OPTIONAL: upload pre-computed data to avoid repeating ALNs
-my $pre_EX_file="$prev_folder/$s1-$s2/all_EX_aln_features.txt";
-my $pre_INT_file="$prev_folder/$s1-$s2/all_INT_aln_features.txt";
-my $pre_PROT_file="$prev_folder/$s1-$s2/all_PROT_aln_features.txt";
-my $pre_ALN_file="$prev_folder/$s1-$s2/EXINT_aln.gz";
+my $pre_EX_file;
+my $pre_INT_file;
+my $pre_PROT_file;
+my $pre_ALN_file;
 my %pre_EX_data;
 my %pre_INT_data;
 my %pre_PROT_data;
 my %pre_ALN_data;
 
 if ($prev_folder){ # option is provided
+    $pre_EX_file="$prev_folder/$s1-$s2/all_EX_aln_features.txt";
+    $pre_INT_file="$prev_folder/$s1-$s2/all_INT_aln_features.txt";
+    $pre_PROT_file="$prev_folder/$s1-$s2/all_PROT_aln_features.txt";
+    $pre_ALN_file="$prev_folder/$s1-$s2/EXINT_aln.gz";
+
     if (-e $pre_EX_file && -e $pre_INT_file && -e $pre_PROT_file && -e $pre_ALN_file){ # all must exist
 	### EXON DATA
 	open (PRE_EX, $pre_EX_file) || die "It cannot open $pre_EX_file\n";
@@ -1093,7 +1103,7 @@ sub score_exons {
 		$ng=0; 
 		$g=0;
 		$e=0;
-		$pr="$n1"
+		$pr="$n1";
 		$rs2="";
 		if (!$print{$pr}){
 #		    print PRSC "$el\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; ##Adding species info in the last 2 columns => it was redundant
@@ -1152,15 +1162,51 @@ sub score_exons {
 			if ($tex){ # which means, there is at least a match
 			    if ($rs1==0){ $rs1=1; }
 			    if ($tex=~/\,/){ ## if the exon need to be realign is written in a special file for further processing
-				# if we loop through $l[0] and $l[1] (start and end of Sp1 exon)
-				# and we match each of these to $s1_s2_res{$r} [pseudo_rs]
+				# we loop through $l[0] and $l[1] (start and end of Sp1 exon)
+				# and match each of these to $s1_s2_res{$r} [pseudo_rs]
 				# tally_per_exon per unique pseudo_rs [remember doing it for Sp2 too]
+				my $total_valid_pos=0; # number of total unique positions
+				my %tally_per_exon=(); # contains unique counts of positions for intervening exons 
+				my %done_pos=(); # keeps track of position
+				for my $temp_pos ($l[0]..$l[1]){
+				    my $match_other_sp = $s1_s2_res{$temp_pos};
+				    if ($match_other_sp){
+					my $exon_other_sp = $exon{$n2."_".$match_other_sp};
+					if (!$done_pos{$match_other_sp} && $exon_other_sp){
+					    $tally_per_exon{$exon_other_sp}++;
+					    $total_valid_pos++;
+					    $done_pos{$match_other_sp}=1;
+					}
+				    }
+				}
 
+				my @new_nex;
 				@nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format ($ne => number of exons)
 				for ($x=0; $x<scalar(@nex); $x++){
-				    $tstr=$el."\t".$_."\t".$ne."\t".$n2."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp1."\t".$sp2;
-				    $miss{$tstr}=1;
-				    print EXSC "$el\t$_\t$ne\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp1\t$sp2\n";
+				    my $perc_matches = 0;
+				    $perc_matches = sprintf("%.2f",100*$tally_per_exon{$nex[$x]}/$total_valid_pos) if $tally_per_exon{$nex[$x]} && $total_valid_pos > 0;
+				    push(@new_nex, $nex[$x]) if ($perc_matches >= 15);
+				}
+
+				# just re-write the old arrays to avoid unexpected issues
+				@nex=@new_nex; $ne=scalar(@nex);
+				if ($ne > 1){ # i.e. still more than one hit
+				    for ($x=0; $x<scalar(@nex); $x++){
+					$tstr=$el."\t".$_."\t".$ne."\t".$n2."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp1."\t".$sp2;
+					$miss{$tstr}=1;
+					print EXSC "$el\t$_\t$ne\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp1\t$sp2\n";
+				    }
+				}
+				elsif ($ne == 1){ # just one hit
+				    print EXSC "$el\t$_\t1\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[0]\t$sp1\t$sp2\n";
+				    @ln=split(/\t/,$_);
+				    @tn1=split(/\|/,$ln[0]);
+				    @tn2=split(/\|/,$n2);
+				    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
+				    $onehit{$idex}=1;				    
+				}
+				else { # no hits above cut-off (15%)
+				    print EXSC "$el\t$_\t0\t$n2\tMANY_EX_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2\n";
 				}
 			    }
 			    else {
@@ -1249,31 +1295,75 @@ sub score_exons {
 				}
 			    }
 			}
-			if ($rs1==0){ $rs1=1; }
-
-			if ($tex=~/\,/){ ##If the exon needs to be realigned is written in an special file for its further processing
-			    @nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format
-			    for ($x=0; $x<scalar(@nex); $x++){
-				$tstr=$el."\t".$_."\t".$ne."\t".$n1."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp2."\t".$sp1;
-				$miss{$tstr}=1;
-				print EXSC "$el\t$_\t$ne\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp2\t$sp1\n";
+                        if ($tex){ # which means, there is at least a match  
+			    if ($rs1==0){ $rs1=1; }
+			    if ($tex=~/\,/){ ##If the exon needs to be realigned is written in an special file for its further processing
+				# we loop through $l[0] and $l[1] (start and end of Sp1 exon)
+				# and match each of these to $s1_s2_res{$r} [pseudo_rs]
+				# tally_per_exon per unique pseudo_rs [remember doing it for Sp2 too]
+				my $total_valid_pos=0; # number of total unique positions
+				my %tally_per_exon=(); # contains unique counts of positions for intervening exons 
+				my %done_pos=(); # keeps track of position
+				for my $temp_pos ($l[0]..$l[1]){
+				    my $match_other_sp = $s2_s1_res{$temp_pos};
+				    if ($match_other_sp){
+					my $exon_other_sp = $exon{$n1."_".$match_other_sp};
+					if (!$done_pos{$match_other_sp} && $exon_other_sp){
+					    $tally_per_exon{$exon_other_sp}++;
+					    $total_valid_pos++;
+					    $done_pos{$match_other_sp}=1;
+					}
+				    }
+				}
+				
+				my @new_nex;
+				@nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format ($ne => number of exons)
+#				print "N_Exons_PRE\t$n2\t$n2\t$ne\t$total_valid_pos\n";
+				for ($x=0; $x<scalar(@nex); $x++){
+				    my $perc_matches = 0;
+				    $perc_matches = sprintf("%.2f",100*$tally_per_exon{$nex[$x]}/$total_valid_pos) if $tally_per_exon{$nex[$x]} && $total_valid_pos > 0;
+				    push(@new_nex, $nex[$x]) if ($perc_matches >= 15);
+#				    print "EX$x\t$perc_matches\n";
+				}
+				# just re-write the old arrays to avoid unexpected issues
+				@nex=@new_nex; $ne=scalar(@nex);
+#				print "N_Exons_POST\t$ne\n\n";
+				
+				if ($ne > 1){ # i.e. still more than one hit
+				    for ($x=0; $x<scalar(@nex); $x++){
+					$tstr=$el."\t".$_."\t".$ne."\t".$n1."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp2."\t".$sp1;
+					$miss{$tstr}=1;
+					print EXSC "$el\t$_\t$ne\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp2\t$sp1\n";
+				    }
+				}
+				elsif ($ne == 1){
+				    print EXSC "$el\t$_\t1\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[0]\t$sp2\t$sp1\n";
+				    @ln=split(/\t/,$_);
+				    @tn1=split(/\|/,$ln[0]);
+				    @tn2=split(/\|/,$n2);
+				    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
+				    $onehit{$idex}=1;				    
+				}
+				else {
+				    print EXSC "$el\t$_\t0\t$n1\tMANY_EX_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp2\t$sp1\n";
+				}
+			    } 
+			    else {
+				print EXSC "$el\t$_\t1\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp2\t$sp1\n";
+				@ln=split(/\t/,$_);
+				@tn1=split(/\|/,$ln[0]);
+				@tn2=split(/\|/,$n2);
+				$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
+				$onehit{$idex}=1;
 			    }
-			} 
-			else {
-			    print EXSC "$el\t$_\t1\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp2\t$sp1\n";
-			    @ln=split(/\t/,$_);
-			    @tn1=split(/\|/,$ln[0]);
-			    @tn2=split(/\|/,$n2);
-			    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
-			    $onehit{$idex}=1;
 			}
+			else {
+			    print EXSC "$el\t$_\t0\t$n1\tNO_EXON_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp2\t$sp1\n"; # 1 nt exons at the Cterm
+			}
+		    } 
+		    else { 
+			print EXSC "$el\t$_\t0\t$n1\tNO_EXON_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp2\t$sp1\n"; 
 		    }
-		    else {
-			print EXSC "$el\t$_\t0\t$n1\tNO_EXON_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp2\t$sp1\n"; # 1 nt exons at the Cterm
-		    }
-		} 
-		else { 
-		    print EXSC "$el\t$_\t0\t$n1\tNO_EXON_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp2\t$sp1\n"; 
 		}
 	    } 
 	}##WHILE POS
