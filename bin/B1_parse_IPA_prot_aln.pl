@@ -210,7 +210,7 @@ while (<IN>){
     if ($chpr{$line[0]}){    
 	if (!$pos{$line[0]}) { $pos{$line[0]}=$_; } else { $pos{$line[0]}.="\n".$_; }    
 	for ($rs1=$l[0];  $rs1<=$l[1]; $rs1++){ 
-	    $exon{$line[0]."_".$rs1}=$_;
+	    $exon{$line[0]."_".$rs1}=$_; # GeneID|ProteinID_position => all the info of the exon for each position of the exon
 	}
     } 
 }
@@ -921,7 +921,6 @@ sub score_introns {
 			$ngp++;	
 			$np++;			
 		    }
-		    
 		}
 		if ($np>0){
 		    $tsimfr=($simfr/$np)*100;
@@ -1047,7 +1046,9 @@ sub score_exons {
     for ($i=0; $i<scalar(@s1); $i++){ # @s1 and @s2 contain the alignment by position. So now we're looping through the aln
 	if ($s2[$i] ne "-") { $res2++; $k2=$res2; }
 	if ($s1[$i] ne "-"){ $res++; $res1++; } # res1 => N of residues in prot 1
-	$s1_s2_res{$res1}=$res2; $s2_s1_res{$res2}=$res1; # correspondance between residues in Sp1 <=> Sp2 
+	# correspondance between residues in Sp1 <=> Sp2 
+	$s1_s2_res{$res1}=$res2 if !$s1_s2_res{$res1};
+	$s2_s1_res{$res2}=$res1 if !$s2_s1_res{$res2};
 	##similarity score
 	if ($sim{$s1[$i].$s2[$i]}){  $s1_scores_sim{$res1}=$sim{$s1[$i].$s2[$i]}; $s2_scores_sim{$res2}=$sim{$s1[$i].$s2[$i]}; }	    
 	##identity score
@@ -1133,10 +1134,10 @@ sub score_exons {
 		$tex="";
 		%check=();
 		if ($sim_score>=0){ ##modified to print all exons that aligned even when sim_score is low, they will be filtered in other programs
-		    if ($rs1 && $rs2){ # start and end in SP2 protein 
-			for ($k=$rs1; $k<=$rs2; $k++){
+		    if ($rs2){ # start and end in SP2 protein 
+			for ($k=$rs1; $k<=$rs2; $k++){ # this is matchin exon in Sp1 to all exons in Sp2
 			    if ($exon{$n2."_".$k}){
-				$ex=$exon{$n2."_".$k};
+				$ex=$exon{$n2."_".$k}; # ex is ALL the info of the exon in Sp2 => ENSP00000483019|ENSG00000100121 exon_1 1-59 chr2 222646346-22646521 +
 				if (!$check{$ex}){
 				    $check{$ex}=1;				    
 				    if (!$tex){
@@ -1148,14 +1149,13 @@ sub score_exons {
 				}
 			    }
 			}
-			if ($tex){
+			if ($tex){ # which means, there is at least a match
 			    if ($rs1==0){ $rs1=1; }
-			    if ($tex=~/\,/){ ##if the exon need to be realign is written in a special file for further processing
-				@nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format
+			    if ($tex=~/\,/){ ## if the exon need to be realign is written in a special file for further processing
+				@nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format ($ne => number of exons)
 				for ($x=0; $x<scalar(@nex); $x++){
 				    $tstr=$el."\t".$_."\t".$ne."\t".$n2."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp1."\t".$sp2;
 				    $miss{$tstr}=1;
-				    #print MISS "$el\t$_\t$ne\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp1\t$sp2\n";
 				    print EXSC "$el\t$_\t$ne\t$n2\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[$x]\t$sp1\t$sp2\n";
 				}
 			    }
@@ -1230,7 +1230,7 @@ sub score_exons {
 		$tex="";
 		%check=();
 		if ($sim_score>=0){ ###modified to print all exons that aligned event when sim_score is low, they will be filtered in other programs
-		    if ($rs1 && $rs2){
+		    if ($rs2){
 			for ($k=$rs1; $k<=$rs2; $k++){
 			    if ($exon{$n1."_".$k}){ # $n1 => prot|gene
 				$ex=$exon{$n1."_".$k};
