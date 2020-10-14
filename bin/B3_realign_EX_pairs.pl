@@ -115,23 +115,27 @@ my ($n1,$n2,$sq1, $sq2, $size1, $size2, $st,$idex, $tmpex, $exonid, $sp1, $sp2, 
 my (@cr1,@cr2);
 my (%score,%ex, %seq, %rex);
 my ($name);
-my $h=0;
+my %pair_already_aln=();
 open (IN, "$i1")|| die "Missing exons to realign file";
+<IN>; # removes header
 while (<IN>){
     chomp($_);
-    $h++;
-    if ($h>1){
-	@l=split(/\t/,$_);
-	@cr1=split(/\-/,$l[3]); 
-	$size1=$cr1[1]-$cr1[0]+1;
-	$sq1=substr($seqs{$l[1]},($cr1[0]-1),$size1);
-	$m=16;
-	$sp1=$l[20]; $sp2=$l[21];
-	@cr2=split(/\-/,$l[16]);
-	$size2=$cr2[1]-$cr2[0]+1;
-	$sq2=substr($seqs{$l[8]},($cr2[0]-1),$size2);
-	$st=substr($l[19],0,1);
-	$idex=$l[8]."\t".$l[$m-1]."\t".$l[$m]."\t".$l[$m+1]."\t".$l[$m+2]."\t".$st;
+    @l=split(/\t/,$_);
+    @cr1=split(/\-/,$l[3]); 
+    $size1=$cr1[1]-$cr1[0]+1;
+    $sq1=substr($seqs{$l[1]},($cr1[0]-1),$size1); # seq of exon 1
+    $m=16;
+    $sp1=$l[20]; $sp2=$l[21];
+    @cr2=split(/\-/,$l[16]);
+    $size2=$cr2[1]-$cr2[0]+1;
+    $sq2=substr($seqs{$l[8]},($cr2[0]-1),$size2); # seq of exon 2
+    $st=substr($l[19],0,1);
+    $idex=$l[8]."\t".$l[$m-1]."\t".$l[$m]."\t".$l[$m+1]."\t".$l[$m+2]."\t".$st;
+
+    ### Adds a check to save realn the same exons multiple times
+    my $pair_of_seqs = "$sq1=$sq2";
+
+    if (!$pair_already_aln{$pair_of_seqs}){
 	##aligning exons locally and getting their sim scores
 	open (TMPALN,">$texf");
 	print TMPALN ">$l[1]\n$sq1\n>$l[8]\n$sq2\n"; 
@@ -161,36 +165,50 @@ while (<IN>){
 	$n2=$nkeys[1];
 	$seq1=$seq{$n1};
 	$seq2=$seq{$n2};
+	
 	## 3) CALLING SUBROUTINE FOR SCORING PROTEINS	
 	if (($n1 && $n2) && ($seq1 && $seq2)){
-	    my ($sim,$id,$gp,$glsc)=score_proteins ($n1,$n2,$seq1,$seq2);
+	    my ($sim,$id,$gp,$glsc)=score_proteins($n1,$n2,$seq1,$seq2);
+	    @{$pair_already_aln{$pair_of_seqs}}=($sim,$id,$gp,$glsc); # info store for the future
 	    $png=sprintf("%.2f",(($gp/$size1)*100));
-	    if (!$score{$l[1]."_".$l[2]."_".$l[8]}){  
+	    if (!$score{$l[1]."_".$l[2]."_".$l[8]}){ # if there is no score for that exon yet
 		$score{$l[1]."_".$l[2]."_".$l[8]}=$sim;
 		$ex{$l[1]."_".$l[2]."_".$l[8]}=$l[8]."\t".$l[$m]."\t".$sim."\t".$id."\t".$gp."\t".$png."\t".$idex;
 	    }
-	    elsif($sim>$score{$l[1]."_".$l[2]."_".$l[8]}){		
+	    elsif($sim>$score{$l[1]."_".$l[2]."_".$l[8]}){ # if there is score, but the new one is higher
 		$score{$l[1]."_".$l[2]."_".$l[8]}=$sim;
 		$ex{$l[1]."_".$l[2]."_".$l[8]}=$l[8]."\t".$l[$m]."\t".$sim."\t".$id."\t".$gp."\t".$png."\t".$idex;
 	    }	    
 	}
-	$tmpex=$l[1]."_".$l[2]."_".$l[8]; 
-	if ($score{$tmpex}){
-	    if ($score{$tmpex}>=20){
-		$rex{$tmpex}=$l[0]."\t".$l[1]."\t".$l[2]."\t".$l[3]."\t".$l[4]."\t".$l[5]."\t".$l[6]."\t"."1\t".$ex{$tmpex}."\t".$sp1."\t".$sp2;
-	    }else { 
-		$rex{$tmpex}=$l[0]."\t".$l[1]."\t".$l[2]."\t".$l[3]."\t".$l[4]."\t".$l[5]."\t".$l[6]."\t0\t$l[8]\tNO_EX_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2";
-	    }
+    }
+    else { # i.e. the pair of sequences have already been aligned
+	my ($sim,$id,$gp,$glsc)=@{$pair_already_aln{$pair_of_seqs}};
+	$png=sprintf("%.2f",(($gp/$size1)*100));
+	if (!$score{$l[1]."_".$l[2]."_".$l[8]}){ # if there is no score for that exon yet
+	    $score{$l[1]."_".$l[2]."_".$l[8]}=$sim;
+	    $ex{$l[1]."_".$l[2]."_".$l[8]}=$l[8]."\t".$l[$m]."\t".$sim."\t".$id."\t".$gp."\t".$png."\t".$idex;
 	}
-    }   
-}
+	elsif($sim>$score{$l[1]."_".$l[2]."_".$l[8]}){ # if there is score, but the new one is higher
+	    $score{$l[1]."_".$l[2]."_".$l[8]}=$sim;
+	    $ex{$l[1]."_".$l[2]."_".$l[8]}=$l[8]."\t".$l[$m]."\t".$sim."\t".$id."\t".$gp."\t".$png."\t".$idex;
+	}	    	
+    }
 
-#####END OF PROGRAM
+    ### Final storage of data. If an exon with a higher match, it will re-write the entry. Otherwise, it will write the previous entry again
+    $tmpex=$l[1]."_".$l[2]."_".$l[8]; # ProtID1|GeneID1   exon_N   ProtID2|GeneID2
+    if ($score{$tmpex}){
+	if ($score{$tmpex}>=5){ # originally it was 20
+	    $rex{$tmpex}=$l[0]."\t".$l[1]."\t".$l[2]."\t".$l[3]."\t".$l[4]."\t".$l[5]."\t".$l[6]."\t"."1\t".$ex{$tmpex}."\t".$sp1."\t".$sp2;
+	} else { 
+	    $rex{$tmpex}=$l[0]."\t".$l[1]."\t".$l[2]."\t".$l[3]."\t".$l[4]."\t".$l[5]."\t".$l[6]."\t0\t$l[8]\tNO_EX_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2";
+	}
+    }
+}   
+
 open (OUT, ">$outf") || die "It cannot open output file ($outf)\n";
 #printing header
 print OUT "CID\tProt_query\tExon_number_query\tAA_pos_exon_query\tChr_query\tExon_coords_query\tStrand\tExon_hits_subject\tProt_subject\tAln_AA_pos_subject\t%Sim_aln_qry_sbj\t\%Id_aln_qry_sbj\tGap_number\t\%Gaps\tProt_subject\tExon_number_subject\tAA_pos_exon_subject\tChr_subject\tExon_coords_subject\tStrand\tSp_query\tSp_subject\n";
-
-my @ks=keys(%rex);
+my @ks=sort(keys(%rex));
 my $eid;
 foreach $eid(@ks){
     print OUT "$rex{$eid}\n";
