@@ -169,7 +169,7 @@ while (<IN>){
 		$score{$l[1]."_".$l[2]."_".$l[8]}=$sim;
 		$ex{$l[1]."_".$l[2]."_".$l[8]}=$l[8]."\t".$l[$m]."\t".$sim."\t".$id."\t".$gp."\t".$png."\t".$idex;
 	    }
-	    elsif($sim>$score{$l[1]."_".$l[2]."_".$l[8]}){		
+	    elsif($sim>$score{$l[1]."_".$l[2]."_".$l[8]}){ #this is the part where we select the match with the highest sim for each query isoform-exon		
 		$score{$l[1]."_".$l[2]."_".$l[8]}=$sim;
 		$ex{$l[1]."_".$l[2]."_".$l[8]}=$l[8]."\t".$l[$m]."\t".$sim."\t".$id."\t".$gp."\t".$png."\t".$idex;
 	    }	    
