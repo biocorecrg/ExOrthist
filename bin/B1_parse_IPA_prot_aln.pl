@@ -20,6 +20,7 @@ my $outf=$ARGV[13]; ## output folder
 my $min_sim_prots=$ARGV[14]; ##minimum prot sim in decimal format.
 my $cpus=$ARGV[15];
 my $prev_folder=$ARGV[16]; # OPTIONAL. Folder with subfolders with pairwise pre-computed info.
+my $min_exon_overlap = 15; # the % the exon from Sp target must map to the exon in Sp query for realn
 
 $cpus=1 if !$cpus;
 
@@ -1185,7 +1186,7 @@ sub score_exons {
 				for ($x=0; $x<scalar(@nex); $x++){
 				    my $perc_matches = 0;
 				    $perc_matches = sprintf("%.2f",100*$tally_per_exon{$nex[$x]}/$total_valid_pos) if $tally_per_exon{$nex[$x]} && $total_valid_pos > 0;
-				    push(@new_nex, $nex[$x]) if ($perc_matches >= 15);
+				    push(@new_nex, $nex[$x]) if ($perc_matches >= $min_exon_overlap);
 				}
 
 				# just re-write the old arrays to avoid unexpected issues
@@ -1205,7 +1206,7 @@ sub score_exons {
 				    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
 				    $onehit{$idex}=1;				    
 				}
-				else { # no hits above cut-off (15%)
+				else { # no hits above cut-off ($min_exon_overlap = 15%)
 				    print EXSC "$el\t$_\t0\t$n2\tMANY_EX_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2\n";
 				}
 			    }
@@ -1325,7 +1326,7 @@ sub score_exons {
 				for ($x=0; $x<scalar(@nex); $x++){
 				    my $perc_matches = 0;
 				    $perc_matches = sprintf("%.2f",100*$tally_per_exon{$nex[$x]}/$total_valid_pos) if $tally_per_exon{$nex[$x]} && $total_valid_pos > 0;
-				    push(@new_nex, $nex[$x]) if ($perc_matches >= 15);
+				    push(@new_nex, $nex[$x]) if ($perc_matches >= $min_exon_overlap);
 #				    print "EX$x\t$perc_matches\n";
 				}
 				# just re-write the old arrays to avoid unexpected issues
