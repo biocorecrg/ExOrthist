@@ -314,7 +314,7 @@ process split_EX_pairs_to_realign {
 
 process realign_EX_pairs {
     tag { "${aligned_folder}/${exons_to_realign.simpleName}" }
-    label 'incr_time_cpus'
+    //label 'incr_time_cpus'
 
     input:
     file(blosumfile)
