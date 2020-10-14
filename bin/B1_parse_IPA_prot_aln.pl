@@ -1093,7 +1093,7 @@ sub score_exons {
 		$ng=0; 
 		$g=0;
 		$e=0;
-		$pr="$n1"
+		$pr="$n1";
 		$rs2="";
 		if (!$print{$pr}){
 #		    print PRSC "$el\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; ##Adding species info in the last 2 columns => it was redundant
