@@ -1216,6 +1216,7 @@ sub score_exons {
 				@tn1=split(/\|/,$ln[0]);
 				@tn2=split(/\|/,$n2);
 				$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
+#				print "ROUND1\t$n1\t$n2\t$idex\n";
 				$onehit{$idex}=1;
 			    }
 			}
@@ -1344,7 +1345,7 @@ sub score_exons {
 				    print EXSC "$el\t$_\t1\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[0]\t$sp2\t$sp1\n";
 				    @ln=split(/\t/,$_);
 				    @tn1=split(/\|/,$ln[0]);
-				    @tn2=split(/\|/,$n2);
+				    @tn2=split(/\|/,$n1);
 				    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
 				    $onehit{$idex}=1;				    
 				}
@@ -1356,8 +1357,9 @@ sub score_exons {
 				print EXSC "$el\t$_\t1\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp2\t$sp1\n";
 				@ln=split(/\t/,$_);
 				@tn1=split(/\|/,$ln[0]);
-				@tn2=split(/\|/,$n2);
+				@tn2=split(/\|/,$n1);
 				$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
+#				print "ROUND2\t$n1\t$n2\t$idex\n";
 				$onehit{$idex}=1;
 			    }
 			}
@@ -1381,6 +1383,7 @@ my @ks=sort(keys(%miss));
 my $mex;
 foreach $mex (@ks){
     @ln=split(/\t/,$mex);
+    # $mex = $tstr = $el."\t".$_."\t".$ne."\t".$n1."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp2."\t".$sp1;
     @tn1=split(/\|/,$ln[1]);
     @tn2=split(/\|/,$ln[8]);
     $idex=$ln[0]."\t".$tn1[1]."\t".$ln[5]."\t".$tn2[1];
