@@ -20,6 +20,7 @@ my $outf=$ARGV[13]; ## output folder
 my $min_sim_prots=$ARGV[14]; ##minimum prot sim in decimal format.
 my $cpus=$ARGV[15];
 my $prev_folder=$ARGV[16]; # OPTIONAL. Folder with subfolders with pairwise pre-computed info.
+my $min_exon_overlap = 15; # the % the exon from Sp target must map to the exon in Sp query for realn
 
 $cpus=1 if !$cpus;
 
@@ -1185,7 +1186,7 @@ sub score_exons {
 				for ($x=0; $x<scalar(@nex); $x++){
 				    my $perc_matches = 0;
 				    $perc_matches = sprintf("%.2f",100*$tally_per_exon{$nex[$x]}/$total_valid_pos) if $tally_per_exon{$nex[$x]} && $total_valid_pos > 0;
-				    push(@new_nex, $nex[$x]) if ($perc_matches >= 15);
+				    push(@new_nex, $nex[$x]) if ($perc_matches >= $min_exon_overlap);
 				}
 
 				# just re-write the old arrays to avoid unexpected issues
@@ -1205,7 +1206,7 @@ sub score_exons {
 				    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
 				    $onehit{$idex}=1;				    
 				}
-				else { # no hits above cut-off (15%)
+				else { # no hits above cut-off ($min_exon_overlap = 15%)
 				    print EXSC "$el\t$_\t0\t$n2\tMANY_EX_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2\n";
 				}
 			    }
@@ -1215,6 +1216,7 @@ sub score_exons {
 				@tn1=split(/\|/,$ln[0]);
 				@tn2=split(/\|/,$n2);
 				$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
+#				print "ROUND1\t$n1\t$n2\t$idex\n";
 				$onehit{$idex}=1;
 			    }
 			}
@@ -1325,7 +1327,7 @@ sub score_exons {
 				for ($x=0; $x<scalar(@nex); $x++){
 				    my $perc_matches = 0;
 				    $perc_matches = sprintf("%.2f",100*$tally_per_exon{$nex[$x]}/$total_valid_pos) if $tally_per_exon{$nex[$x]} && $total_valid_pos > 0;
-				    push(@new_nex, $nex[$x]) if ($perc_matches >= 15);
+				    push(@new_nex, $nex[$x]) if ($perc_matches >= $min_exon_overlap);
 #				    print "EX$x\t$perc_matches\n";
 				}
 				# just re-write the old arrays to avoid unexpected issues
@@ -1343,7 +1345,7 @@ sub score_exons {
 				    print EXSC "$el\t$_\t1\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$nex[0]\t$sp2\t$sp1\n";
 				    @ln=split(/\t/,$_);
 				    @tn1=split(/\|/,$ln[0]);
-				    @tn2=split(/\|/,$n2);
+				    @tn2=split(/\|/,$n1);
 				    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
 				    $onehit{$idex}=1;				    
 				}
@@ -1355,8 +1357,9 @@ sub score_exons {
 				print EXSC "$el\t$_\t1\t$n1\t$rs1-$rs2\t$id_score\t$sim_score\t$ng\t$png\t$tex\t$sp2\t$sp1\n";
 				@ln=split(/\t/,$_);
 				@tn1=split(/\|/,$ln[0]);
-				@tn2=split(/\|/,$n2);
+				@tn2=split(/\|/,$n1);
 				$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
+#				print "ROUND2\t$n1\t$n2\t$idex\n";
 				$onehit{$idex}=1;
 			    }
 			}
@@ -1380,6 +1383,7 @@ my @ks=sort(keys(%miss));
 my $mex;
 foreach $mex (@ks){
     @ln=split(/\t/,$mex);
+    # $mex = $tstr = $el."\t".$_."\t".$ne."\t".$n1."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp2."\t".$sp1;
     @tn1=split(/\|/,$ln[1]);
     @tn2=split(/\|/,$ln[8]);
     $idex=$ln[0]."\t".$tn1[1]."\t".$ln[5]."\t".$tn2[1];
