@@ -1218,6 +1218,9 @@ sub score_exons {
 				$onehit{$idex}=1;
 			    }
 			}
+			else { 
+			    print EXSC "$el\t$_\t0\t$n2\tNO_EXON_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2\n"; 
+			}
 		    }
 		    else { 
 			print EXSC "$el\t$_\t0\t$n2\tNO_EXON_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2\n"; 
@@ -1364,6 +1367,9 @@ sub score_exons {
 		    else { 
 			print EXSC "$el\t$_\t0\t$n1\tNO_EXON_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp2\t$sp1\n"; 
 		    }
+		}
+		else {
+		    print EXSC "$el\t$_\t0\t$n1\tNO_EXON_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp2\t$sp1\n"; # 1 nt exons at the Cterm
 		}
 	    } 
 	}##WHILE POS
