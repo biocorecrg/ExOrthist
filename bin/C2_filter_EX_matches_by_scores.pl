@@ -39,7 +39,7 @@ for ($i=0; $i<=$#ARGV; $i++){
 }
 
 if (!$m){ $m=0.65}
-if (!$int){ $int=2; }
+if ($int !~ /\d/){ die "ERROR: Intron number must be 0, 1 or 2\n";}
 if (!$id){ $id = 0.2; $A = 0.20*0.2; $C = 0.15*0.2; } else { $A=0.20*$id; $C=0.15*$id; } # prev weights: A = 0.18 and C = 0.16
 #if (!$out){ $out="Best_score_exon_hits_filtered_$m-$int-$id".".tab"; }
 if (!$out){ $out="filtered_best_scored_EX_matches_by_targetgene.tab"; }
@@ -82,26 +82,26 @@ while (<INONE>){
 	if ($max>30) { $lim=int($max*$m);}
 	else { $lim=int($max*0.3);} # if it's a MIC of 18 and 6 => it's OK (5.4)
 	
-	# sets IDs, etc
+	# sets IDs, etc (before, it forced reciprocal fake mappings)
 	@g1=split(/\|/,$line[3]); @g2=split(/\|/,$line[6]);		
-#	if ($sid{$line[15]}<$sid{$line[16]}) { # allows reciprocal matches
-	    $id1=$g1[1]."\t".$line[5];
-	    $id2=$g2[1]."\t".$line[8];
-	    $sp{$id1."\t".$id2}=$line[15]."\t".$line[16];
-	    $sp{$id2."\t".$id1}=$line[16]."\t".$line[15];	
-#	} else { 
-#	    $id2=$g1[1]."\t".$line[5];  
-#	    $id1=$g2[1]."\t".$line[8]; 
-#	    $sp{$id1."\t".$id2}=$line[16]."\t".$line[15];
-#	    $sp{$id2."\t".$id1}=$line[15]."\t".$line[16];			
-#	}	   			
+	$id1=$g1[1]."\t".$line[5];
+	$id2=$g2[1]."\t".$line[8];
+	$sp{$id1."\t".$id2}=$line[15]."\t".$line[16];
+	$sp{$id2."\t".$id1}=$line[16]."\t".$line[15];	
+
 	if ($line[2] eq "Internal") {
 	    # tests if $int (1 or 2) intron positions are conserved
+	    # add the explicit check for 1 or 0 introns.
 	    if ($int==2){
 		if ($line[10] > 0 && $line[12]>0){ $rs=1; }
-	    } else {
+	    } elsif ($int==1) {
 		if ($line[10] > 0 || $line[12]>0){ $rs=1; }				
+	    } elsif ($int==0) { 
+		$rs=1; 
+	    } else { 
+		die "ERROR: The number of introns needs to be 0, 1 or 2\n";
 	    }
+
 	    # IF INTRON POSITIONS ARE CONSERVED:
 	    if ($rs==1){
 		# tests sequence conservation of the three exons
@@ -124,7 +124,7 @@ while (<INONE>){
 	    }
 	}
 	elsif ($line[2] eq "C_terminal"){
-	    if ($line[10]>0 && $line[9]>=$C && $line[11]>=$A){
+	    if (($line[10]>0 || $int == 0) && $line[9]>=$C && $line[11]>=$A){
 		if($sex1>=$lim && $sex2>=$lim){ ##filtering by size diference 
 		    $hits{$id1."\t".$id2}=1;
 		    $sc{$id1."\t".$id2}+=$line[14]; 
@@ -141,7 +141,7 @@ while (<INONE>){
 	    }
 	}
 	elsif ($line[2] eq "N_terminal"){
-	    if ($line[12] > 0 && $line[11]>=$A && $line[13]>=$C){
+	    if (($line[12] > 0 || $int == 0) && $line[11]>=$A && $line[13]>=$C){
 		if ($sex1>=$lim && $sex2>=$lim){ ##filtering by size difference
 		    $hits{$id1."\t".$id2}=1;
 		    $sc{$id1."\t".$id2}+=$line[14]; 
