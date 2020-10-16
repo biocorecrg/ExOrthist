@@ -1,5 +1,5 @@
 params {
-    cluster      = "$baseDir/test/Ame_Cdi_Dme_s.tab.gz"
+    cluster      = "$baseDir/test/Ame_Cdi_Dme_red.tab.gz"
     genomes      = "$baseDir/test/GENOMES/*_gDNA.fasta.gz"
     annotations  = "$baseDir/test/GTF/*_annot.gtf.gz"
     alignmentnum   = 1000
@@ -12,9 +12,9 @@ params {
     medium_dist  = "2,0.50,0.55,0.20"
     short_dist   = "2,0.70,0.65,0.25"
     prevaln      = ""
-    //intcons      = 2
-    //exsim      = 0.2
-    //maxsize      = 0.65
+    intcons      = 2
+    exsim      = 0.2
+    maxsize      = 0.65
     output       = "$baseDir/output_small"
     email        = "yourmail@yourdomain"
 }
