@@ -5,16 +5,13 @@ params {
     alignmentnum   = 1000
     extraexons   = ""
     liftover     = ""
-    orthofolder  = ""
+    orthopairs  = ""
     vastdb       = ""
     evodists     = "$baseDir/test/evodists.txt" 
     long_dist    = "1,0.20,0.45,0.15"
     medium_dist  = "2,0.50,0.55,0.20"
     short_dist   = "2,0.70,0.65,0.25"
     prevaln      = ""
-    //intcons      = 2
-    //exsim      = 0.2
-    //maxsize      = 0.65
     output       = "$baseDir/output_small"
     email        = "yourmail@yourdomain"
 }
