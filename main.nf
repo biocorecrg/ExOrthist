@@ -92,7 +92,7 @@ if ( !evodisfile.exists() ) exit 1, "Missing evodists file: ${evodisfile}!"
 
 		script:
 		"""
-		check_input.pl -e ${evodisfile} -g \"${params.annotations}\" -f \"${params.genomes}\"
+		A0_check_input.pl -e ${evodisfile} -g \"${params.annotations}\" -f \"${params.genomes}\"
 		"""
 }
 
@@ -570,7 +570,7 @@ process recluster_genes_by_species_pair {
 	script:
 	def species = "${combid1}".split("-") 
 	"""
- 	python D3.2_recluster_genes_by_species_pair.py -og ${clusterfile} -op ${orthopairs} --species1 ${species[0]} --species2 ${species[1]} -out reclustered_genes_${combid1}.tab
+ 	python D3.1_recluster_genes_by_species_pair.py -og ${clusterfile} -op ${orthopairs} --species1 ${species[0]} --species2 ${species[1]} -out reclustered_genes_${combid1}.tab
     	"""
 }
 
@@ -603,7 +603,7 @@ process recluster_EXs_by_species_pair {
 	//	vastbcmd = "D3.1_add_vastid_to_EX_clusters.pl ${params.vastdb} ${species_out_file} ${vastdb_out}"
 	//}
 	"""
-	D3.3_recluster_EXs_by_species_pair.pl ${recl_genes} ${exon_cluster_for_reclustering} ${species_out_file}
+	D3.2_recluster_EXs_by_species_pair.pl ${recl_genes} ${exon_cluster_for_reclustering} ${species_out_file}
     	"""
 }
 
