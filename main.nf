@@ -226,7 +226,7 @@ process split_clusters_in_chunks {
 
 
 //cls_files_2_align.transpose().set{cls_files_2_align_t}
-cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}.into{cls_files_2_align_t}
+cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}.set{cls_files_2_align_t}
 
 //Create a channel for the evo distances
 Channel
@@ -277,7 +277,6 @@ process parse_IPA_prot_aln {
 	dist_range_par = "${params.short_dist}".split(",")
 
 	"""
-	echo ciao
 		B1_parse_IPA_prot_aln.pl ${sp1} ${sp2} ${cls_part_file} \
 ${sp1}/${sp1}_annot_exons_prot_ids.txt ${sp2}/${sp2}_annot_exons_prot_ids.txt \
 ${sp1}/${sp1}_protein_ids_exons_pos.txt ${sp2}/${sp2}_protein_ids_exons_pos.txt \
