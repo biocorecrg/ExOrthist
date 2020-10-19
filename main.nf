@@ -465,7 +465,7 @@ process collapse_overlapping_matches {
     file(scores) from filtered_all_scores
 
     output:
-    file("filtered_best_scored_exon_matches_by_gene-NoOverlap.txt") into score_exon_hits_pairs
+    file("filtered_best_scored_exon_matches_by_gene-NoOverlap.txt") into score_exon_hits_pairs, exon_pairs_for_reclustering
 
 	script:
 	liftfile = ""
@@ -550,7 +550,6 @@ process format_EX_clusters_output {
 /*
 * Re-clustering of genes
 */
-orthopairs = file(params.orthopairs)
 process recluster_genes_by_species_pair {
     publishDir "${params.output}/reclustering", mode: 'copy'
     tag { "${combid}" }
@@ -561,7 +560,7 @@ process recluster_genes_by_species_pair {
     input:
     set combid, file(folderA), file(folderB) from species_to_recluster_genes
     file(clusterfile)
-    file(orthopairs)
+    file(orthopairs) from file(params.orthopairs)
 
     output:
     set combid, file("reclustered_genes_*.tab") into recl_genes_for_rec_exons
@@ -587,22 +586,17 @@ process recluster_EXs_by_species_pair {
 
     input:
     set combid, file(recl_genes) from recl_genes_for_rec_exons
-    file(exon_cluster_for_reclustering)
+    file(exon_clusters) from exon_cluster_for_reclustering
+    file(exon_pairs) from exon_pairs_for_reclustering
 
     output:
     file("reclustered_EXs_*.tab")
-    //file("reclustered_EXs_*_vastdb.tab") optional true
 
 	script:
 	def combid1 = combid.replace("-", "_")
-	def species_out_file = "reclustered_EXs_${combid1}.tab"
-	//def vastdb_out = "reclustered_EXs_${combid1}_vastdb.tab"
-	//def vastbcmd = ""
-	//if (params.vastdb!= "") {
-	//	vastbcmd = "D3.1_add_vastid_to_EX_clusters.pl ${params.vastdb} ${species_out_file} ${vastdb_out}"
-	//}
+	def species = "${combid1}".split("-")
 	"""
-	D3.2_recluster_EXs_by_species_pair.pl ${recl_genes} ${exon_cluster_for_reclustering} ${species_out_file}
+	python D3.2_recluster_EXs_by_species_pair.py -ep ${exon_pairs} -rg ${recl_genes} -ec ${exon_clusters} -sp1 ${species[0]} -sp2 ${species[1]} -out reclustered_EXs_${combid1}.tab
     	"""
 }
 
