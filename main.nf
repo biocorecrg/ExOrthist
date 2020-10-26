@@ -312,7 +312,7 @@ process split_EX_pairs_to_realign {
 
 process realign_EX_pairs {
     tag { "${aligned_folder}/${exons_to_realign.simpleName}" }
-    //label 'incr_time_cpus'
+    label 'incr_time_cpus'
 
     input:
     file(blosumfile)
@@ -465,7 +465,7 @@ process collapse_overlapping_matches {
     file(scores) from filtered_all_scores
 
     output:
-    file("filtered_best_scored_exon_matches_by_gene-NoOverlap.txt") into score_exon_hits_pairs, exon_pairs_for_reclustering
+    file("filtered_best_scored_exon_matches_by_gene-NoOverlap.txt") into (score_exon_hits_pairs, exon_pairs_for_reclustering)
 
 	script:
 	liftfile = ""
@@ -550,6 +550,7 @@ process format_EX_clusters_output {
 /*
 * Re-clustering of genes
 */
+
 process recluster_genes_by_species_pair {
     publishDir "${params.output}/reclustering", mode: 'copy'
     tag { "${combid}" }
@@ -560,15 +561,16 @@ process recluster_genes_by_species_pair {
     input:
     set combid, file(folderA), file(folderB) from species_to_recluster_genes
     file(clusterfile)
-    file(orthopairs) from file(params.orthopairs)
+    //file(orthopairs) from orthopairs_file
 
     output:
     set combid, file("reclustered_genes_*.tab") into recl_genes_for_rec_exons
 
 	script:
-	def species = "${combid1}".split("-") 
+	def species = "${combid}".split("-")
+	def orthopairs = file("${params.orthopairs}") 
 	"""
- 	python D3.1_recluster_genes_by_species_pair.py -og ${clusterfile} -op ${orthopairs} --species1 ${species[0]} --species2 ${species[1]} -out reclustered_genes_${combid1}.tab
+ 	D3.1_recluster_genes_by_species_pair.py -og ${clusterfile} -op ${orthopairs} --species1 ${species[0]} --species2 ${species[1]} -out reclustered_genes_${combid}.tab
     	"""
 }
 
@@ -596,7 +598,7 @@ process recluster_EXs_by_species_pair {
 	def combid1 = combid.replace("-", "_")
 	def species = "${combid1}".split("-")
 	"""
-	python D3.2_recluster_EXs_by_species_pair.py -ep ${exon_pairs} -rg ${recl_genes} -ec ${exon_clusters} -sp1 ${species[0]} -sp2 ${species[1]} -out reclustered_EXs_${combid1}.tab
+	D3.2_recluster_EXs_by_species_pair.py -ep ${exon_pairs} -rg ${recl_genes} -ec ${exon_clusters} -sp1 ${species[0]} -sp2 ${species[1]} -out reclustered_EXs_${combid1}.tab
     	"""
 }
 
