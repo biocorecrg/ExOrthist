@@ -27,7 +27,9 @@ for (my_clusterID in single_exon_cluster_IDs) {
     if (exon_hits[1,"ID2"] == exon_id) {new_cluster_ID = my_final_clusters[as.vector(exon_hits[1,"ID1"]), "ClusterID"]} #take the ID of the matching exon
     my_final_clusters[exon_id,"ClusterID"] = new_cluster_ID
     } else {
-      my_final_clusters = my_final_clusters[rownames(my_final_clusters)[rownames(my_final_clusters)!=exon_id],] #remove the single-exon cluster from the final graph.
+      my_final_clusters$names = rownames(my_final_clusters)
+      my_final_clusters = my_final_clusters[!(rownames(my_final_clusters) == exon_id),] #remove the single-exon cluster from the final graph.
+      rownames(my_final_clusters) =  my_final_clusters$names;  my_final_clusters$names = NULL; 
   }
 }
 
