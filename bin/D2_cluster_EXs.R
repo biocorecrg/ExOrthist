@@ -21,7 +21,7 @@ my_final_clusters = as.data.frame(as.matrix(membership(my_clusters))); colnames(
 single_exon_cluster_IDs = names(table(my_final_clusters)[table(my_final_clusters)==1])
 for (my_clusterID in single_exon_cluster_IDs) {
   exon_id = rownames(subset(my_final_clusters, ClusterID==my_clusterID))
-  exon_hits = subset(my_table, ID1 == exon_id | ID2 == exon_id & Best_reciprocal == "TRUE")
+  exon_hits = subset(my_table, (ID1 == exon_id | ID2 == exon_id) & Best_reciprocal == "TRUE")
   if (nrow(exon_hits) >= 1) { #take the first best_hit (if there are more in different exon clusters there's not much we can do)
     if (exon_hits[1,"ID1"] == exon_id) {new_cluster_ID = my_final_clusters[as.vector(exon_hits[1,"ID2"]), "ClusterID"]} #take the ID of the matching exon
     if (exon_hits[1,"ID2"] == exon_id) {new_cluster_ID = my_final_clusters[as.vector(exon_hits[1,"ID1"]), "ClusterID"]} #take the ID of the matching exon
