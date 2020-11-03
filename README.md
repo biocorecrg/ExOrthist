@@ -1,170 +1,455 @@
+---
+title: ExOrthist pipeline
+output:
+  html_document: default
+  pdf_document: default
+---
+<!--
 <img align="middle" href="https://github.com/biocorecrg/exon_intron_orthology_pipeline" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/logo_s.png?raw=true" />
+-->
+<!--
+<img style="float:left; padding-right:20px" src="/Users/federica/Documents/CRG_PhD/weekly_meetings/20_10_15/exorthist_new.png" width=300 height=350 />
+-->
 
+<style>
+figcaption {
+  text-align: left;
+  font-size: 0.7em;
+}
+</style>
 
-Summary
+<figure>
+  <img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/exorthist_new_logo.png" width=270 height=400 />
+  <figcaption>Original logo by Queralt Tolosa</figcaption>
+<figure>
+
+Meeting the ExOrthist
 -------
 
-ExOrthist is a Nextflow-based pipeline to obtain groups of exon orthologous at all evolutionary timescales.
+ExOrthist is a Nextflow based pipeline allowing inferences of exon orthology groups at all evolutionary distances. As a crucial innovation, ExOrthist sequentially evaluates three features when inferring exon orthologous relationships: conservation of up/downstream intron phases, conservation of the exon sequence and conservation of the up/downstream exons’ sequence. ExOrthist presents 3 modules:  
+
+* **Main** module: to infer the exon orthology relationships.  
+* **Exint_plotter** module: to visualize changes in exon-intron structure between orthologous genes.   
+* **Compare_exons** module: to evaluate regulatory conservation between groups of orthologous exons.
+
+Table of contents
+-------
+* [Requirements](#requirements)  
+* [Installation](#installation)  
+* [ExOrthist main module](#exorthist-main-module)  
+  + [Overview](#overview)
+  + [Running ExOrthist main.nf](#running-exorthist-main\.nf)
+  + [Arguments](#arguments)
+  + [Algorithm](#algorithm)  
+    - [A. Input generation](#a\.-input-generation)  
+      * [Output](#output)
+    - [B. Pairwise alignments and feature extraction](#b\.-pairwise-alignments-and-feature-extraction) 
+      * [Output](#output-1)
+    - [C. Scoring and best matches selection](#c\.-scoring-and-best-matches-selection) 
+      * [Addition of manually curated exon orthology pairs](#addition-of-manually-curated-exon-orthology-pairs)
+      * [Output](#output-2)
+    - [D. Clustering](#d\.-clustering)
+      * [Output](#output-3)
+      * [Exon clusters statistics](#exon-clusters-statistics)
+* [ExOrthist exint_plotter module](#exorthist-exint_plotter-module)
+  + [Overview](#overview-1)
+  + [Running ExOrthist exint_plotter.nf](#running-exorthist-exint_plotter\.nf)  
+  + [Arguments](#arguments-1)
+  + [Output](#output-4)
+  + [Plot structure](#plot-structure)
+* [ExOrthist compare_exons module](#exorthist-compare_exons-module)
+  + [Overview](#overview-2)
+  + [Running ExOrthist CompareExonSets.pl](#running-exorthist-compareexonsets\.pl)
 
 Requirements
 ------------
 
 ExOrthist requires the following software:
- * [Nextflow](https://www.nextflow.io/)
- * A linux container engine (either [Docker](https://www.docker.com/) or [Singularity](https://sylabs.io/guides/3.1/user-guide/cli/singularity_apps.html))
- * R 3.5 or higher, with the [igraph](https://igraph.org/) package installed.
- * Perl 5.10.1 or higher
- * [Mafft](https://mafft.cbrc.jp/alignment/software/) for protein alignment.
- 
- Additionally, [liftOver](https://genome-store.ucsc.edu/), [bedtools](https://bedtools.readthedocs.io/en/latest/) as well as specific pairwise [liftOver files](http://hgdownload.soe.ucsc.edu/downloads.html#liftover) are required to run GetLiftOverFile.pl (see [below](#adding-manually-curated-exon-orthology-pairs)).
 
+* [Nextflow](https://www.nextflow.io/)  
+* A linux container engine (either [Docker](https://www.docker.com/) or [Singularity](https://sylabs.io/guides/3.1/user-guide/cli/singularity_apps.html))  
+
+Additionally, [liftOver](https://genome-store.ucsc.edu/), [bedtools](https://bedtools.readthedocs.io/en/latest/) as well as specific pairwise [liftOver files](http://hgdownload.soe.ucsc.edu/downloads.html#liftover) are required to run GetLiftOverFile.pl [see [below](#addition-of-manually-curated-exon-orthology-pairs)].
 
 Installation
 ------------
 
 Install Nextflow (version 19.10.0):
 
-~~~~
+```bash
 curl -s https://get.nextflow.io | bash
-~~~~
+```
 
-Clone the ExOrthist repository:
-~~~~
+Clone the ExOrthist repository:  
+```bash
 git clone https://github.com/biocorecrg/ExOrthist.git
-~~~~
+```
 
 Install Docker:
 
 * Docker: https://docs.docker.com/install/ (version 10.03 or later is required)
 * Singularity: https://sylabs.io/guides/2.6/user-guide/quick_start.html#quick-installation-steps (version 2.6.1 or 3.2.1 is required)
 
-A Docker image was uploaded to [Docker Hub](https://cloud.docker.com/u/biocorecrg/repository/docker/biocorecrg/exon_intron_pipe). 
+ExOrthist will take care of downloading the required docker image from DockerHub and eventually convert it into a singularity one.  
 
+ExOrthist main module
+------------
 
-Running ExOrthist main module
+Overview
+------------
+ExOrthist infers exon orthology groups within gene orthogroups provided as input (e.g. generated by [Orthofinder](https://github.com/davidemms/OrthoFinder), [Broccoli](https://github.com/rderelle/Broccoli) or similar tools) for all the species for which annotation (gtf) and genomic (fasta) files are provided [[see Arguments](#arguments) for details on the inputs].  
+ExOrthist starts by creating files with annotation information for all the considered species [[see Algorithm, section A](#a\.-input-generation)]. 
+It next works by species pairs (species1-species2) and within gene orthogroups, generating **Intron Position Aware (IPA)** protein alignments for all isoforms in species1 vs all isoforms in species2. Considering species1 as query and species 2 as target (and vice versa), ExOrthist extracts **alignment features** at the protein, exon and intron level [[see Algorithm, section B](#b\.-pairwise-alignments-and-feature-extraction)]. 
+For each query exon, the best exon match in each target isoform is selected based on sequence similarity. All extracted features are translated into partial scores used to infer pairwise exon orthologous relationships. The sum of all partial scores gives a global score ranging from 0 to 1 and representing the overall goodness of a match. ExOrthist uses the global score to select the best exon match in a target gene for each query exon. While the ExOrthist logic requires a query exon to match a unique exon in the target gene, each target-gene exon can potentially be matched by more query exons. This setting captures cases of in-tandem exon duplication while preserving the information about which duplicated exon is more similar to the ancestral one [[see Algorithm, section C](#c\.-scoring-and-best-matches-selection)].  
+Next, ExOrthist infers species **pairwise exon orthologous relationships** for each query exon-target gene best match by sequentially evaluating three features (partial scores): the conservation of the up/downstream intron phases, conservation of the exon sequence, conservation of the up/downstream exons’ sequence. The sequentiality is a key aspect, since exons whose up/downstream intron phases are not conserved will not be considered orthologs, independently from their sequence conservation. As an optional feature, ExOrthist allows different levels of conservation stringency for short, medium and long evolutionary distances [[see Arguments](#arguments)].   
+The selected exon orthologous matches for all species pairs are joined and translated in a directed graph, from which **exon orthologous groups** (clusters) are inferred. ExOrthist computes a Membership Score (MS) for each exon in its relative exon cluster based on graph properties. Importantly, best reciprocal matches (i.e. a query exon is the best match of its own target exon) are taken into account in the MS computation. [[see Algorithm, section D](#d\.-clustering)].  
+At the end of a run, ExOrthist returns two files with complete and filtered exon clusters information, together with relevant intermediate files generated in each step.    
+
+Running ExOrthist main.nf
 ------------
 
 The pipeline can be launched in this way:
 ```bash
-nextflow run main.nf -bg > log.txt
+nextflow run main.nf [-with-docker | -with-singularity] -bg > log.txt
+```
+If the pipeline crashes at any step, it can be re-launched using the -resume option (-not --):
+```bash
+nextflow run main.nf -bg -resume > log.txt
 ```
 
-A config file "params.config" is need, with the following information:
+Arguments
+------------
 
+### params.config file
+
+For the pipeline to run, a params.config file with the following format has to be present in the working directory or specified with the **???** flag:
+A template of the params.config file is provided together with the pipeline.
 ```
 params {
-    cluster      = "$baseDir/test/Ame_Cdi_Dme_s.tab.gz"
-    genomes      = "$baseDir/test/GENOMES/*_gDNA.fasta.gz"
-    annotations  = "$baseDir/test/GTF/*_annot.gtf.gz"
-    clusternum   = 100
+    cluster      = "$baseDir/inputs/hg38_mm10_bosTau9.tab.gz""
+    genomes      = "$baseDir/inputs/GENOMES/*_gDNA.fasta"
+    annotations  = "$baseDir/inputs/GTF/*_annot.gtf"
+    alignmentnum   = 1000
+    evodists     = "$baseDir/inputs/evodists.txt"
+    long_dist    = "1,0.20,0.65,0.15"
+    medium_dist  = "2,0.50,0.75,0.20"
+    short_dist   = "2,0.70,0.85,0.25"
+    output       = "$baseDir/current_output"
     extraexons   = ""
     liftover     = ""
-    orthofolder  = ""
-    vastdb       = ""
-    intcons      = 2
-    idexons      = 0.2
-    maxsize      = 0.65
-    output       = "$baseDir/output_small"
-    email        = "yourmail@yourdomain"
+    orthopairs  = ""
+    prevaln      = ""
+    email        = ""
 }
-
 ```
+Alternatively, the arguments in the params.config can be specified as independent command line flags. The command line-provided values overwrite the ones defined in the params.config file.  
 
-If pipeline the pipeline crashes at any step, it can be re-launched using the `-resume` option (`-` not `--`):
-```bash
-nextflow run main.nf -resume -bg > log.txt
+### Required arguments
+**--genomes:** a folder with genome files (fasta). The prefix (i.e. the species ID) must match the corresponding annotation file. The files can be compressed (.gz). Example:  
 ```
-
-Test data for ExOrthist
-------------
-
-Test data are in the folder **test**. Input files are:
-
-* Genomic sequences in fasta files (can be gzipped). The prefix, i.e. the genome identifier, must match the corresponding annotation file:
-```bash
-     Hsa.fasta.gz
-     Mmu.fasta.gz
-     Bta.fasta.gz
+hg38_gDNA.fasta
+mm10_gDNA.fasta
+bosTau9_gDNA.fasta
 ```
-
-* Annotation files in GTF format (can be gzipped). The prefix must match the corresponding GTF file:
-Example:
-
-```bash
-     Hsa.gtf.gz
-     Mmu.gtf.gz 
-     Bta.gtf.gz
+**--annotations**: a folder with annotation files (gtf). The prefix (i.e. the species ID) must match the corresponding genome file. The files can be compressed (.gz). Example:
 ```
-
-* Gene cluster file with the following format (tsv): ClusterID Species GeneID
-```bash
-GF000001	Hsa	ENSG00000151690
-GF000001	Mmu	ENSMUSG00000041439
-GF000001	Bta	ENSBTAG00000007719
-GF000002	Hsa	ENSG00000091127
-GF000002	Mmu	ENSMUSG00000057541
-GF000002	Bta	ENSBTAG00000007743
-GF000003	Hsa	ENSG00000029534
-GF000003	Mmu	ENSMUSG00000031543
-GF000003	Bta	ENSBTAG00000003275
+hg38_annot.gtf
+mm10_annot.gtf
+bosTau9_annot.gtf
 ```
-
-The Species identifier should match that of the other files. Moreover, the prefix of the file should match the combination of genome identifiers like:
-```bash
-Hsa_Mmu_Bta.tab.gz
+**--cluster**: a tsv file containing gene orthology groups with the following format: ClusterID SpeciesID GeneID. The SpeciesID must match the prefixes of --genomes and --annotations. The file can be compressed (.gz). Example:  
 ```
-
-
-To provide additional non-annotated exons... The following format (tsv): XXXXX.
-
-```bash
-???
+GF000001	hg38    ENSG00000151690
+GF000001	mm10    ENSMUSG00000041439
+GF000001	bosTau9 ENSBTAG00000007719
+GF000002	hg38    ENSG00000091127
+GF000002	mm10    ENSMUSG00000057541
+GF000002	bosTau9	ENSBTAG00000007743
+GF000003	hg38    ENSG00000029534
+GF000003	mm10    ENSMUSG00000031543
+GF000003	bosTau9	ENSBTAG00000003275
 ```
+**--alignmentnum:** number of alignments to submit within each chunk (suggested: 1000) [[see Algorithm, section B](#b\.-pairwise-alignments-and-feature-extraction)].  
+**--evodists:** a tsv file with evolutionary distance ranges (**short**, **medium**, **long**) for all pairs of species. Pairwise species combinations between all species of interest need to be specified. This information is used to adapt the stringency of the pairwise exon orthology call based on the evolutionary distance [[see Algorithm, section C](#c\.-scoring-and-best-matches-selection)]. Example:  
+```
+hg38	mm10    short
+hg38	bosTau9 short
+mm10	bosTau9 short
+```
+**--long_dist**, **--medium_dist**, **--short_dist**: list of stringency parameters for the pairwise orthology call corresponding to each evolutionary range. The list is in the format **“int_num,ex_sim,ex_len,prot_sim”**.  
+**int_num**: number of required surrounding introns with a conserved pahse. Accepted values: 0, 1, 2. When set to 0, the exon orthology call will not take intron conservation into account.  
+**ex_sim:** minimum percentage of sequence similarity between exon pairs. The same cutoff is applied for the conservation of the focus exon and its up/downstream exons.  
+**ex_len:** minimum ratio between lengths of an exon pair (shortest/longest).  
+**prot_sim:** minimum protein similarity required for a query and target protein isoforms to be compared. Example:
+```
+--short_dist "2,0.7,0.6,0.25"
+--medium_dist "2,0.5,0.5,0.25"
+--long_dist "1,0.2,0.4,0.25"
+```
+**--output:** output folder destination.  
 
-
-Adding manually curated exon orthology pairs
-------------
-
-To add pairs of manually curated or liftOver-based pairwise orthology associations...
-
-The file format is as follows (tsv; header is expected):  GeneID_Sp1 Exon_Coord_Sp1 GeneID_Sp2 Exon_Coord_Sp2
-
-```bash
+### Facultative arguments
+**--extraexons:** a folder with tsv files of not-annotated exons. The prefix (i.e. the species ID) must match the annotation, genome and cluster files. Example:  
+```
+hg38_extraexons.tab
+mm10_extraexons.tab
+bosTau_extraexons.tab
+```
+Required format (the header is expected):
+```
+ExonID	GeneID	Exon_coords_A	C1_Ref	C2_Ref
+HsaEX0000026	ENSG00000255857	chr12:120210930-120211106	chr12:120209839-120209934	chr12:120212375-120212919
+HsaEX0000056	ENSG00000258038	chr14:28837253-28837330	chr14:28832006-28832060	chr14:28841804-28842082
+HsaEX0000064	ENSG00000258498	chr14:101558633-101558834	chr14:101559800-101560025	chr14:101557754-101557819
+HsaEX0000091	ENSG00000137871	chr15:56917065-56917212	chr15:56917540-56918571	chr15:56890014-56890167
+```
+**--liftover:** a tsv file with liftover exon pairs to be incorporated in the exon orthology [[see Algorithm, section C](#c\.-scoring-and-best-matches-selection)]. The input for this argument can be generated by running the GetLiftOverFile.pl [see [below](#addition-of-manually-curated-exon-orthology-pairs)].
+Example (the header is expected):  
+```
+GeneID_Sp1 Exon_Coord_Sp1 GeneID_Sp2 Exon_Coord_Sp2
 ENSG00000171055	chr2:36552056-36552268:-	ENSMUSG00000056121	chr17:78377717-78377890:-
 ENSG00000171055	chr2:36578597-36578832:-	ENSMUSG00000056121	chr17:78400630-78400865:-
 ENSG00000171055	chr2:36558438-36558513:-	ENSMUSG00000056121	chr17:78384744-78384819:-
 ```
+**--minmembership:** minimum membership score value used to filter the final exon cluster file [see Algorithm, section D]. Default=X  
+**--orthopairs:** a file with gene orthologous pairs (for all species combinations) between the genes represented in **--cluster**. This file can be easily obtained from Orthofinder output (see [Orthofinder](https://github.com/davidemms/OrthoFinder),Results Files: Orthologues Directory) or it is directly provided as Broccoli output (see [Broccoli](https://github.com/rderelle/Broccoli), step 4). If provided, the gene orthopairs are used to recluster the **--cluster** orthogroups for each pair of species and later derive exon orthologous relationships only between direct orthologs. [[see Algorithm, section D](#d\.-clustering)]. Example:  
+```
+ENSMUSG00000067996  ENSBTAG00000031354
+ENSMUSG00000067998  ENSBTAG00000031354
+ENSMUSG00000094800  ENSBTAG00000020939
+ENSMUSG00000095304  ENSBTAG00000020939
+ENSMUSG00000072674  ENSBTAG00000020939
+ENSG00000189129 ENSBTAG00000020939
+ENSG00000189129 ENSMUSG00000094800
+ENSG00000189129 ENSMUSG00000095304
+ENSG00000189129 ENSMUSG00000072674
+ENSG00000167863 ENSMUSG00000034566
+```
+**--prevaln:** path to the output folder of a previous ExOrthist run. If this argument is provided, the previously generated protein alignments are integrated in the current run. Only the alignments between newly introduced protein pairs (for previously run species) or extra species pairs will be generated de-novo [[see Algorithm, section B](#b\.-pairwise-alignments-and-feature-extraction)].   
+**--email:** email address for notifications (yourmail@yourdomain)  
 
-ExOrthist includes a custom [script](https://github.com/biocorecrg/ExOrthist/blob/master/bin/GetLiftOverFile.pl) to create lists of exon files using liftOver.
+Algorithm
+------------
+Conceptually, ExOrthist works in four steps.  
 
+### A. Input generation   
+ExOrthist first generates files with annotation information for each considered species, which will be the input of all species pairwise comparisons. 
+
+##### Output  
+ExOrthist creates a folder in the output directory for each species, containing the following files:  
+
+* **\${species}\_ref_proteins.txt**: geneID and proteinID of reference proteins.  
+* **\${species}.exint**: fasta files by protein isoform. The header reports the aminoacidic positions corresponding to exon boundaries (i.e. intron positions).  
+* **\${species}\_protein_ids_exons_pos.txt**: exon genomic and aminoacidic coordinates by protein isoform.  
+* **\${species}\_protein_ids_intron_pos.txt**: intron genomic coordinates by protein isoform.  
+* **\${species}\_protein_ids_intron_pos_CDS.txt**: In-CDS* intron genomic coordinates by protein isoform.  
+* **\${species}\_overlap_CDS_exons.txt**: overlapping groups of CDS exons by gene.  
+* **\${species}\_overlap_CDS_introns.txt**: overlapping groups of In-CDS introns by gene (NB: In-CDS = Introns within coding sequence).  
+* **\${species}\_multex_introns.tab**: number of transcripts in which each exon is included.  
+* **\${species}\_annot\_exons_prot_ids.txt**: proteinID and geneID of all genes with annotated exons.  
+* **\${species}\_annot_fake.gtf.gz**: merge of the original gtf (annotated exons) and a facultative “fake” GTF where entries for provided not-annotated exons are added (see below).  
+
+ExOrthist is also able to consider not-annotated exons in the orthology inference, which can be added via the **--extraexons** argument [[see Arguments](#arguments)]. If not-annotated exons are added, ExOrthist also generates the following files:
+
+* **FakeTranscripts-${species}-vB.gtf**: gtf file where a fake transcript for each of the not-annotated exons is introduced. ExOrthist first maps the upstream and downstream exons (provided in input) to the annotated transcripts. When both exons exactly match the same transcript, this becomes the template of the fake transcript to which the not-annotated exon is added; otherwise, ExOrthist uses partial matches of the upstream or downstream exon to identify the template transcript.
+* **LOG_FakeTranscripts-${species}-vB.tab**: it contains info of the mapping of not-annotated exons to the relative fake transcript.  
+
+Finally, the **--cluster** gene cluster file [[see Arguments](#arguments)] is copied and gzipped in the output directory as **gene_cluster_file.gz**. This copy is necessary to run the exint_plotter module without external dependencies.  
+
+### B. Pairwise alignments and feature extraction  
+For each species pair and gene orthogroup, ExOrthist executes the following steps.  
+It first generates Intron Position Aware (IPA) pairwise alignments between all protein isoforms of species1 and species2. These alignments are divided into chunks of chuncks of **--alignmentnum** [[see Arguments](#arguments)], which will be processed in parallel. Considering species1 as query and species2 as target (and vice versa), ExOrthist parses the IPA alignments to derive: 
+
+* **Protein alignment features**: percentage of identity, species-wise similarity and gaps between the two proteins. These values are used to assign a global score to the protein alignment. Alignments are not considered for further processing if their sequence similarity does not reach **prot_sim**. The prot_sim value can be customized within different evolutionary ranges through the --long_dist, -medium_dist and --short_dist arguments [[see Arguments](#arguments)].  
+* **Exon alignment features**: for each query exon, it selects all exon matches in all target isoforms. Among other data, ExOrthist reports the species-wise sequence similarity for all the matched pairs. This information will be later used to assign a score to each pair and to evaluate pairwise exon orthology relationships [[see Algorithm, section C](#c\.-scoring-and-best-matches-selection)]. In case of query exons matching multiple target exons in the same isoform, each exon pair is specifically realigned and the best match is selected based on sequence similarity.  
+* **Intron alignment features**: ExOrthist tries to match each query intron with a target intron in the IPA alignment. Depending on the protein alignment features, the width of the searching window around the query intron changes:  
+
+  + if % similarity <= 30 or % gaps >= 30: width = 10  
+  + if % similarity >= 30 and % similarity < 50: width = 8  
+  + if % similarity >= 50 and % similarity < 70: width = 6  
+  + if % similarity >= 70 and % similarity < 80: width = 4  
+  + if % similarity >= 80 and % similarity < 90: width = 2   
+
+  If a target intron is not found within the searching window, conservation of the query intron is set to zero; If a match is found and the phases of the two introns are equal, intron conservation is rated 10; if the phases of the two introns are different, intron conservation is rated -10. In case the two phases are not perfectly aligned, the number of positions by which they are separated in the alignment is subtracted to the intron conservation (i.e. the maximum intron conservation is equal to 10). The intron conservation is later translated to a score used to evaluate pairwise exon orthology relationships [[see Algorithm, section C](#c\.-scoring-and-best-matches-selection)].  
+
+ExOrthist performs the alignments and the realignments in a parallelized way, to later join all the best isoform-wise matches for a given species pair. If the output of a previous ExOrthist run is provided with the **--prevaln** flag, the alignment and realignment steps are skipped for all the query and target isoforms which have already been aligned [[see Arguments](#arguments)].  
+
+##### Output  
+ExOrthist creates a folder in the output directory for each species pairs, containing the following files:  
+[NB: in all cases, both species1 and species2 are considered as query and target in turn.] 
+
+* **EXINT_aln.gz**: all query isoforms vs target isoforms alignments.  
+* **all_PROT_aln_features.txt**: information regarding the protein alignments of all query isoforms vs all target isoforms.   
+* **all_EX_aln_features.txt**: information regarding the best match of all query exon in each target isoform.    
+* **all_INT_aln_features.txt**: information regarding intron conservation for all query intron in each target isoform.    
+* **all_PROT_EX_INT_aln_features_\${species_pair}.txt**: integration of the previous information. Each line corresponds to a query exon-target isoform match from the all_EX_aln_features.txt file, integrated with information regarding the conservation of the up/downstream introns and up/downstream exons.  
+
+### C. Scoring and best matches selection
+ExOrthist keeps executing the processes separately for each species pair. In here, it selects the best match for each query species exon among the isoforms of a given target species gene. The selection is based on 5 partial scores derived from the protein, exon and intron alignment features relative to each exon pair [[see Algorithm, section B](#b\.-pairwise-alignments-and-feature-extraction)]:  
+
+1. Conservation of **upstream intron** phase: ranging [-0.25, 0.25]. Positive values indicate phase conservation.  
+2. Conservation of **downstream intron** phase: ranging [-0.25, 0.25]. Positive values indicate phase conservation.  
+3. Conservation of the **exon sequence**: ranging [0, 0.2]. 0.2 indicates 100% sequence similarity.  
+4. Conservation of the **upstream exon** sequence: ranging from [0, 0.15]. 0.15 indicates 100% sequence similarity.  
+5. Conservation of the **downstream exon** sequence: ranging from [0, 0.15] 0.15 indicates 100% sequence similarity.  
+
+These partial scores are then summed up to generate a **global score** ranging [0,1].  
+For each species pair, different filtering criteria will be applied based on the evolutionary distance specified in the **--evodists** file argument and the relative parameters (int_num, exsim, exlen) defined in the **--long_dist**, **--medium_dist** and **--short_dist** arguments [[see Arguments](#arguments)].  
+The up/downstream intron conservation, the exon sequence conservation and the up/downstream exons conservation are sequentially evaluated in the filtering.  
+
+* Scores **(1)** and/or **(2)** are required to be positive in all the gene-wise best matches (i.e. the intron phases need to be conserved, even if not necessarily in the same position). The number of introns whose phase conservation is required is defined by **int\_num** for each evolutionary range. If the intron phase(s) are conserved, sequence conservation is evaluated. 
+* **(3)** is required to be >= ($ex\_sim*0.2)/100$).
+* **(4)** and **(5)** are required to be >= ($ex\_sim*0.15/100$).
+* Extra filter: the length ratio between two matched exons ($lenght\_shortest/length\_longest$) should not exceed **ex\_len**.  
+
+In the end, among these pre-filtered matches, the match with the highest global score is selected for each query exon and target gene. While the ExOrthist logic requires a query exon to match a unique target exon, each target exon can potentially be matched by more query exons. Overlapping query exons (i.e. alternative forms of the same exon) might be present in the pool of filtered matches. In order to univocally derived orthologous relationships for each exon, ExOrthist selects the form with the highest number of matches (among all target genes) as representative of its overlap group.   
+
+##### Addition of manually curated exon orthology pairs   
+ExOrthist also allows the introduction of exon pairs from liftover to be considered in the exon orthology inference. Such exons can be specified with the **--liftover** flag [[see Arguments](#arguments)].  
+The input file for the liftover argument can be generated by the GetLiftOverFile.pl script. This scripts needs annotation files (gtf) of the two considered species and a chain file [[see Requirements](#requirements)]. More information about the usage is provided in the script's help.  
+
+##### Output  
+ In each species pair folder previously generated [[see Algorithm, section B](#b\.-pairwise-alignments-and-feature-extraction)], ExOrthist saves the following files:
+ 
+* **all_scored_EX_matches.txt**: it contains all the exon matches previously identified, where the information regarding exon sequence similarity, intron conservation and sequence similarity of the up/downstream exons have been converted in the relative scoring system.  
+* **best_scored_EX_matches_by_targetgene.txt**: it contains the best match of each query exon between all the isoforms of a target gene, selected based on the highest global score.  
+
+In the output folder, ExOrhist saves the following file:
+
+* **filtered\_best\_scored\_EX\_matches\_by\_targetgene.tab**: it contains the best gene-wise exon matches for ALL species pairs which respect the filtering criteria. The exons involved in these matches are considered orthologous. 
+
+### D. Clustering  
+After deriving exon orthologous relationships between each pair of species, ExOrthist works on the combined information for the inference of exon orthology groups.  
+For each gene cluster, ExOrthist builds a directed graph (through the R package **igraph**) with exons as nodes and their pairwise orthologous relationships represented as edges. Separated exon clusters from all species are then derived from the general graph. ExOrhthis also computes a Membership Score (MS) for each exon, reflecting its degree of similarity to all the other exons in its belonging cluster. The MS is defined as:  
+
+$$ MS = (IN\_degree + OUT\_degree + N\_reciprocals) / (2*(TOT\_exons\_in\_cluster - SPECIES\_exons\_in\_cluster) + \\                                                                                                                                       (TOT\_genes\_in\_cluster - SPECIES\_genes\_in\_excluster)) $$    
+
+with:
+
+* **IN\_degree**: number of exon matches from the other exons in the cluster (i.e. the considered exon is target).  
+* **OUT\_degree**: number of exon matches to the other exons in the cluster (i.e. the considered exon is query).   
+* **N\_reciprocal**: number of reciprocal matches (i.e. query exon is a match of target exon and vice versa).  
+* **TOT\_exons\_in\_cluster**: number of exons in the cluster.  
+* **SPECIES\_exons\_in\_cluster**: number of exons from the same species present in the exon cluster.  
+* **TOT\_genes\_in\_cluster**: total number of genes in the original gene cluster.  
+* **SPECIES\_genes\_in\_excluster**: number of genes from the same species which contribute exons to the exon cluster.  
+
+##### Output 
+ExOrthist saves two files in the output folder:  
+
+* **Exon\_Clusters\_Info.tab.gz**: exon clusters with all the graph information used to compute the MS.  
+* **Exon\_Clusters.tab**: exon clusters filtered by a minimum MS. The default value of X can be modified through the **--minmembership** argument [[see Arguments](#arguments)].  <span style="color:red"> This still needs to be implemented. </span>
+
+ExOrthist provides the possibility to subset the exon orthology files based on reclustering information. This step is performed when a file with orthologous pairs from all species pairwise combinations is provided with the **--orthopairs argument** [[see Arguments](#arguments)]. In that case, an extra *reclustering* folder is saved to the output folder directory, with the following files:  
+
+* **reclustered_genes_${species_pair}.tab**: orthogroups reclustered according to species pairwise orthologs.  
+* **reclustered_exons_${species_pair}.tab**: exon orthologous relationships within the reclustered orthogroups for each species pair.  
+
+##### Exon clusters statistics 
+ExOrthists allows to calculate basics statistics on the generated exon clusters with the GetStatsExonsClusters.pl perl script. Example:  
+```
+Species	Annotated CDS exons	Exons in Genes in clusters	Exons in exon clusters	%covered
+bosTau9	198432	186534	156373	83.83%
+hg38	208106	192725	160409	83.23%
+mm10	205956	188058	153849	81.81%
+
+Total exon clusters	164582
+Clusters 111	132752	80.66%
+Clusters 222	218	0.13%
+Clusters >=3 exons/species	469	0.28%
+Clusters >=4 exons/species	193	0.12%
+Incomplete clusters	29455	17.90%
+  - bosTau9	10151	34.46%
+  - hg38	6406	21.75%
+  - mm10	13004	44.15%
+```
+Further information about the usage is provided in the script's help.
+
+ExOrthist exint_plotter module
+------------
+
+Overview
+------------
+The exint plotter module allows to visualize conservation/changes in the exon-intron structure between a provided query gene and its homologs (in other species) starting from the output of ExOrthist main module. Exint_plotter.nf is composed by (1) a few processes calling python scripts which build the necessary input files and (2) a process calling an R script generating the plot.
+
+Running ExOrthist exint_plotter.nf
+------------
 ```bash
-perl GetLiftOverFile.pl -annot_sp1 test/Hsa.exons -annot_sp2 test/Mmu.exons -gene_clusters XXXX -chain_file hg38ToMm10.over.chain
+nextflow exint_plotter.nf [-with-docker | -with-singularity] -bg > exint_plotter_log.txt
 ```
 
-Basic cluster stats are provided with Get_stats_exon_cls.pl => DEVELOP FURTHER AND RUN AUTOMATICALLY AT THE END
-
-
-Basic cluster statistics
+Arguments: 
 ------------
+### params.config file
+For the pipeline to run, a params.config file with the following format has to be present in the working directory or specified with the **???** flag:
+A template of the params.config file is provided together with the pipeline.
+```
+params {
+    geneID          = "geneID"
+    output_main     = "/path/to/main_output"
+    output          = "$baseDir/output_exint"
+    relevant_exs    = ""
+    sub_orthologs   = ""
+    isoformID       = ""
+}
+```
+Alternatively, the arguments in the params.config can be specified as independent command line flags. The command line-provided values overwrite the ones defined in the params.config file.  
 
-XXXXXX
+### Required arguments
+**--geneID**: query gene ID (it has to match the geneID used for the exon orthology inference in **--output_main**). Example:  
+```
+--geneID "ENSG00000139793"
+```
+**--output_main**: output directory of an ExOrthist main.nf run.  
+**--output**: output folder destination. A subfolder with the geneID will be generated, where intermediate and final files will be saved. [[See Output](#output-4)]
 
+### Facultative arguments
+**--ordered_species**: a comma separated list of speciesID, specifying the vertical order (top-bottom) of the species in the plot. The query gene is always printed on top. If not provided, the order of the species will be derived from the gene cluster file in the --output_main directory (gene_cluster_file.gz). Example:  
+```
+--ordered_species "hg38,mm10,bosTau9"
+```
+**--sub_orthologs**: subsetted of the gene_cluster_file.gz in --output_main, with a selection of homologs to be plotted.  
+**--relevant_exs**: coordinates (chr:start-stop) comma separated list of query gene exons, which will be highlilghted in the plot with different colors. All orthologous exons in the target genes will be highlighted with the same color. This feature is useful to quickly visualize the conservation of one/few exons of interest. Example:  
+```
+--relevant_exs "chr13:97365136−97365171,chr13:97366459-97366553"
+``` 
+**--isoformID**: isoform ID of an isoform of query gene. It has to match the isoform ID in the gtf provided as input of the main.nf run. The exon included in the specified isoform will be highlighted with a red border. Example:  
+```
+--isoformID "ENST00000345429"
+```
 
-
-Pairwise species re-clustering
+Output 
 ------------
+ExOrthist creates a directory with the geneID within the designated output folder, which will contain 3 subfolders (inputs, intermediate_files, processed_tables). While inputs and intermediate_files folder contain links to temporary files in the work/ directory, the files in processed_tables are necessary for the plot. The exint plot is saved in the **exint_plot.pdf**. If the **--isoformID** argument is provided, this is introduced in the file name (e.g. exint_plot_ENST00000345429.pdf).
 
+Plot structure 
+------------
+Homologous genes are plotted on parallel horizontal axis. Exons are illustrated as gray rectangles. The query gene is plotted on top of the others, with all its exons represented with the sequential genomic order and relative exon length. Exons in the target genes are vertically aligned to their orthologous exon in the query species (thus, their order in the plot might not always reflect their genomic disposition).  
+
+<br />
+
+<img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/exint_plotter_example.png" />
+
+
+### Features representation
+
+* **Not-annotated** exons (given as facultative input to main.nf, **--extraexons** argument, [[see Arguments](#arguments)]) are represented as white boxes.  
+* When **more target exons** are orthologs of the same query exon, they are represented by a single rectangle. The total number of target exons is reported in the rectangle.  
+* When target exons are **not orthologs** of any query exons, they are represented as smaller rectangles in the relative genomic position (i.e. directly downstream of the closest exon with an ortholog in the query gene).  
+* A dashed border surrounds target exons not detected as orthologs of any query exons but still presenting an **exon match** within the query gene. This allows to highlight exons which did not respect the conservation filters applied in the main.nf run, but present a certain degree of similarity with at least one query gene.  
+* **First** and **last** exons in any isoform are represented by symmetric triangles.  
+* Exons in the query gene taken from the **--relevant_exs** argument [[see Arguments](#arguments)]) (and their orthologs) are highlighted with different colors.  
+* **Phases** of the upstream and downstream introns are represented with asterisks of different colors.  
+
+
+ExOrthist compare_exons module
+------------
 XXXX
 
-
-Evolutionary comparison of exon lists
+Overview
 ------------
+XXXX
 
-XXXXXX
-
-
-Exon-intron gene plots
+Running ExOrthist CompareExonSets.pl
 ------------
-
-XXXXXX
-
+XXXX

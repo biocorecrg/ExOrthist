@@ -2,5 +2,8 @@ oldbin
 log
 singularity
 work
-output
+trace*
+*report*
+logs/*
+*output*
 .nextflow*
