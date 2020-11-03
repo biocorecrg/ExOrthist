@@ -1,22 +1,27 @@
+<!--
 ---
 title: ExOrthist pipeline
 output:
   html_document: default
   pdf_document: default
 ---
+-->
 <!--
 <img align="middle" href="https://github.com/biocorecrg/exon_intron_orthology_pipeline" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/logo_s.png?raw=true" />
 -->
 <!--
 <img style="float:left; padding-right:20px" src="/Users/federica/Documents/CRG_PhD/weekly_meetings/20_10_15/exorthist_new.png" width=300 height=350 />
 -->
-
+<!--
 <style>
 figcaption {
   text-align: left;
   font-size: 0.7em;
 }
 </style>
+-->
+
+# ExOrthist pipeline
 
 <figure>
   <img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/exorthist_new_logo.png" width=270 height=400 />
