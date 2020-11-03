@@ -194,18 +194,20 @@ process overlapping_exons_info {
 	"""
 }
 
+clusterfile = file(params.exonclusters)
 process overlapping_exons_selection {
 	tag {"${species}"}
 	publishDir "${params.output}/${params.geneID}/intermediate_files", mode: 'symlink'
 
 	input:
+	file(clusterfile)
 	set species, file(processed_overlap) from processed_overlap_info
 	output:
 	set species, file("*_exons_overlap_selected.tab") into (selected_exons_4_strand, selected_exons_4_isoforms, selected_exons_4_strand1, selected_exons_4_strand2)
 
 	script:
 	"""
-	python ${baseDir}/bin/select_overlapping_exons.py -i ${processed_overlap} -out ${species}_exons_overlap_selected.tab
+	python ${baseDir}/bin/select_overlapping_exons.py -i ${processed_overlap} -c ${clusterfile} -out ${species}_exons_overlap_selected.tab
 	"""
 }
 
@@ -548,8 +550,8 @@ process plot_exint {
 	val(my_geneID)
 	val(my_query_species) from query_species2 
 	val(ordered_target)
-	file(gene_clusters)
 	val(relevant_exons)
+	file(gene_clusters)
 	val(isoform_interesting_exs)
 	file("*") from plot_input
 	output:
@@ -559,22 +561,3 @@ process plot_exint {
 	Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} ${isoform_interesting_exs} ${relevant_exons} 
 	"""
 }
-//} else {
-//	process plot_exint {
-//		tag{"${my_geneID}"}
-//		publishDir "${params.output}/${params.geneID}", mode: 'copy'
-//		input:
-//		val(my_geneID)
-//		val(my_query_species) from query_species2
-//		file(gene_clusters) 
-//		val(ordered_target)
-//		val(isoform_interesting_exs)
-//		file("*") from plot_input
-//		output:
-//		"${baseDir}/exint_plots"
-//		script:
-//		"""
-//		Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} ${isoform_interesting_exs}
-//		"""
-//	}
-//}

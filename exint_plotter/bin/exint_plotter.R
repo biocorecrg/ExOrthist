@@ -360,7 +360,7 @@ my_plot = ggplot()  +
                                                label=paste0(unique_table_for_names$Species, " ",
                                                             unique_table_for_names$GeneName, ", ",
                                                             sub(".*;", "", unique(unique_table_for_names$ExonNumberPlot)), " ex.\n",
-                                                            unique_table_for_names$GeneID)), size=7) +
+                                                            unique_table_for_names$GeneID)), size=6.5) +
   geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.25, label=plotting_table$Levels), size=7) + #plot number of matching exons
   geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.75, label=plotting_table$ExonLength+1), size=7) + #plot the exon length
   

@@ -1,0 +1,8 @@
+params {
+    geneID          = "geneID"
+    output_main     = "/path/to/main_output"
+    output          = "$baseDir/output_exint"
+    relevant_exs    = ""
+    sub_orthologs   = ""
+    isoformID       = ""
+}
