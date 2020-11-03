@@ -7,7 +7,7 @@ params {
     liftover     = ""
     orthopairs   = ""
     evodists     = "$baseDir/test/evodists.txt" 
-    long_dist    = "1,0.20,0.45,0.15"
+    long_dist    = "2,0.20,0.45,0.15"
     medium_dist  = "2,0.50,0.55,0.20"
     short_dist   = "2,0.70,0.65,0.25"
     prevaln      = ""
