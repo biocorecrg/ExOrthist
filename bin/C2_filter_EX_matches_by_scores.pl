@@ -106,6 +106,7 @@ while (<INONE>){
 	    if ($rs==1){
 		# tests sequence conservation of the three exons
 		if ($line[9]>=$C && $line[13]>=$C && $line[11]>=$A){
+#		if ($line[11]>=$A && (($line[9]>=$C && $line[13]>=$C && $int == 2) || (($line[9]>=$C || $line[13]>=$C) && $int == 1) || ($int == 0))){ # testing...
 		    # filtering by sizes of the two exons that are being scored
 		    if ($sex1 >= $lim && $sex2 >= $lim){ 
 			$hits{$id1."\t".$id2}=1;

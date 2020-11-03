@@ -553,7 +553,9 @@ if (defined $f_exon_list_sp2){
 #			print "SP1\t$t_co1\t$gene_strand{$sp1}{$t_g1}\t$match1\t$anchor_ups\t$anchor_downs\t$cons_conv_call\t$array_sp1\n";
 #			print "SP2\t$t_co2\t$gene_strand{$sp2}{$t_g2}\t$match2\t$anchor_conversion{$anchor_ups}\t$anchor_conversion{$anchor_downs}\t$cons_conv_call\t$array_sp2\n";
 		    }
-		    print OUT_GENES "$gene_cluster\t$t_g1\t$t_co1\t$le_ex1\t$t_exon_cl1\t$t_g2\t$t_co2\t$le_ex2\t$t_exon_cl2\t$cons_conv_call\t$sp1\t$sp2\n";
+		    if (defined $outFile && defined $f_exon_list_sp2){
+			print OUT_GENES "$gene_cluster\t$t_g1\t$t_co1\t$le_ex1\t$t_exon_cl1\t$t_g2\t$t_co2\t$le_ex2\t$t_exon_cl2\t$cons_conv_call\t$sp1\t$sp2\n";
+		    }
 		    $cons_conv_call=~s/\_[A-Z]$//;
 		    $tally_sp1_exons_in_Rcons_genes_by_type{$cons_conv_call}++;
 		}
@@ -645,6 +647,8 @@ if (defined $f_exon_list_sp2){
     # perc of Rcons exons out of the total Gcons exons
     my $perc_sp1_exons_Rcons_exons_Gcons = sprintf ("%.2f", 100*$tally_sp1_exons_Rcons/$tally_sp1_exons_Gcons) if $tally_sp1_exons_Gcons>0;
     my $perc_sp2_exons_Rcons_exons_Gcons = sprintf ("%.2f", 100*$tally_sp2_exons_Rcons/$tally_sp2_exons_Gcons) if $tally_sp2_exons_Gcons>0;
+    $perc_sp1_exons_Rcons_exons_Gcons = sprintf ("%.2f", 0) if !$perc_sp1_exons_Rcons_exons_Gcons;
+    $perc_sp2_exons_Rcons_exons_Gcons = sprintf ("%.2f", 0) if !$perc_sp2_exons_Rcons_exons_Gcons;
 
     print "
 - Gene-level stats:
