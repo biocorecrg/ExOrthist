@@ -449,12 +449,12 @@ Homologous genes are plotted on parallel horizontal axis. Exons are illustrated 
 
 ExOrthist compare_exons module
 ------------
-XXXX
+In preparation
 
 Overview
 ------------
-XXXX
+In preparation
 
 Running ExOrthist CompareExonSets.pl
 ------------
-XXXX
+In preparation
