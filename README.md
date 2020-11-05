@@ -46,7 +46,7 @@ Table of contents
   + [Running ExOrthist main.nf](#running-exorthist-main\.nf)
   + [Arguments](#arguments)
   + [Algorithm](#algorithm)  
-    - [A. Input generation](#a\.-input-generation)  
+    - [A. Input generation](#a.-input-generation)  
       * [Output](#output)
     - [B. Pairwise alignments and feature extraction](#b\.-pairwise-alignments-and-feature-extraction) 
       * [Output](#output-1)
