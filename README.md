@@ -216,7 +216,7 @@ ENSG00000171055	chr2:36552056-36552268:-	ENSMUSG00000056121	chr17:78377717-78377
 ENSG00000171055	chr2:36578597-36578832:-	ENSMUSG00000056121	chr17:78400630-78400865:-
 ENSG00000171055	chr2:36558438-36558513:-	ENSMUSG00000056121	chr17:78384744-78384819:-
 ```
-**--minmembership:** minimum membership score value used to filter the final exon cluster file [see Algorithm, section D]. Default=X  
+<!-- **--minmembership:** minimum membership score value used to filter the final exon cluster file [see Algorithm, section D]. Default=X -->
 **--orthopairs:** a file with gene orthologous pairs (for all species combinations) between the genes represented in **--cluster**. This file can be easily obtained from Orthofinder output (see [Orthofinder](https://github.com/davidemms/OrthoFinder),Results Files: Orthologues Directory) or it is directly provided as Broccoli output (see [Broccoli](https://github.com/rderelle/Broccoli), step 4). If provided, the gene orthopairs are used to recluster the **--cluster** orthogroups for each pair of species and later derive exon orthologous relationships only between direct orthologs. [[see Algorithm, section D](#d-clustering)]. Example:  
 ```
 ENSMUSG00000067996  ENSBTAG00000031354
@@ -343,7 +343,9 @@ with:
 ExOrthist saves two files in the output folder:  
 
 * **Exon\_Clusters\_Info.tab.gz**: exon clusters with all the graph information used to compute the MS.  
-* **Exon\_Clusters.tab**: exon clusters filtered by a minimum MS. The default value of X can be modified through the **--minmembership** argument [[see Arguments](#arguments)].  <span style="color:red"> This still needs to be implemented. </span>
+* **Exon\_Clusters.tab**: exon clusters reporting only the most essential information.       
+
+<!-- The default value of X can be modified through the **--minmembership** argument [[see Arguments](#arguments)].  <span style="color:red"> This still needs to be implemented. </span> -->
 
 ExOrthist provides the possibility to subset the exon orthology files based on reclustering information. This step is performed when a file with orthologous pairs from all species pairwise combinations is provided with the **--orthopairs argument** [[see Arguments](#arguments)]. In that case, an extra *reclustering* folder is saved to the output folder directory, with the following files:  
 
@@ -386,7 +388,7 @@ nextflow exint_plotter.nf [-with-docker | -with-singularity] -bg > exint_plotter
 Arguments: 
 ------------
 ### params.config file
-For the pipeline to run, a params.config file with the following format has to be present in the working directory or specified with the **???** flag:
+For the pipeline to run, a params.config file with the following format has to be present in the working directory.  
 A template of the params.config file is provided together with the pipeline.
 ```
 params {
