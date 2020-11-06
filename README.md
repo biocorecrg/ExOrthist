@@ -43,7 +43,8 @@ Table of contents
 * [Installation](#installation)  
 * [ExOrthist main module](#exorthist-main-module)  
   + [Overview](#overview)
-  + [Running ExOrthist main.nf](#running-exorthist-main\.nf)
+  + [Running ExOrthist main.nf](#running-exorthist-mainnf)
+    - [Test run](#test-run)
   + [Arguments](#arguments)
   + [Algorithm](#algorithm)  
     - [A. Input generation](#a-input-generation)  
@@ -58,13 +59,13 @@ Table of contents
       * [Exon clusters statistics](#exon-clusters-statistics)
 * [ExOrthist exint_plotter module](#exorthist-exint_plotter-module)
   + [Overview](#overview-1)
-  + [Running ExOrthist exint_plotter.nf](#running-exorthist-exint_plotter\.nf)  
+  + [Running ExOrthist exint_plotter.nf](#running-exorthist-exint_plotternf)  
   + [Arguments](#arguments-1)
   + [Output](#output-4)
   + [Plot structure](#plot-structure)
 * [ExOrthist compare_exons module](#exorthist-compare_exons-module)
   + [Overview](#overview-2)
-  + [Running ExOrthist CompareExonSets.pl](#running-exorthist-compareexonsets\.pl)
+  + [Running ExOrthist CompareExonSets.pl](#running-exorthist-compareexonsetspl)
 
 Requirements
 ------------
@@ -122,12 +123,22 @@ If the pipeline crashes at any step, it can be re-launched using the -resume opt
 nextflow run main.nf -bg -resume > log.txt
 ```
 
+### Test run   
+The ExOrthist repository includes a folder named **test** containing all the input files necessary for a test run. The relative configuration files (nextflow.config and params.config) are also provided, and can be used as templates for customized runs.  
+The test run will extract the exon orthology for 50 gene orthogroups shared between Dme (Drosophila *melanogaster*), Ame (Apis *mellifera*) and Cdi (Cloeon *dipterum*) selected from an [Orthofinder](https://github.com/davidemms/OrthoFinder) run.  
+In order to familiarize with ExOrthist output, simply run the following code from the ExOrthist-master directory:  
+```bash
+nextflow run main.nf [-with-docker | -with-singularity] > test_log.txt  
+```
+ExOrthist will save all outputs in the **output_test** directory. All arguments and outputs are explained in details in the following sections.  
+
+
 Arguments
 ------------
 
 ### params.config file
 
-For the pipeline to run, a params.config file with the following format has to be present in the working directory or specified with the **???** flag:
+For the pipeline to run, a params.config file with the following format has to be present in the working directory.  
 A template of the params.config file is provided together with the pipeline.
 ```
 params {
@@ -136,7 +147,7 @@ params {
     annotations  = "$baseDir/inputs/GTF/*_annot.gtf"
     alignmentnum   = 1000
     evodists     = "$baseDir/inputs/evodists.txt"
-    long_dist    = "1,0.20,0.65,0.15"
+    long_dist    = "2,0.20,0.65,0.15"
     medium_dist  = "2,0.50,0.75,0.20"
     short_dist   = "2,0.70,0.85,0.25"
     output       = "$baseDir/current_output"

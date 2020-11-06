@@ -1,5 +1,5 @@
 params {
-    cluster      = "$baseDir/test/Ame_Cdi_Dme.tab.gz"
+    cluster      = "$baseDir/test/Ame_Cdi_Dme.tab"
     genomes      = "$baseDir/test/GENOMES/*_gDNA.fasta.gz"
     annotations  = "$baseDir/test/GTF/*_annot.gtf.gz"
     alignmentnum = 1000
