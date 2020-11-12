@@ -752,7 +752,8 @@ sub score_introns {
 		}
 	    }
 	    else { 
-		##First check alignment quality
+		### First check alignment quality
+		# region being scanned for sequence similarity, to decide the actual window to consider introns from
 		$pa1=$n-12; if ($pa1<0){ $pa1=0; }
 		$pa2=$n+12; if ($pa2>scalar(@seq1)){ $pa2=scalar(@seq1)-1; }
 		$np=0;
@@ -771,17 +772,18 @@ sub score_introns {
 			$ngp++;	
 			$np++;			
 		    }
-		    
 		}		
 		if ($np>0){
 		    $tsimfr=($simfr/$np)*100;
-		    if ($tsimfr<30 || $ngp>=($np*0.3)){ $win=10;  }
+		    if ($tsimfr<30 || $ngp>=($np*0.3)){ $win=10;  } # sim lower than 30% or N of gaps >= 30% of N of positions
 		    elsif ($tsimfr>=30 && $tsimfr<50){ $win=8;  }
 		    elsif ($tsimfr>=50 && $tsimfr<70){ $win=6;  }
 		    elsif ($tsimfr>=70 && $tsimfr<80){ $win=4;  }
 		    elsif ($tsimfr>=80 && $tsimfr<90){ $win=3;  }
 		    elsif ($tsimfr>=90){ $win=2; }
 		}
+		# Add a modifier to window when there are gaps to avoid artifacts from alignments.
+		$win = $win + int($ngp/2);
 		##ALN quality
 		$j=-$win; ##changing to a window of sliding depending of alignment quality
 		$r=$i2;
@@ -942,6 +944,8 @@ sub score_introns {
 		    elsif ($tsimfr>=80 && $tsimfr<90){ $win=3;  }
 		    elsif ($tsimfr>=90){ $win=2; }
 		}
+		# Add a modifier to window when there are gaps to avoid artifacts from alignments.
+		$win = $win + int($ngp/2);
 		##ALN quality
 		$j=-$win; ##changing deviation accordint to alignment quality
 		my $r=$i2; $apos=0;
