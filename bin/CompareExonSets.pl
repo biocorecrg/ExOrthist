@@ -225,7 +225,7 @@ close ECL;
 
 ### Loads pairwise information
 my %best_exon_hits; # from Sp1  => Sp2 and Sp2 => Sp1
-if (defined $exon_list_sp2){
+if (defined $f_exon_list_sp2){
     die "[Abort] It needs to provide the folder with the pairwise comparisons for $sp1 and $sp2\n" unless ($pairwise_folder);
     my $best_hits_per_gene = "$pairwise_folder/best_scored_EX_matches_by_targetgene.txt";
     open (PAIRWISE, $best_hits_per_gene) || die "It cannot open the pairwise best hits (best_scored_EX_matches_by_targetgene.txt)\n";
