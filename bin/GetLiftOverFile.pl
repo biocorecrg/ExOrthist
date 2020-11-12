@@ -140,6 +140,7 @@ if (defined $canonical_ss){
     close SEQ;
     
     # Gets the dinucleotide sequences and does the filtering
+    my %done_chr;
     open (TEMP_LIFT, $temp_lifted_exons) || die "It cannot open the lifted exons ($temp_lifted_exons)\n";
     open (O_FILTERED, ">$temp_lifted_exons_dinuc") || die "It cannot open the output filtered file ($temp_lifted_exons_dinuc)\n";
     while (<TEMP_LIFT>){
@@ -151,19 +152,27 @@ if (defined $canonical_ss){
 	my $strand = $t[5];
 	my $ID = $t[3];
 	
-	my $left_seq = substr($SEQ{$chr},$start-2,2);
-	my $right_seq = substr($SEQ{$chr},$end,2);
-	if ($strand eq "-"){
-	    $left_seq = join ("", reverse split (//, $left_seq));
-	    $left_seq =~ tr/ACGTacgt/TGCATGCA/;
-	    $right_seq = join ("", reverse split (//, $right_seq));
-	    $right_seq =~ tr/ACGTacgt/TGCATGCA/;
+	my ($left_seq,$right_seq);
+	if ($SEQ{$chr}){ # weird chromosomes
+	    $left_seq = substr($SEQ{$chr},$start-2,2);
+	    $right_seq = substr($SEQ{$chr},$end,2);
+	    
+	    if ($strand eq "-"){
+		$left_seq = join ("", reverse split (//, $left_seq));
+		$left_seq =~ tr/ACGTacgt/TGCATGCA/;
+		$right_seq = join ("", reverse split (//, $right_seq));
+		$right_seq =~ tr/ACGTacgt/TGCATGCA/;
+	    }
+	    
+	    ### Fiters the file (liftover inverts strand sometimes, so this cases will be discarded
+	    if (($strand eq "+" && ($left_seq eq "AG" || $right_seq=~/G[TC]/)) ||
+		($strand eq "-" && ($left_seq=~/G[TC]/ || $right_seq eq "AG"))){
+		print O_FILTERED "$_\n";
+	    }
 	}
-	
-	### Fiters the file (liftover inverts strand sometimes, so this cases will be discarded
-	if (($strand eq "+" && ($left_seq eq "AG" || $right_seq=~/G[TC]/)) ||
-	    ($strand eq "-" && ($left_seq=~/G[TC]/ || $right_seq eq "AG"))){
-	    print O_FILTERED "$_\n";
+	else {
+	    print "No sequence data for $chr\n" unless $done_chr{$chr};
+	    $done_chr{$chr}=1;
 	}
     }
     close TEMP_LIFT;
