@@ -13,6 +13,8 @@ my $f_gene_cluster;
 my $f_exon_cluster;
 my $f_exon_list_sp1;
 my $f_exon_list_sp2;
+my $f_all_exon_sp1;
+my $f_all_exon_sp2;
 my $sp1;
 my $sp2;
 my $dPSI_info = "auto";
@@ -26,6 +28,8 @@ GetOptions( "gene_clusters=s" => \$f_gene_cluster,
 	    "exon_clusters=s" => \$f_exon_cluster,
 	    "exon_list_sp1=s" => \$f_exon_list_sp1,
 	    "exon_list_sp2=s" => \$f_exon_list_sp2,
+	    "all_exons_sp1=s" => \$f_all_exon_sp1,
+	    "all_exons_sp2=s" => \$f_all_exon_sp2,
 	    "sp1=s" => \$sp1,
 	    "sp2=s" => \$sp2,
 	    "dPSI_info=s" => \$dPSI_info,
@@ -52,6 +56,8 @@ Compulsory Options:
 Discretionary Options:
      -exon_list_sp2 FILE       File with exons from target species. It must contain qualitative or quantitative information on deltaPSIs.
                                   * If provided, the comparisons is done bidirectional (i.e. both species will be used as target and query).
+     -all_exons_sp1 FILE       Improves conservation vs convergence calls. File with all exons used by ExOrthist (i.e. Sp1/Sp1_overlap_CDS_exons.txt)
+     -all_exons_sp2 FILE       Improves conservation vs convergence calls. File with all exons used by ExOrthist (i.e. Sp2/Sp2_overlap_CDS_exons.txt)
      -dPSI_info auto           Type of information provided for each exon. Any of the following: dPSI, qual_call, none, auto.
                                   * none: no information is provided. All exons in the lists are treated as regulated.
                                   * dPSI: a value between -100 and 100. If a numeric value is provided (non NA), the exon is assumed to have sufficient coverage.
@@ -190,6 +196,8 @@ my %exons_by_cluster=(); # all the exons in a cluster organized by species
 my %partial_coord_conversion=(); # to match full coordinates of clusters and lists
 my %array_of_exons_per_gene=(); # an array of coordinates per gene, to derive a first non-cons score
 my %gene_strand=(); # keeps the strand of each gene (currently, only if it has exon clusters
+my %added_exon_to_array; # keeps the subIDs of all exons added to the gene arrays
+my %g_with_exon_clusters; # keeps memory if the gene has ANY exon cluster
 
 open (ECL, $f_exon_cluster) || die "It cannot open the exon orthology file ($f_exon_cluster)\n";
 while (<ECL>){
@@ -204,6 +212,7 @@ while (<ECL>){
 	my $exon_id2 = "$l[1]=$f"; # geneID=exon_end
 	my $exon_id = "$l[1]=$chr:$i-$f";
 	
+	$g_with_exon_clusters{$temp_sp}{$gene}=1;
 	$gene_strand{$temp_sp}{$gene}=$strand;
 	$tally_exons{$temp_sp}++; # sanity check for species provided
 	$exon_to_cluster{$temp_sp}{$exon_id1} = $exon_cluster; # to check for variants in the list
@@ -213,9 +222,61 @@ while (<ECL>){
 	$partial_coord_conversion{$temp_sp}{$exon_id1}=$exon_id; # to avoid inconsistencies between full coord in list and clusters
 	$partial_coord_conversion{$temp_sp}{$exon_id2}=$exon_id; # to avoid inconsistencies between full coord in list and clusters
 	push(@{$array_of_exons_per_gene{$temp_sp}{$gene}},"$i-$f=$exon_cluster"); # all coordinates of the exons per gene
+	$added_exon_to_array{$temp_sp}{$exon_id1}=1;
+	$added_exon_to_array{$temp_sp}{$exon_id2}=1;
     }
 }
 close ECL;
+
+### Adds ALL the exons used for ExOrthist
+# Format: OV_EX_dm6_1  FBgn0000008  22162920-22163694
+if (defined $f_all_exon_sp1){
+    my %added_exon_from_all;
+    open (ALL_EX_SP1, $f_all_exon_sp1) || die "It cannot open $f_all_exon_sp1\n";
+    while (<ALL_EX_SP1>){
+	chomp;
+	my @t = split(/\t/);
+	my ($temp_sp) = $t[0]=~/OV_EX_(.+)_/;
+	my $gene = $t[1];
+	my ($i,$f) = $t[2] =~ /(.+?)\-(.+)/;
+	my $exon_id1 = "$gene=$i"; # geneID=exon_start
+        my $exon_id2 = "$gene=$f"; # geneID=exon_end    
+	my $strand = $t[3];
+	$gene_strand{$temp_sp}{$gene}=$strand;
+
+	# if it has not been added as an exon cluster or before
+	if (!$added_exon_to_array{$temp_sp}{$exon_id1} && !$added_exon_to_array{$temp_sp}{$exon_id2} && !$added_exon_from_all{$t[0]}){
+	    push(@{$array_of_exons_per_gene{$temp_sp}{$gene}},"$i-$f=NO_CLUSTER"); # all coordinates of the exons per gene
+	    $added_exon_to_array{$temp_sp}{$exon_id1}=1;
+	    $added_exon_to_array{$temp_sp}{$exon_id2}=1;
+	}
+	$added_exon_from_all{$t[0]}=1;
+    }
+}
+if (defined $f_all_exon_sp2){
+    my %added_exon_from_all;
+    open (ALL_EX_SP2, $f_all_exon_sp2) || die "It cannot open $f_all_exon_sp2\n";
+    while (<ALL_EX_SP2>){
+	chomp;
+	my @t = split(/\t/);
+	my ($temp_sp) = $t[0]=~/OV_EX_(.+)_/;
+	my $gene = $t[1];
+	my ($i,$f) = $t[2] =~ /(.+?)\-(.+)/;
+	my $exon_id1 = "$gene=$i"; # geneID=exon_start
+        my $exon_id2 = "$gene=$f"; # geneID=exon_end    
+	my $strand = $t[3];
+	$gene_strand{$temp_sp}{$gene}=$strand;
+
+	# if it has not been added as an exon cluster or before
+	if (!$added_exon_to_array{$temp_sp}{$exon_id1} && !$added_exon_to_array{$temp_sp}{$exon_id2} && !$added_exon_from_all{$t[0]}){
+	    push(@{$array_of_exons_per_gene{$temp_sp}{$gene}},"$i-$f=NO_CLUSTER"); # all coordinates of the exons per gene
+	    $added_exon_to_array{$temp_sp}{$exon_id1}=1;
+	    $added_exon_to_array{$temp_sp}{$exon_id2}=1;
+	}
+	$added_exon_from_all{$t[0]}=1;
+    }
+}
+
 
 ### Checks species
 die "[Abort] It could not find gene orthologs for $sp1; correct species 1 ID?\n" if !defined $tally_genes{$sp1};
@@ -320,7 +381,7 @@ while (<LIST1>){
 	$exon_cluster_is_regulated{$exon_cluster}{$sp1}=1; 
 	$exact_exon_with_a_match{$exon_cluster}{$exon_id}=1;
     }
-    else { # added to the gene's exon array as non Gcons
+    elsif (!$added_exon_to_array{$sp1}{$exon_id1} && !$added_exon_to_array{$sp1}{$exon_id2}) { # added to the gene's exon array as non Gcons if not previously added
 	push(@{$array_of_exons_per_gene{$sp1}{$gene}},"$i-$f=NO_CLUSTER"); # all coordinates of the exons per gene
     }
     
@@ -413,7 +474,7 @@ if (defined $f_exon_list_sp2){
 	    $exon_cluster_is_regulated{$exon_cluster}{$sp2}=1; 
 	    $exact_exon_with_a_match{$exon_cluster}{$exon_id}=1;
 	}
-	else { # added to the gene's exon array as non Gcons
+	elsif (!$added_exon_to_array{$sp2}{$exon_id1} && !$added_exon_to_array{$sp2}{$exon_id2}) { # added to the gene's exon array as non Gcons if not previously added
 	    push(@{$array_of_exons_per_gene{$sp2}{$gene}},"$i-$f=NO_CLUSTER"); # all coordinates of the exons per gene
 	}
 
@@ -485,8 +546,32 @@ if (defined $f_exon_list_sp2){
 		    elsif ($t_exon_cl2 ne "NO_CLUSTER" && $exon_cluster_has_sp{$t_exon_cl2}{$sp1}){ # there is another Sp1 exon in the Sp2 cluster
 			$cons_conv_call= "NON_CONSERVED_C";
 		    }
-		    elsif (!defined $gene_strand{$sp1}{$t_g1} || !defined $gene_strand{$sp2}{$t_g2}){ # either of them has no clusters
-			$cons_conv_call = "UNCLEAR_B";
+		    elsif (!$g_with_exon_clusters{$sp1}{$t_g1} || !$g_with_exon_clusters{$sp2}{$t_g2}){ # either of them has no exon clusters
+			my @temp_sp1; my @temp_sp2;
+			@temp_sp1 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "+"; 
+			@temp_sp1 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "-"; 
+			@temp_sp2 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "+"; 
+			@temp_sp2 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "-"; 
+			
+			my $match1; my $match2; # the position of the actual exons
+			foreach my $t_ex (0..$#temp_sp1){
+			    $match1 = $t_ex if ($temp_sp1[$t_ex]=~/$i/ || $temp_sp1[$t_ex]=~/$f/);
+			}
+			foreach my $t_ex (0..$#temp_sp2){
+			    $match2 = $t_ex if ($temp_sp2[$t_ex]=~/$i2/ || $temp_sp2[$t_ex]=~/$f2/);
+			}			
+			my $segment_sp1 = int(5*$match1/($#temp_sp1+1))+1; # in 5 segments
+			my $segment_sp2 = int(5*$match2/($#temp_sp2+1))+1; # in 5 segments
+			
+			if (($#temp_sp1+1) <= 4 || ($#temp_sp1+1) <= 4){
+			    $cons_conv_call = "UNCLEAR_B"; 
+			}
+			elsif (abs($segment_sp1-$segment_sp2)>=2){
+			    $cons_conv_call= "NON_CONSERVED_H";
+			}
+			else {
+			    $cons_conv_call = "UNCLEAR_B"; 
+			}
 		    }
 		    else { # both genes have exon clusters
 			my @temp_sp1; my @temp_sp2;
@@ -494,6 +579,10 @@ if (defined $f_exon_list_sp2){
 			@temp_sp1 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "-"; 
 			@temp_sp2 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "+"; 
 			@temp_sp2 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "-"; 
+			
+			# For debugging
+#			print "T_Sp1\t$i\t$f\t@temp_sp1\n";
+#			print "T_Sp2\t$i2\t$f2\t@temp_sp2\n\n";
 
 			my $match1; my $match2; # the position of the actual exons
 			my %cl_to_index1; my %cl_to_index2; # from the cluster ID to index in array
@@ -525,8 +614,19 @@ if (defined $f_exon_list_sp2){
 			    }
 			}
 			### does the anchors assessment
+			my $segment_sp1 = int(5*$match1/($#temp_sp1+1))+1; # in 5 segments
+			my $segment_sp2 = int(5*$match2/($#temp_sp2+1))+1; # in 5 segments
+
 			if (!defined $anchor_ups && !defined $anchor_downs){ # no common clusters
-			    $cons_conv_call= "UNCLEAR_C";
+			    if (($#temp_sp1+1) <= 4 || ($#temp_sp1+1) <= 4){
+				$cons_conv_call = "UNCLEAR_C"; 
+			    }
+			    elsif (abs($segment_sp1-$segment_sp2)>=2){
+				$cons_conv_call= "NON_CONSERVED_H2";
+			    }
+			    else {
+				$cons_conv_call = "UNCLEAR_C"; 
+			    }
 			}
 			elsif (defined $anchor_ups && !defined $anchor_downs){ # anchor upstream
 			    $cons_conv_call= "UNCLEAR_D" if $match2 > $anchor_conversion{$anchor_ups}; # it's downstream the anchor
