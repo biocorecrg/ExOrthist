@@ -52,12 +52,12 @@ Compulsory Options:
      -exon_clusters FILE       File with clusters of exon orthology relationships (multi-species or pairwise [recommended])(tsv).
      -exon_list_sp1 FILE       File with exons from query species. It must contain qualitative or quantitative information on deltaPSIs.
 #                                  * Format (tsv): GeneID Exon_coord Info
-     -pairwise_folder FOLDER   ExOrthist folder for the pairwise species comparison (e.g. Sp1-Sp2/). 
 
 
 Discretionary Options:
      -exon_list_sp2 FILE       File with exons from target species. It must contain qualitative or quantitative information on deltaPSIs.
                                   * If provided, the comparisons is done bidirectional (i.e. both species will be used as target and query).
+     -pairwise_folder FOLDER   ExOrthist folder for the pairwise species comparison (e.g. Sp1-Sp2/). Needed if exon_list_sp2 is provided. 
      -all_exons_sp1 FILE       Improves conservation vs convergence calls. File with all exons used by ExOrthist (i.e. Sp1/Sp1_overlap_CDS_exons.txt)
      -all_exons_sp2 FILE       Improves conservation vs convergence calls. File with all exons used by ExOrthist (i.e. Sp2/Sp2_overlap_CDS_exons.txt)
      -dPSI_info auto           Type of information provided for each exon. Any of the following: dPSI, qual_call, none, auto.
@@ -225,31 +225,34 @@ close ECL;
 
 ### Loads pairwise information
 my %best_exon_hits; # from Sp1  => Sp2 and Sp2 => Sp1
-my $best_hits_per_gene = "$pairwise_folder/best_scored_EX_matches_by_targetgene.txt";
-open (PAIRWISE, $best_hits_per_gene) || die "It cannot open the pairwise best hits (best_scored_EX_matches_by_targetgene.txt)\n";
-<PAIRWISE>;
-# GF_000928 Exon Internal ENSMUSP00000000028|ENSMUSG00000000028  exon_12  chr16:18794762-18794860:- 
-# FBpp0070175|FBgn0026143  exon_2  chrX:1028551-1029364:-  0.006  0  0.104  0  0.084  0.194  mm10  dm6
-while (<PAIRWISE>){
-    chomp;
-    my @t = split(/\t/);
-    my ($gene_sp1) = $t[3] =~ /\|(.+)/;
-    my ($gene_sp2) = $t[6] =~ /\|(.+)/;
-    my ($i1,$f1) = $t[5] =~ /\:(.+?)\-(.+?)\:/;
-    my $temp_sp1 = $t[15];
-    my $exon_id1_1 = "$gene_sp1=$i1"; # geneID=exon_start
-    my $exon_id1_2 = "$gene_sp1=$f1"; # geneID=exon_end
-    
-    if ($t[7] ne "NO_EXON_ALN"){
-	my ($i2,$f2) = $t[8] =~ /\:(.+?)\-(.+?)\:/;
-	$best_exon_hits{$temp_sp1}{$exon_id1_1}{$gene_sp2}="$i2-$f2";
-	$best_exon_hits{$temp_sp1}{$exon_id1_2}{$gene_sp2}="$i2-$f2";
-    } else {
-	$best_exon_hits{$temp_sp1}{$exon_id1_1}{$gene_sp2}="NO_EXON_ALN";
-	$best_exon_hits{$temp_sp1}{$exon_id1_2}{$gene_sp2}="NO_EXON_ALN";
+if (defined $exon_list_sp2){
+    die "[Abort] It needs to provide the folder with the pairwise comparisons for $sp1 and $sp2\n" unless ($pairwise_folder);
+    my $best_hits_per_gene = "$pairwise_folder/best_scored_EX_matches_by_targetgene.txt";
+    open (PAIRWISE, $best_hits_per_gene) || die "It cannot open the pairwise best hits (best_scored_EX_matches_by_targetgene.txt)\n";
+    <PAIRWISE>;
+    # GF_000928 Exon Internal ENSMUSP00000000028|ENSMUSG00000000028  exon_12  chr16:18794762-18794860:- 
+    # FBpp0070175|FBgn0026143  exon_2  chrX:1028551-1029364:-  0.006  0  0.104  0  0.084  0.194  mm10  dm6
+    while (<PAIRWISE>){
+	chomp;
+	my @t = split(/\t/);
+	my ($gene_sp1) = $t[3] =~ /\|(.+)/;
+	my ($gene_sp2) = $t[6] =~ /\|(.+)/;
+	my ($i1,$f1) = $t[5] =~ /\:(.+?)\-(.+?)\:/;
+	my $temp_sp1 = $t[15];
+	my $exon_id1_1 = "$gene_sp1=$i1"; # geneID=exon_start
+	my $exon_id1_2 = "$gene_sp1=$f1"; # geneID=exon_end
+	
+	if ($t[7] ne "NO_EXON_ALN"){
+	    my ($i2,$f2) = $t[8] =~ /\:(.+?)\-(.+?)\:/;
+	    $best_exon_hits{$temp_sp1}{$exon_id1_1}{$gene_sp2}="$i2-$f2";
+	    $best_exon_hits{$temp_sp1}{$exon_id1_2}{$gene_sp2}="$i2-$f2";
+	} else {
+	    $best_exon_hits{$temp_sp1}{$exon_id1_1}{$gene_sp2}="NO_EXON_ALN";
+	    $best_exon_hits{$temp_sp1}{$exon_id1_2}{$gene_sp2}="NO_EXON_ALN";
+	}
     }
+    close PAIRWISE;
 }
-close PAIRWISE;
 
 ### Adds ALL the exons used for ExOrthist
 # Format: OV_EX_dm6_1  FBgn0000008  22162920-22163694
