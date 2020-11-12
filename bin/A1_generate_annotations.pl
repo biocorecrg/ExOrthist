@@ -1681,7 +1681,7 @@ while (<TEMP_I>){
     my @t=split(/\t/);
     my ($gene)=$t[0]=~/\|(.+)/;
     if (defined $gene){
-	push(@{$temp_coords{$gene}},$t[4]);
+	push(@{$temp_coords{$gene}},"$t[4]:$t[5]");
     }
 }
 close TEMP_I;
@@ -1691,6 +1691,7 @@ open (TEMP_O, ">$outexfile") || die "It cannot open the temporary exon file\n";
 foreach my $gene (sort keys %temp_coords){
     foreach my $coord (sort @{$temp_coords{$gene}}){
 	my $temp_ex = "$gene:$coord";
+        $coord=~s/\:/\t/;
 	print TEMP_O "$gene\t$coord\n" unless $done_ex{$temp_ex};
 	$done_ex{$temp_ex}=1;
     }
