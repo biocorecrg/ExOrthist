@@ -257,7 +257,6 @@ ExOrthist creates a folder in the output directory for each species, containing 
 * **\${species}\_ref_proteins.txt**: geneID and proteinID of reference proteins.  
 * **\${species}.exint**: fasta files by protein isoform. The header reports the aminoacidic positions corresponding to exon boundaries (i.e. intron positions).  
 * **\${species}\_protein_ids_exons_pos.txt**: exon genomic and aminoacidic coordinates by protein isoform.  
-* **\${species}\_protein_ids_intron_pos.txt**: intron genomic coordinates by protein isoform.  
 * **\${species}\_protein_ids_intron_pos_CDS.txt**: In-CDS* intron genomic coordinates by protein isoform.  
 * **\${species}\_overlap_CDS_exons.txt**: overlapping groups of CDS exons by gene.  
 * **\${species}\_overlap_CDS_introns.txt**: overlapping groups of In-CDS introns by gene (NB: In-CDS = Introns within coding sequence).  
