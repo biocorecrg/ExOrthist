@@ -130,7 +130,8 @@ while (<IN>){
 	$sps{$line[1]}=$line[20];
 	$sps{$line[8]}=$line[21];
 	$id=$line[1]."#".$line[2]."#".$line[8];		
-	if ($line[11]>0){ 
+#	if ($line[11]>0){ 
+	if ($line[11]=~/\d/){ # if sim = 0 will skip it (i.e. in the case of some microexons between flies and mammals)
 	    $line[11]=sprintf("%.2f",($line[11]/100));  
 	    $exsc{$id}=$line[0]."\t".$line[1]."\t".$line[2]."\t".$line[4].":".$line[5].":".$line[6]."\t".$line[8].
 		"\t".$line[15]."\t".$line[17].":".$line[18].":".$line[19]."\t".$line[11]."\t".$line[20]."\t".$line[21];

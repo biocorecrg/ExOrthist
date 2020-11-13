@@ -572,8 +572,14 @@ if (defined $f_exon_list_sp2){
 		    my $segment_sp2 = int(5*$match2/($#temp_sp2+1))+1; # in 5 segments
 		    my $total_ex_sp1 = $#temp_sp1+1; # total number of exons in gene sp1
 		    my $total_ex_sp2 = $#temp_sp2+1; # total number of exons in gene sp2
-		    
-		    ### Totally new approach in V2
+
+		    # For debugging
+#		    if ($t_g1 eq "ENSMUSG00000014602"){
+#			print "T_Sp1\t$gene_strand{$sp1}{$t_g1}\t$t_g1\t$match1\t$i\t$f\t@temp_sp1\n";
+#			print "T_Sp2\t$gene_strand{$sp2}{$t_g2}\t$t_g2\t$match2\t$i2\t$f2\t@temp_sp2\n\n";
+#		    }
+
+		    ### New approach in V2
 		    my $cons_conv_call = "UNCLEAR_0";
 		    # 1: if the exon cluster is the same
 		    if ($t_exon_cl1 eq $t_exon_cl2 && $t_exon_cl1 ne "NO_CLUSTER" && $t_exon_cl2 ne "NO_CLUSTER"){
@@ -629,10 +635,6 @@ if (defined $f_exon_list_sp2){
 		    }
 		    # 6: both genes have exon clusters to use as anchors
 		    else { # both genes have exon clusters
-			# For debugging
-#			print "T_Sp1\t$i\t$f\t@temp_sp1\n";
-#			print "T_Sp2\t$i2\t$f2\t@temp_sp2\n\n";
-
 			my %cl_to_index1; my %cl_to_index2; # from the cluster ID to index in array
 			my $anchor_ups; my $anchor_downs;
 			my %anchor_conversion;
