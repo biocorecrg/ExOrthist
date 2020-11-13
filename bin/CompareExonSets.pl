@@ -313,8 +313,8 @@ die "[Abort] It could not find exon orthologs for $sp2; correct species 2 ID?\n"
 ### Genes with regulated exons
 if (defined $outFile && defined $f_exon_list_sp2){
     open (OUT_GENES, ">OrthoGenes_with_reg_exons-$sp1-$sp2.tab");
-    print OUT_GENES "OrthoCluster\tGeneID_1\tExon_coord_1\tExon_length_1\tEx_cluster_1\t".
-	"GeneID_2\tExon_coord_2\tExon_length_2\tEx_cluster_2\tCONSERV_CALL\tSpecies_1\tSpecies_2\n";
+    print OUT_GENES "OrthoCluster\tGeneID_1\tExon_coord_1\tExon_N_1\tTotal_Exons_1\tExon_length_1\tEx_cluster_1\t".
+	"GeneID_2\tExon_coord_2\tExon_N_2\tTotal_Exons_2\tExon_length_2\tEx_cluster_2\tCONSERV_CALL\tSpecies_1\tSpecies_2\n";
 }
 
 ### Options for last column: (i) dPSI, (ii) Qualitative calls, (iii) none
@@ -554,6 +554,25 @@ if (defined $f_exon_list_sp2){
 		    my $le_ex1 = ($f-$i)+1;
 		    my $le_ex2 = ($f2-$i2)+1;
 
+		    ### Does the sorting and matching here in V2
+		    my @temp_sp1; my @temp_sp2;
+		    @temp_sp1 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "+"; 
+		    @temp_sp1 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "-"; 
+		    @temp_sp2 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "+"; 
+		    @temp_sp2 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "-"; 
+		    
+		    my $match1; my $match2; # the position of the actual exons
+		    foreach my $t_ex (0..$#temp_sp1){
+			$match1 = $t_ex if ($temp_sp1[$t_ex]=~/$i/ || $temp_sp1[$t_ex]=~/$f/);
+		    }
+		    foreach my $t_ex (0..$#temp_sp2){
+			$match2 = $t_ex if ($temp_sp2[$t_ex]=~/$i2/ || $temp_sp2[$t_ex]=~/$f2/);
+		    }
+		    my $segment_sp1 = int(5*$match1/($#temp_sp1+1))+1; # in 5 segments
+		    my $segment_sp2 = int(5*$match2/($#temp_sp2+1))+1; # in 5 segments
+		    my $total_ex_sp1 = $#temp_sp1+1; # total number of exons in gene sp1
+		    my $total_ex_sp2 = $#temp_sp2+1; # total number of exons in gene sp2
+		    
 		    ### Totally new approach in V2
 		    my $cons_conv_call = "UNCLEAR_0";
 		    # 1: if the exon cluster is the same
@@ -597,23 +616,8 @@ if (defined $f_exon_list_sp2){
 		    }
 		    # 5: either of the genes don't have any exon cluster to be used as anchor
 		    elsif (!$g_with_exon_clusters{$sp1}{$t_g1} || !$g_with_exon_clusters{$sp2}{$t_g2}){ # either of them has no exon clusters
-			my @temp_sp1; my @temp_sp2;
-			@temp_sp1 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "+"; 
-			@temp_sp1 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "-"; 
-			@temp_sp2 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "+"; 
-			@temp_sp2 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "-"; 
-			
-			my $match1; my $match2; # the position of the actual exons
-			foreach my $t_ex (0..$#temp_sp1){
-			    $match1 = $t_ex if ($temp_sp1[$t_ex]=~/$i/ || $temp_sp1[$t_ex]=~/$f/);
-			}
-			foreach my $t_ex (0..$#temp_sp2){
-			    $match2 = $t_ex if ($temp_sp2[$t_ex]=~/$i2/ || $temp_sp2[$t_ex]=~/$f2/);
-			}
-			my $segment_sp1 = int(5*$match1/($#temp_sp1+1))+1; # in 5 segments
-			my $segment_sp2 = int(5*$match2/($#temp_sp2+1))+1; # in 5 segments
-			
-			if (($#temp_sp1+1) <= 4 || ($#temp_sp1+1) <= 4){
+			# uses the sorting info
+			if ($total_ex_sp1 <= 4 || $total_ex_sp2 <= 4){
 			    $cons_conv_call = "UNCLEAR_5"; 
 			}
 			elsif (abs($segment_sp1-$segment_sp2)>=2){
@@ -625,27 +629,18 @@ if (defined $f_exon_list_sp2){
 		    }
 		    # 6: both genes have exon clusters to use as anchors
 		    else { # both genes have exon clusters
-			my @temp_sp1; my @temp_sp2;
-			@temp_sp1 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "+"; 
-			@temp_sp1 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "-"; 
-			@temp_sp2 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "+"; 
-			@temp_sp2 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "-"; 
-			
 			# For debugging
 #			print "T_Sp1\t$i\t$f\t@temp_sp1\n";
 #			print "T_Sp2\t$i2\t$f2\t@temp_sp2\n\n";
 
-			my $match1; my $match2; # the position of the actual exons
 			my %cl_to_index1; my %cl_to_index2; # from the cluster ID to index in array
 			my $anchor_ups; my $anchor_downs;
 			my %anchor_conversion;
 			foreach my $t_ex (0..$#temp_sp1){
-			    $match1 = $t_ex if ($temp_sp1[$t_ex]=~/$i/ || $temp_sp1[$t_ex]=~/$f/);
 			    my ($value) = $temp_sp1[$t_ex] =~ /\=(.+)/;
 			    $cl_to_index1{$value}=$t_ex;
 			}
 			foreach my $t_ex (0..$#temp_sp2){
-			    $match2 = $t_ex if ($temp_sp2[$t_ex]=~/$i2/ || $temp_sp2[$t_ex]=~/$f2/);
 			    my ($value) = $temp_sp2[$t_ex] =~ /\=(.+)/;
 			    $cl_to_index2{$value}=$t_ex;
 			    if (defined ($cl_to_index1{$value})){ # it can take 0
@@ -665,11 +660,9 @@ if (defined $f_exon_list_sp2){
 			    }
 			}
 			### does the anchors assessment
-			my $segment_sp1 = int(5*$match1/($#temp_sp1+1))+1; # in 5 segments
-			my $segment_sp2 = int(5*$match2/($#temp_sp2+1))+1; # in 5 segments
-
 			if (!defined $anchor_ups && !defined $anchor_downs){ # no common clusters
-			    if (($#temp_sp1+1) <= 4 || ($#temp_sp1+1) <= 4){
+			    # based on exon number
+			    if ($total_ex_sp1 <= 4 || $total_ex_sp2 <= 4){
 				$cons_conv_call = "UNCLEAR_6A"; 
 			    }
 			    elsif (abs($segment_sp1-$segment_sp2)>=2){
@@ -697,7 +690,9 @@ if (defined $f_exon_list_sp2){
 			}
 		    }
 		    if (defined $outFile && defined $f_exon_list_sp2){
-			print OUT_GENES "$gene_cluster\t$t_g1\t$t_co1\t$le_ex1\t$t_exon_cl1\t$t_g2\t$t_co2\t$le_ex2\t$t_exon_cl2\t$cons_conv_call\t$sp1\t$sp2\n";
+			$match1++; $match2++; # they were 0-based			
+			print OUT_GENES "$gene_cluster\t$t_g1\t$t_co1\t$match1\t$total_ex_sp1\t$le_ex1\t$t_exon_cl1\t".
+			    "$t_g2\t$t_co2\t$match2\t$total_ex_sp2\t$le_ex2\t$t_exon_cl2\t$cons_conv_call\t$sp1\t$sp2\n";
 		    }
 		    $cons_conv_call=~s/(.+)\_[A-Z0-9]+?$/$1/;
 		    $tally_sp1_exons_in_Rcons_genes_by_type{$cons_conv_call}++;
