@@ -1405,14 +1405,12 @@ sub score_exons {
     }#CLOSING IF
 } ##End of subroutine score_exons
 ##printing file of exons to realign##
-my @ks=sort(keys(%miss));
-my $mex;
-foreach $mex (@ks){
-    @ln=split(/\t/,$mex);
+foreach my $mex (sort keys %miss){
+    my @ln=split(/\t/,$mex);
     # $mex = $tstr = $el."\t".$_."\t".$ne."\t".$n1."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp2."\t".$sp1;
-    @tn1=split(/\|/,$ln[1]);
-    @tn2=split(/\|/,$ln[8]);
-    $idex=$ln[0]."\t".$tn1[1]."\t".$ln[5]."\t".$tn2[1];
+    my @tn1=split(/\|/,$ln[1]);
+    my @tn2=split(/\|/,$ln[8]);
+    my $idex=$ln[0]."\t".$tn1[1]."\t".$ln[5]."\t".$tn2[1]; # g_cluster gene_sp1 exon_coord gene_sp2
     if (!$onehit{$idex}){
 	print MISS "$mex\n";
     }
