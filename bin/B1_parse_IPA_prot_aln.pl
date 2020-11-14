@@ -207,6 +207,7 @@ my %exon;
 my $rs1;
 my %pos;
 my @n;
+my %last_exon_number; # stores the last exon per isoform (14/11/20)
 open (IN,"$i4")|| die "It cannot open exon position files species 1\n";
 while (<IN>){
     chomp($_);
@@ -219,6 +220,13 @@ while (<IN>){
 	    $exon{$line[0]."_".$rs1}=$_; # GeneID|ProteinID_position => all the info of the exon for each position of the exon
 	}
     } 
+    ### stores last exon
+    my ($ex_N)=$line[1]=~/exon_(\d+)/;
+    if (!defined $last_exon_number{$line[0]}){
+	$last_exon_number{$line[0]}=$ex_N;
+    } else {
+	$last_exon_number{$line[0]}=$ex_N if $ex_N >= $last_exon_number{$line[0]};
+    }
 }
 close IN;
 
@@ -233,6 +241,13 @@ while (<IN>){
 	for ($rs1=$l[0];  $rs1<=$l[1]; $rs1++){ 
 	    $exon{$line[0]."_".$rs1}=$_;
 	}
+    }
+    ### stores last exon
+    my ($ex_N)=$line[1]=~/exon_(\d+)/;
+    if (!defined $last_exon_number{$line[0]}){
+	$last_exon_number{$line[0]}=$ex_N;
+    } else {
+	$last_exon_number{$line[0]}=$ex_N if $ex_N >= $last_exon_number{$line[0]};
     }
 }
 close IN;
@@ -1113,7 +1128,8 @@ sub score_exons {
     my $ng=0; 
     my $g=0;
     my $e=0;
-    my $nr1=-1;    
+    my $nr1=-1;
+    my ($temp_last_exon_1,$temp_last_exon_2); # the last exons
     if ($fres1!=0 && $fres2!=0){ ##first if (i.e. there is at least one aa in the proteins)
 	open (POS, "$tp");
 	while (<POS>){
@@ -1230,7 +1246,18 @@ sub score_exons {
 				    @tn1=split(/\|/,$ln[0]);
 				    @tn2=split(/\|/,$n2);
 				    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
-				    $onehit{$idex}=1;				    
+
+				    ### not activated if it's internal and against a first/last exon
+				    $temp_last_exon_1 = "exon_$last_exon_number{$ln[0]}";
+				    $temp_last_exon_2 = "exon_$last_exon_number{$n2}";
+				    my @temp_ex_hit = split(/\t/,$nex[0]); # prot|gene exon_N co_prot chr co_i co_f strand
+				    if ($ln[1] eq "exon_1" || $ln[1] eq $temp_last_exon_1){ # it's the first OR last exon
+					$onehit{$idex}=1;
+				    }
+				    elsif ($temp_ex_hit[1] ne "exon_1" && $temp_ex_hit[1] ne $temp_last_exon_2){ # it's internal and the hit too
+					$onehit{$idex}=1;
+				    } 
+				    else {} # internal vs first/last
 				}
 				else { # no hits above cut-off ($min_exon_overlap = 15%)
 				    print EXSC "$el\t$_\t0\t$n2\tMANY_EX_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2\n";
@@ -1242,8 +1269,18 @@ sub score_exons {
 				@tn1=split(/\|/,$ln[0]);
 				@tn2=split(/\|/,$n2);
 				$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
-#				print "ROUND1\t$n1\t$n2\t$idex\n";
-				$onehit{$idex}=1;
+				
+				### not activated if it's internal and against a first/last exon
+				$temp_last_exon_1 = "exon_$last_exon_number{$ln[0]}";
+				$temp_last_exon_2 = "exon_$last_exon_number{$n2}";
+				my @temp_ex_hit = split(/\t/,$tex); # prot|gene exon_N co_prot chr co_i co_f strand
+				if ($ln[1] eq "exon_1" || $ln[1] eq $temp_last_exon_1){ # it's the first OR last exon
+				    $onehit{$idex}=1;
+				}
+				elsif ($temp_ex_hit[1] ne "exon_1" && $temp_ex_hit[1] ne $temp_last_exon_2){ # it's internal and the hit too
+				    $onehit{$idex}=1;
+				} 
+				else {} # internal vs first/last
 			    }
 			}
 			else { 
@@ -1373,7 +1410,18 @@ sub score_exons {
 				    @tn1=split(/\|/,$ln[0]);
 				    @tn2=split(/\|/,$n1);
 				    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
-				    $onehit{$idex}=1;				    
+
+				    ### not activated if it's internal and against a first/last exon
+				    $temp_last_exon_1 = "exon_$last_exon_number{$ln[0]}";
+				    $temp_last_exon_2 = "exon_$last_exon_number{$n1}";
+				    my @temp_ex_hit = split(/\t/,$nex[0]); # prot|gene exon_N co_prot chr co_i co_f strand
+				    if ($ln[1] eq "exon_1" || $ln[1] eq $temp_last_exon_1){ # it's the first OR last exon
+					$onehit{$idex}=1;
+				    }
+				    elsif ($temp_ex_hit[1] ne "exon_1" && $temp_ex_hit[1] ne $temp_last_exon_2){ # it's internal and the hit too
+					$onehit{$idex}=1;
+				    } 
+				    else {} # internal vs first/last
 				}
 				else {
 				    print EXSC "$el\t$_\t0\t$n1\tMANY_EX_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp2\t$sp1\n";
@@ -1385,8 +1433,18 @@ sub score_exons {
 				@tn1=split(/\|/,$ln[0]);
 				@tn2=split(/\|/,$n1);
 				$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
-#				print "ROUND2\t$n1\t$n2\t$idex\n";
-				$onehit{$idex}=1;
+
+				### not activated if it's internal and against a first/last exon
+				$temp_last_exon_1 = "exon_$last_exon_number{$ln[0]}";
+				$temp_last_exon_2 = "exon_$last_exon_number{$n1}";
+				my @temp_ex_hit = split(/\t/,$tex); # prot|gene exon_N co_prot chr co_i co_f strand
+				if ($ln[1] eq "exon_1" || $ln[1] eq $temp_last_exon_1){ # it's the first OR last exon
+				    $onehit{$idex}=1;
+				}
+				elsif ($temp_ex_hit[1] ne "exon_1" && $temp_ex_hit[1] ne $temp_last_exon_2){ # it's internal and the hit too
+				    $onehit{$idex}=1;
+				} 
+				else {} # internal vs first/last
 			    }
 			}
 			else {
