@@ -2,8 +2,8 @@
 use warnings;
 use strict;
 
-my $input_file=$ARGV[0]; # scores all introns btw pair of species (all merged Final_aln_scores_Sp1_Sp2.txt)
-my $outf=$ARGV[1]; # output folder => Sp1_Sp2
+my $input_file=$ARGV[0]; # scores all introns btw pair of species (all_PROT_EX_INT_aln_features_Sp1-Sp2.txt)
+my $outf=$ARGV[1]; # output folder => Sp1-Sp2
 my ($info, $id, $r, $k, $pid, $s1, $s2);
 my $b=0;
 my (@i1, @i2, @i1b, @i2b, @line, @t1, @t2, @t3, @t4, @name, @l1, @l2);
