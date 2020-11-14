@@ -717,12 +717,11 @@ sub score_introns {
     (%insc, %indev)=();
     ##getting intron scores for Species 1 vs Species 2##
     $gp=0;
-    for ($n=0; $n<scalar(@seq1); $n++){ 
+    for ($n=0; $n<scalar(@seq1); $n++){ # $n => position in the aln
 	$r=$n+1;
-	if ($seq1[$n]=~/\d/){ $i1++; $dev=0; } if ($seq2[$n]=~/\d/){ $i2++; } 
-	if ($seq1[$n]=~/\d/){
-	    #$i1++;
-	    if ($seq2[$n]=~/\d/){
+	if ($seq1[$n]=~/\d/){ $i1++; $dev=0; } if ($seq2[$n]=~/\d/){ $i2++; } # if it finds an intron in Sp1 or Sp2 advances count
+	if ($seq1[$n]=~/\d/){ # finds an introns in Sp1, in position $n
+	    if ($seq2[$n]=~/\d/){ # there is also an intron in Sp2 in the same position
 		$dev=1;
 		my $m1=$n-1; my  $m2=$n+1;
 		$paa1=$intron_aa{$n1."\tintron_".$i1};
@@ -732,7 +731,7 @@ sub score_introns {
 		##A 0 score, means same phase, but a deviation of 5 aa;
 		##A negative score is a non conserved phase 
 		##therefore a score >=0 means that the intron is conserved with ot without aa deviation 
-		if ($paa1 && $paa2){ ##added this 
+		if ($paa1 && $paa2){ # both introns exist
 		    if ($seq1[$n] == $seq2[$n]){ ##checking if the phase is the same for both introns
 			$score=10;
 			if ($n1 && $n2){
@@ -751,8 +750,8 @@ sub score_introns {
 		    }
 		}
 	    }
-	    else { 
-		### First check alignment quality
+	    else {  # there is not intron in Sp2, needs to check around
+		### First check alignment quality to decide how far to check
 		# region being scanned for sequence similarity, to decide the actual window to consider introns from
 		$pa1=$n-12; if ($pa1<0){ $pa1=0; }
 		$pa2=$n+12; if ($pa2>scalar(@seq1)){ $pa2=scalar(@seq1)-1; }
@@ -773,7 +772,7 @@ sub score_introns {
 			$np++;			
 		    }
 		}		
-		if ($np>0){
+		if ($np>0){ # here, it decides how far to check (win) based on similarity
 		    $tsimfr=($simfr/$np)*100;
 		    if ($tsimfr<30 || $ngp>=($np*0.3)){ $win=10;  } # sim lower than 30% or N of gaps >= 30% of N of positions
 		    elsif ($tsimfr>=30 && $tsimfr<50){ $win=8;  }
@@ -784,44 +783,45 @@ sub score_introns {
 		}
 		# Add a modifier to window when there are gaps to avoid artifacts from alignments.
 		$win = $win + int($ngp/2);
-		##ALN quality
-		$j=-$win; ##changing to a window of sliding depending of alignment quality
+
+		$j=-$win; # j is the begining of the window. It increments +1 in each loop. So it's the relative position
 		$r=$i2;
 		$score=0; $apos=0; $gp=0;
-		for ($t=$n+$j; $t<=$n+$win; $t++){ ##changing the sliding window according to similarity of upstream and downstream regions
-		    if ($t <= $#seq2){
-			if ($seq2[$t] eq "-"){ $gp++; $apos++; }
+		my ($gp_left, $gp_right)=(0,0); # N of gaps at each side of the intron (gp_left is BEFORE the intron; not valid)
+		### Starts the actual check around
+		for ($t=$n+$j; $t<=$n+$win; $t++){ # t is the current aln position. j the relative (respect to the intron in Sp1)
+		    if ($t <= $#seq2){ # it doesn't go beyond the end of the Aln
+			if ($seq2[$t] eq "-"){ $gp++; $apos++; $gp_left++ if $t<$n; $gp_right++ if $t>$n;} # gp_left and right added to know where gaps are
 			if ($seq2[$t]=~/[A-Z]/ ) { $apos++; }
-			if ($seq2[$t]=~/\d/){		    
+			if ($seq2[$t]=~/\d/){ # Finds an intron in Sp2
 			    $dev=1;
 			    if ($j>0) { $r++; }
-			    my $m1=$t-1; my $m2=$t+1; my $m3=$j-1;
+			    my $m1=$t-1; my $m2=$t+1; my $m3=$j-1; # m3 is the relative position -1
 			    $idin=$el."\t".$n1."\tintron_".$i1;
 			    $paa1=$intron_aa{$n1."\tintron_".$i1};
 			    $paa2=$intron_aa{$n2."\tintron_".$r};
 			    $score=0;
-			    if ($paa1 && $paa2){ ##added this 
-				if ($m3>0){			    
-				    if ($seq1[$n] eq $seq2[$t]) { $score=10; } else { $score=-10; } ##change in the scoring system
-				    $score=$score-(abs($m3)); ##resting deviating positions to the score
-				    ###differentiating from NO_ALN
-				    if ($score==0){ $score=-1; }
+			    if ($paa1 && $paa2){ # if both introns exist as annotated
+				if ($m3>0){ # if it's to the right
+				    if ($seq1[$n] eq $seq2[$t]) { $score=10;} # same phase
+				    else { $score=-10; }  # different phase
+				    $score = $score-(abs($m3)); # resting deviating positions to the score
+				    $score = $score+$gp_right; # the N of gaps are "subtracted" from the deviation (14/11/20)
+
+				    if ($score==0){ $score=-1; } ###differentiating from NO_ALN
 				    if (!$insc{$idin}){
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
 					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
-					    
 					    $indev{$idin}=abs($m3);
 					}
-					#print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$r\t$paa2\t$seq2[$t]\t+$m3\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
 				    }
 				    elsif (abs($m3)<$indev{$idin}) {
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
 					    $aln[$m2]="n" if !defined $aln[$m2];					    
 					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
-					    
 					    $indev{$idin}=abs($m3);
 					}
 				    }
@@ -830,17 +830,16 @@ sub score_introns {
 				    my $w=$m3+2; 
 				    if ($seq1[$n] eq $seq2[$t]) { $score=10; } else { $score=-10; }
 				    $score=$score-(abs($w)); ##resting deviating positions to the score
-				    ###differentiating from NO_ALN
-				    if ($score==0){ $score=-1; }
+				    # correction for left gap not possible with the current setting
+				    
+				    if ($score==0){ $score=-1; } ###differentiating from NO_ALN  
 				    if (!$insc{$idin}){
-					
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
 					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
 					    $indev{$idin}=abs($w);
 					}
-					#print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$r\t$paa2\t$seq2[$t]\t+$m3\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
 				    }
 				    elsif (abs($w)<$indev{$idin}) {
 					if ($n1 && $n2){
@@ -850,7 +849,6 @@ sub score_introns {
 					    $indev{$idin}=abs($w);
 					}
 				    }
-				    #print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tintron_$r\t$paa2\t$seq2[$t]\t$w\t$aln[$m1],$aln[$m2]\t$score\t$sp1\t$sp2\n";
 				}
 			    }
 			}
@@ -866,12 +864,11 @@ sub score_introns {
 		    if ($gp>=int($apos*0.6)){ ##bad alignment in the protein query
 			print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tNO_ALN\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2\n";
 			
-		    }else {
+		    } else {
 		   	print INSC "$el\t$n1\tintron_$i1\t$paa1\t$seq1[$n]\t$n2\tNO_INTRON\tNA\tNA\tNA\tNA\t0\t$sp1\t$sp2\n";
 		    }
 		}
 	    }
-	    
 	}
     }
     ###END OF PROCESSING THE ALIGNMENT SPECIES 1 VS 2     
@@ -950,9 +947,10 @@ sub score_introns {
 		$j=-$win; ##changing deviation accordint to alignment quality
 		my $r=$i2; $apos=0;
 		$score=0; $gp=0;
+		my ($gp_left, $gp_right)=(0,0); # N of gaps at each side of the intron (left BEFORE the intron; not valid)
 		for ($t=$n+$j; $t<=$n+$win; $t++){
 		    if ($t <= $#seq1){ # in some cases, $t is bigger than $#seq1
-			if ($seq1[$t] eq "-"){ $gp++; $apos++; } # @seq1 is the positions of the aln
+			if ($seq1[$t] eq "-"){ $gp++; $apos++; $gp_left++ if $t<$n; $gp_right++ if $t>$n;} 
 			if ($seq1[$t] =~/[A-Z]/) { $apos++; }
 			if ($seq1[$t]=~/\d/){ 		    
 			    $dev=1;
@@ -964,8 +962,10 @@ sub score_introns {
 			    $score=0;
 			    if ($paa1 && $paa2){
 				if ($m3>0){
-				    if ($seq2[$n] eq $seq1[$t]) { $score=10; } else { $score=-10; }
+				    if ($seq2[$n] eq $seq1[$t]) { $score=10; } else { $score=-10; } # both introns have the same phase
 				    $score=$score-(abs($m3)); ##resting deviating positions to the score
+				    $score = $score+$gp_right; # the N of gaps are "subtracted" from the deviation (14/11/20)
+
 				    if (!$insc{$idin}){
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
@@ -982,13 +982,13 @@ sub score_introns {
 					    $indev{$idin}=abs($m3);
 					}
 				    }
-				    #print INSC "$el\t$n2\tintron_$i1\t$paa1\t$seq2[$n]\t$n1\tintron_$r\t$paa2\t$seq1[$t]\t+$m3\t$aln[$m1],$aln[$m2]\t$score\t$sp2\t$sp1\n";
 				}
 				else {
 				    my $w=$m3+2; 
 				    if ($seq2[$n] eq $seq1[$t]) { $score=10; } else { $score=-10; }
 				    $score=$score-(abs($w)); ##resting deviating positions to the score
-				    
+				    # from the left side, it cannot be corrected for gaps
+
 				    if (!$insc{$idin}){
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
