@@ -134,7 +134,7 @@ while (<IN>){
 		    $sI2=$isc{$i2}; 
 		    # adds the check for Sp2 introns -1 and +1 being consecutive
 		    if ($sI2>0 && $sI1>0) { # if both introns seem OK
-			$sI2=-0.1 if abs($intron_N_hit{$i1}-$intron_N_hit{$i2}) != 1; # also if it's the same intron (not sure it can happen)
+			$sI2=-0.01 if abs($intron_N_hit{$i1}-$intron_N_hit{$i2}) != 1; # also if it's the same intron (not sure it can happen)
 		    }
 		} 
 	    } else{ $sI2=-0.25; }
