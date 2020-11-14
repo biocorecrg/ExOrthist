@@ -150,6 +150,8 @@ while (<IN>){
 	if ($intpos{$line[5]."_".$line[6]}){ $pint2=$intpos{$line[5]."_".$line[6]}; }
 	else { $pint2="NA";  }
 	$insc{$id}=$line[0]."\t".$line[1]."\t".$line[2]."\t$intpos{$pint1}\t".$line[5]."\t".$line[6]."\t$pint2\t".$line[11]."\t".$line[12]."\t".$line[13];
+
+	### Reciprocal hit not enforced
 	#$id=$line[5]."#".$line[6]."#".$line[1];
 	#$insc{$id}=$line[0]."\t".$line[5]."\t".$line[6]."\t".$line[7]."\t".$line[8]."\t".$line[1]."\t".$line[2]."\t".$line[3]."\t".$line[4]."\t".$line[9];
     }
