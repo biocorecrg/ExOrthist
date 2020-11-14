@@ -395,6 +395,7 @@ my_plot = ggplot()  +
 #This is generate the right proportions in the plot.
 my_width = as.numeric(nrow(subset(plotting_table, GeneID==my_gene)))+10 #number of exons 
 my_height = length(unique(as.vector(plotting_table$GeneID))) #Number of orthologs
+if (length(unique(as.vector(plotting_table$GeneID))) < 5) {my_height = 5} #adjust cases with very few genes 
 if (my_isorform_id == "None") {output_file = "exint_plot.pdf"} else {output_file = paste0("exint_plot_", my_isorform_id, ".pdf")}
 pdf(paste0(my_folder, output_file), width=my_width, height=my_height)
 my_plot
