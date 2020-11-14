@@ -103,6 +103,7 @@ while (<TEMP_INFILE>){
 }
 close TEMP_INFILE;
 close SC;
+$p=0 if !defined $p;
 print STDERR "Number of parts:\t$p\n";
 
 system "rm tmp.out sorted_scores.out";
