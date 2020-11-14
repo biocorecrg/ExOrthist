@@ -809,20 +809,23 @@ sub score_introns {
 				    $score = $score+$gp_right; # the N of gaps are "subtracted" from the deviation (14/11/20)
 
 				    if ($score==0){ $score=-1; } ###differentiating from NO_ALN
-				    if (!$insc{$idin}){
+				    if (!defined $insc{$idin}){
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
 					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
-					    $indev{$idin}=abs($m3);
+#					    $indev{$idin}=abs($m3);
+					    $indev{$idin}=$score; # in case the closest has a different phase (14/11/20)
 					}
 				    }
-				    elsif (abs($m3)<$indev{$idin}) {
+#				    elsif (abs($m3)<$indev{$idin}) { # to keep the closest one
+				    elsif ($score > $indev{$idin}) { # to keep the best one
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
 					    $aln[$m2]="n" if !defined $aln[$m2];					    
 					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
-					    $indev{$idin}=abs($m3);
+#					    $indev{$idin}=abs($m3);
+					    $indev{$idin}=$score; # in case the closest has a different phase (14/11/20)
 					}
 				    }
 				}
@@ -833,20 +836,23 @@ sub score_introns {
 				    # correction for left gap not possible with the current setting
 				    
 				    if ($score==0){ $score=-1; } ###differentiating from NO_ALN  
-				    if (!$insc{$idin}){
+				    if (!defined $insc{$idin}){
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
 					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
-					    $indev{$idin}=abs($w);
+#					    $indev{$idin}=abs($w);
+					    $indev{$idin}=$score; # in case the closest has a different phase (14/11/20)
 					}
 				    }
-				    elsif (abs($w)<$indev{$idin}) {
+#				    elsif (abs($w)<$indev{$idin}) { # the closest one
+				    elsif ($score > $indev{$idin}) { # to keep the best one
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
 					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n1."\tintron_".$i1."\t".$paa1."\t".$seq1[$n]."\t".$n2."\tintron_".$r."\t".$paa2."\t".$seq2[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp1."\t".$sp2;
-					    $indev{$idin}=abs($w);
+#					    $indev{$idin}=abs($w);
+					    $indev{$idin}=$score; # in case the closest has a different phase (14/11/20)
 					}
 				    }
 				}
@@ -966,20 +972,23 @@ sub score_introns {
 				    $score=$score-(abs($m3)); ##resting deviating positions to the score
 				    $score = $score+$gp_right; # the N of gaps are "subtracted" from the deviation (14/11/20)
 
-				    if (!$insc{$idin}){
+				    if (!defined $insc{$idin}){
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
 					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
-					    $indev{$idin}=abs($m3);
+#					    $indev{$idin}=abs($m3);
+					    $indev{$idin}=$score; # in case the closest has a different phase (14/11/20)
 					}
 				    }
-				    elsif (abs($m3)<$indev{$idin}){
+#				    elsif (abs($m3)<$indev{$idin}){ # the closest one
+				    elsif ($score > $indev{$idin}) { # to keep the best one
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
 					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t+".$m3."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
-					    $indev{$idin}=abs($m3);
+#					    $indev{$idin}=abs($m3);
+					    $indev{$idin}=$score; # in case the closest has a different phase (14/11/20)
 					}
 				    }
 				}
@@ -989,20 +998,23 @@ sub score_introns {
 				    $score=$score-(abs($w)); ##resting deviating positions to the score
 				    # from the left side, it cannot be corrected for gaps
 
-				    if (!$insc{$idin}){
+				    if (!defined $insc{$idin}){
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
 					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
-					    $indev{$idin}=abs($w);
+#					    $indev{$idin}=abs($w);
+					    $indev{$idin}=$score; # in case the closest has a different phase (14/11/20)
 					}
 				    }
-				    elsif (abs($w)<$indev{$idin}){
+#				    elsif (abs($w)<$indev{$idin}){ # the closest one
+				    elsif ($score > $indev{$idin}) { # to keep the best one
 					if ($n1 && $n2){
 					    $aln[$m1]="n" if !defined $aln[$m1]; 
 					    $aln[$m2]="n" if !defined $aln[$m2];
 					    $insc{$idin}=$el."\t".$n2."\tintron_".$i1."\t".$paa1."\t".$seq2[$n]."\t".$n1."\tintron_".$r."\t".$paa2."\t".$seq1[$t]."\t".$w."\t".$aln[$m1].",".$aln[$m2]."\t".$score."\t".$sp2."\t".$sp1;
-					    $indev{$idin}=abs($w);
+#					    $indev{$idin}=abs($w);
+					    $indev{$idin}=$score; # in case the closest has a different phase (14/11/20)
 					}
 				    }
 				}
