@@ -787,11 +787,11 @@ sub score_introns {
 		$j=-$win; # j is the begining of the window. It increments +1 in each loop. So it's the relative position
 		$r=$i2;
 		$score=0; $apos=0; $gp=0;
-		my ($gp_left, $gp_right)=(0,0); # N of gaps at each side of the intron (gp_left is BEFORE the intron; not valid)
+		my ($gp_left, $gp_right)=(0,0); # N of gaps at each side of the intron (gp_left is BEFORE the intron)
 		### Starts the actual check around
 		for ($t=$n+$j; $t<=$n+$win; $t++){ # t is the current aln position. j the relative (respect to the intron in Sp1)
 		    if ($t <= $#seq2){ # it doesn't go beyond the end of the Aln
-			if ($seq2[$t] eq "-"){ $gp++; $apos++; $gp_left++ if $t<$n; $gp_right++ if $t>$n;} # gp_left and right added to know where gaps are
+			if ($seq2[$t] eq "-"){ $gp++; $apos++; $gp_right++ if $t>$n;} # right added to know where gaps are
 			if ($seq2[$t]=~/[A-Z]/ ) { $apos++; }
 			if ($seq2[$t]=~/\d/){ # Finds an intron in Sp2
 			    $dev=1;
@@ -833,7 +833,12 @@ sub score_introns {
 				    my $w=$m3+2; 
 				    if ($seq1[$n] eq $seq2[$t]) { $score=10; } else { $score=-10; }
 				    $score=$score-(abs($w)); ##resting deviating positions to the score
-				    # correction for left gap not possible with the current setting
+				    # correction for left gap not possible with the current setting. Needs checking downstream
+				    $gp_left=0; # redefined just in case
+				    for my $sub_pos ($t..$n){ # scans from current position (t) to intron in Sp1 (n)
+					$gp_left++ if $seq2[$sub_pos] eq "-";
+				    }
+				    $score=$score+$gp_left;
 				    
 				    if ($score==0){ $score=-1; } ###differentiating from NO_ALN  
 				    if (!defined $insc{$idin}){
@@ -953,10 +958,10 @@ sub score_introns {
 		$j=-$win; ##changing deviation accordint to alignment quality
 		my $r=$i2; $apos=0;
 		$score=0; $gp=0;
-		my ($gp_left, $gp_right)=(0,0); # N of gaps at each side of the intron (left BEFORE the intron; not valid)
+		my ($gp_left, $gp_right)=(0,0); # N of gaps at each side of the intron
 		for ($t=$n+$j; $t<=$n+$win; $t++){
 		    if ($t <= $#seq1){ # in some cases, $t is bigger than $#seq1
-			if ($seq1[$t] eq "-"){ $gp++; $apos++; $gp_left++ if $t<$n; $gp_right++ if $t>$n;} 
+			if ($seq1[$t] eq "-"){ $gp++; $apos++; $gp_right++ if $t>$n;} # only gaps to the right here
 			if ($seq1[$t] =~/[A-Z]/) { $apos++; }
 			if ($seq1[$t]=~/\d/){ 		    
 			    $dev=1;
@@ -996,7 +1001,12 @@ sub score_introns {
 				    my $w=$m3+2; 
 				    if ($seq2[$n] eq $seq1[$t]) { $score=10; } else { $score=-10; }
 				    $score=$score-(abs($w)); ##resting deviating positions to the score
-				    # from the left side, it cannot be corrected for gaps
+				    # correction for left gap not possible with the current setting. Needs checking downstream
+				    $gp_left=0; # redefined just in case
+				    for my $sub_pos ($t..$n){ # scans from current position (t) to intron in Sp2 (n)
+					$gp_left++ if $seq1[$sub_pos] eq "-";
+				    }
+				    $score=$score+$gp_left;
 
 				    if (!defined $insc{$idin}){
 					if ($n1 && $n2){
