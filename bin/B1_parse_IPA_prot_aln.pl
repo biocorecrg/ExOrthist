@@ -1149,7 +1149,6 @@ sub score_exons {
 		$pr="$n1";
 		$rs2="";
 		if (!$print{$pr}){
-#		    print PRSC "$el\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; ##Adding species info in the last 2 columns => it was redundant
 		    %cin=();
 		    $print{$pr}=1;
 		}
@@ -1310,7 +1309,6 @@ sub score_exons {
 		$rs2="";
 		if (!$print{$pr}){
 		    %cin=();
-#		    print PRSC  "$el\tProtein\t$n2\t$n1\t$sim2\t$sim1\t$id1\t$glsc1\t$sp2\t$sp1\n"; ##Adding species info in the last 2 columns => corrected sim1 and sim2, but also eliminated as redundant
 		    $print{$pr}=1;
 		}		    
 		@l=split(/\-/,$line[2]);		    
@@ -1386,17 +1384,13 @@ sub score_exons {
 				
 				my @new_nex;
 				@nex=split(/\,/,$tex); $ne=scalar(@nex); ##changing output format ($ne => number of exons)
-#				print "N_Exons_PRE\t$n2\t$n2\t$ne\t$total_valid_pos\n";
 				for ($x=0; $x<scalar(@nex); $x++){
 				    my $perc_matches = 0;
 				    $perc_matches = sprintf("%.2f",100*$tally_per_exon{$nex[$x]}/$total_valid_pos) if $tally_per_exon{$nex[$x]} && $total_valid_pos > 0;
 				    push(@new_nex, $nex[$x]) if ($perc_matches >= $min_exon_overlap);
-#				    print "EX$x\t$perc_matches\n";
 				}
 				# just re-write the old arrays to avoid unexpected issues
-				@nex=@new_nex; $ne=scalar(@nex);
-#				print "N_Exons_POST\t$ne\n\n";
-				
+				@nex=@new_nex; $ne=scalar(@nex);				
 				if ($ne > 1){ # i.e. still more than one hit
 				    for ($x=0; $x<scalar(@nex); $x++){
 					$tstr=$el."\t".$_."\t".$ne."\t".$n1."\t".$rs1."-".$rs2."\t".$id_score."\t".$sim_score."\t".$ng."\t".$png."\t".$nex[$x]."\t".$sp2."\t".$sp1;
