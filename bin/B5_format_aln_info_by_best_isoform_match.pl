@@ -6,14 +6,14 @@ use strict;
 ##SCRIPT FOR SCORING EXONS BTW PAIR OF SPECIES##
 my $s1=$ARGV[0]; ##species 1 
 my $s2=$ARGV[1]; ##species 2
-my $i1=$ARGV[2]; ##aligned protein sp1 sp2 (Aligned_proteins.txt)
-my $i2=$ARGV[3]; ##exon scores (Best_scores_pair_exons.txt)
-my $i3=$ARGV[4]; ##intron scores (Score_all_introns.txt)
+my $i1=$ARGV[2]; ##aligned protein sp1 sp2 (all_PROT_aln_features.txt)
+my $i2=$ARGV[3]; ##exon scores (all_EX_aln_features.txt)
+my $i3=$ARGV[4]; ##intron scores (all_INT_aln_features.txt)
 my $i4=$ARGV[5]; ##exint file sp1 (Sp1.exint)
 my $i5=$ARGV[6]; ##exint file sp1 (Sp2.exint)
 my $i6=$ARGV[7]; ##intron coords sp1 (Sp1_protein_ids_intron_pos_CDS.txt)
 my $i7=$ARGV[8]; ##intron coords sp2 (Sp2_protein_ids_intron_pos_CDS.txt)
-my $outf=$ARGV[9];
+my $outf=$ARGV[9]; # all_PROT_EX_INT_aln_features_Sp1-Sp2.txt
 
 ##protein ids exons species 1
 open (IN,"$i1") || die "Missing aligned proteins file";  
