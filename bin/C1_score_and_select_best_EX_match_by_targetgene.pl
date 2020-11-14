@@ -81,15 +81,15 @@ while (<IN>){
 	    if ($esc{$e2}) { $sC2=($esc{$e2} * 0.15); } # prev = 0.16
 	    if ($line[5] ne "NO_EXON_ALN") { 
 		$sA=($line[7] * 0.20); # prev = 0.18
-		$TSC=$sA+$sI2+$sC2; ##Total Score
+		$TSC=$sA+$sI2+$sC2+0.4; ##Total Score
 		print OUTONE "$c\tExon\tN_terminal\t$line[1]\t$line[2]\t$line[3]\t";
 		print OUTONE "$line[4]\t$line[5]\t$line[6]\tNA\tNA\t$sA\t$sI2\t$sC2\t$TSC\t$line[8]\t$line[9]\n";
 		$string=$c."\tExon"."\t"."N_terminal\t".$line[1]."\t".$line[2]."\t".$line[3]."\t";
 		$string.=$line[4]."\t".$line[5]."\t".$line[6]."\tNA\tNA\t".$sA."\t".$sI2."\t".$sC2."\t".$TSC."\t".$line[8]."\t".$line[9];
 	    }
 	    else { 
-		$sA=-0.1; ##Nothing aligned
-		$TSC=$sA+$sI2+$sC2+0.41; ##Total Score  (to sum up to 1, the missing exon and intron score are added)
+		$sA = -1; ##Nothing aligned => previously -0.1 (14/11/20)
+		$TSC=$sA+$sI2+$sC2+0.4; ##Total Score  (to sum up to 1, the missing exon and intron score are added)
 		print OUTONE "$c\tExon\tN_terminal\t$line[1]\t$line[2]\t$line[3]\t";
 		print OUTONE "$line[4]\t$line[5]\tNA\tNA\tNA\t$sA\t$sI2\t$sC2\t$TSC\t$line[8]\t$line[9]\n";
 		$string=$c."\tExon"."\t"."N_terminal\t".$line[1]."\t".$line[2]."\t".$line[3]."\t";
@@ -104,15 +104,15 @@ while (<IN>){
 	    if ($esc{$e1}) { $sC1=($esc{$e1} * 0.15); } # prev = 0.16
 	    if ($line[5] ne "NO_EXON_ALN") { 
 		$sA=($line[7] * 0.20); # prev = 0.18
-		$TSC=$sC1+$sI1+$sA+0.41; ##Total Score  (to sum up to 1, the missing exon and intron score are added); ##Total Score
+		$TSC=$sC1+$sI1+$sA+0.40; ##Total Score  (to sum up to 1, the missing exon and intron score are added); ##Total Score
 		print OUTONE "$c\tExon\tC_terminal\t$line[1]\t$line[2]\t$line[3]\t";
 		print OUTONE "$line[4]\t$line[5]\t$line[6]\t$sC1\t$sI1\t$sA\tNA\tNA\t$TSC\t$line[8]\t$line[9]\n";
 		$string=$c."\t"."Exon"."\t"."C_terminal\t".$line[1]."\t".$line[2]."\t".$line[3]."\t";
 		$string.=$line[4]."\t".$line[5]."\t".$line[6]."\t".$sC1."\t".$sI1."\t".$sA."\tNA\tNA\t".$TSC."\t".$line[8]."\t".$line[9];
 	    }
 	    else { 
-		$sA=-0.1; 
-		$TSC=$sC1+$sI1+$sA;
+		$sA = -1; ##Nothing aligned => previously -0.1 (14/11/20) 
+		$TSC=$sC1+$sI1+$sA+0.4; # the 0.4 is for "perfect" I2 C2
 		print OUTONE "$c\tExon\tC_terminal\t$line[1]\t$line[2]\t$line[3]\t";			
 		print OUTONE "$line[4]\t$line[5]\tNA\t$sC1\t$sI1\t$sA\tNA\tNA\t$TSC\t$line[8]\t$line[9]\n";
 		$string=$c."\t"."Exon"."\t"."C_terminal\t".$line[1]."\t".$line[2]."\t".$line[3]."\t";
@@ -139,6 +139,7 @@ while (<IN>){
 		} 
 	    } else{ $sI2=-0.25; }
 	    if ($esc{$e2}) { $sC2=($esc{$e2} * 0.15); } # prev = 0.16 
+
 	    if ($line[5] ne "NO_EXON_ALN") { 
 		$sA=$line[7] * 0.20; # prev = 0.18
 		$TSC=$sC1+$sI1+$sA+$sI2+$sC2;			
@@ -148,7 +149,7 @@ while (<IN>){
 		$string.=$line[4]."\t".$line[5]."\t".$line[6]."\t".$sC1."\t".$sI1."\t".$sA."\t".$sI2."\t".$sC2."\t".$TSC."\t".$line[8]."\t".$line[9];
 	    }
 	    else { 
-		$sA=-0.1; 
+		$sA = -1; ##Nothing aligned => previously -0.1 (14/11/20)  
 		$TSC=$sC1+$sI1+$sA+$sI2+$sC2;
 		print OUTONE "$c\tExon\tInternal\t$line[1]\t$line[2]\t$line[3]\t";			
 		print OUTONE "$line[4]\t$line[5]\tNA\t$sC1\t$sI1\t$sA\t$sI2\t$sC2\t$TSC\t$line[8]\t$line[9]\n";
