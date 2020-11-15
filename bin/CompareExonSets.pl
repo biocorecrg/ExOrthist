@@ -348,7 +348,7 @@ my %done_sp2_EX=(); # to store already seen PARTIAL exons
 my %done_sp2_G=(); # count genes
 
 my %info_by_exon=(); # all necessary info
-my %exact_exon_with_a_match=(); # this stores for each cluster all the exons matched in lists [the coord may not be exact]
+
 
 open (LIST1, $f_exon_list_sp1) || die "It cannot open exon list for $sp1 ($f_exon_list_sp1)\n";
 while (<LIST1>){
@@ -432,7 +432,6 @@ while (<LIST1>){
 	    
 	    $tally_sp1_exons_Gcons++ if (defined $exon_cluster_has_sp{$exon_cluster}{$sp2}); # exons with Genome conservation
 	    $exon_cluster_is_regulated{$exon_cluster}{$sp1}=1; 
-	    $exact_exon_with_a_match{$exon_cluster}{$exon_id}=1;
 	}
 	elsif (!$added_exon_to_array{$sp1}{$exon_id1} && !$added_exon_to_array{$sp1}{$exon_id2}) { # added to the gene's exon array as non Gcons if not previously added
 	    push(@{$array_of_exons_per_gene{$sp1}{$gene}},"$i-$f=NO_CLUSTER"); 
@@ -539,7 +538,6 @@ if (defined $f_exon_list_sp2){
 		$tally_sp2_exons_Gcons++ if (defined $exon_cluster_has_sp{$exon_cluster}{$sp1});
 		$tally_sp2_exons_Rcons++ if (defined $exon_cluster_is_regulated{$exon_cluster}{$sp1});
 		$exon_cluster_is_regulated{$exon_cluster}{$sp2}=1; 
-		$exact_exon_with_a_match{$exon_cluster}{$exon_id}=1;
 	    }
 	    elsif (!$added_exon_to_array{$sp2}{$exon_id1} && !$added_exon_to_array{$sp2}{$exon_id2}) { # added to the gene's exon array as non Gcons if not previously added
 		push(@{$array_of_exons_per_gene{$sp2}{$gene}},"$i-$f=NO_CLUSTER"); # all coordinates of the exons per gene
