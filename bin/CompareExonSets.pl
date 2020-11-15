@@ -158,6 +158,7 @@ if (defined $f_exon_list_sp2){
 	die "[Aborted] No info column should be provided\n" if $tally_info2{EMPTY} != $all_list2;
     }
 }
+print "dPSI information detected = $dPSI_info\n\n";
 ############################ Finish detecting format of dPSI
 
 
@@ -365,7 +366,6 @@ while (<LIST1>){
     ### to avoid multiple counting of exon variants (e.g. as in rMATS or SUPPA)
     next if ((defined $done_sp1_EX{$exon_id1}) || (defined $done_sp1_EX{$exon_id2}));
     $done_sp1_EX{$exon_id1}=1; $done_sp1_EX{$exon_id2}=1;
-    $total_sp1_exons++;
     
     #### Defines the info here, in case exon_id is redefined by cluster match
     if ($dPSI_info eq "none"){
@@ -393,6 +393,7 @@ while (<LIST1>){
     
     ### Only evaluates regulated exons
     if ( $info_by_exon{$sp1}{$exon_id} eq "REGULATED" || $info_by_exon{$sp1}{$exon_id} eq "UP" || $info_by_exon{$sp1}{$exon_id} eq "DOWN"){
+	$total_sp1_exons++;
 	### tries to assign to ex cluster
 	my $t_exon_cl1; # redundant with some code below
 	if (defined $exon_to_cluster{$sp1}{$exon_id1}){$t_exon_cl1=$exon_to_cluster{$sp1}{$exon_id1};}
@@ -466,7 +467,6 @@ if (defined $f_exon_list_sp2){
 	### to avoid multiple counting of exon variants (e.g. as in rMATS or SUPPA)
 	next if ((defined $done_sp2_EX{$exon_id1}) || (defined $done_sp2_EX{$exon_id2}));
 	$done_sp2_EX{$exon_id1}=1; $done_sp2_EX{$exon_id2}=1;
-	$total_sp2_exons++;
 
 	#### Defines the info here, in case exon_id is redefined by cluster match
 	if ($dPSI_info eq "none"){
@@ -494,6 +494,7 @@ if (defined $f_exon_list_sp2){
 	
 	### Only evaluates regulated exons
 	if ( $info_by_exon{$sp2}{$exon_id} eq "REGULATED" || $info_by_exon{$sp2}{$exon_id} eq "UP" || $info_by_exon{$sp2}{$exon_id} eq "DOWN"){
+	    $total_sp2_exons++;
 	    ### tries to assign to ex cluster
 	    my $t_exon_cl2; # redundant with some code below
 	    if (defined $exon_to_cluster{$sp2}{$exon_id1}){$t_exon_cl2=$exon_to_cluster{$sp2}{$exon_id1};}
