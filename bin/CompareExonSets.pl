@@ -313,8 +313,8 @@ die "[Abort] It could not find exon orthologs for $sp2; correct species 2 ID?\n"
 ### Genes with regulated exons
 if (defined $outFile && defined $f_exon_list_sp2){
     open (OUT_GENES, ">OrthoGenes_with_reg_exons-$sp1-$sp2.tab");
-    print OUT_GENES "OrthoCluster\tGeneID_1\tExon_coord_1\tExon_N_1\tTotal_Exons_1\tExon_length_1\tEx_cluster_1\t".
-	"GeneID_2\tExon_coord_2\tExon_N_2\tTotal_Exons_2\tExon_length_2\tEx_cluster_2\tCONSERV_CALL\tSpecies_1\tSpecies_2\n";
+    print OUT_GENES "OrthoCluster\tGeneID_1\tExon_coord_1\tExon_N_1\tTotal_Exons_1\tExon_length_1\tEx_cluster_1\tINFO_1\t".
+	"GeneID_2\tExon_coord_2\tExon_N_2\tTotal_Exons_2\tExon_length_2\tEx_cluster_2\tINFO_2\tCONSERV_CALL\tSpecies_1\tSpecies_2\n";
 }
 
 ### Options for last column: (i) dPSI, (ii) Qualitative calls, (iii) none
@@ -365,65 +365,84 @@ while (<LIST1>){
     next if ((defined $done_sp1_EX{$exon_id1}) || (defined $done_sp1_EX{$exon_id2}));
     $done_sp1_EX{$exon_id1}=1; $done_sp1_EX{$exon_id2}=1;
     $total_sp1_exons++;
-
-    ### tries to assign to ex cluster
-    my $t_exon_cl1; # redundant with some code below
-    if (defined $exon_to_cluster{$sp1}{$exon_id1}){$t_exon_cl1=$exon_to_cluster{$sp1}{$exon_id1};}
-    elsif (defined $exon_to_cluster{$sp1}{$exon_id2}){$t_exon_cl1=$exon_to_cluster{$sp1}{$exon_id2};}
-    else {$t_exon_cl1 = "NO_CLUSTER";}
-
-    ##### Gene level conservation
-    $total_sp1_genes++ unless (defined $done_sp1_G{$gene}); # to avoid multiple gene counting
-    ### Check first if the exon falls in an orthologous gene 
-    if (defined $gene_to_cluster{$sp1}{$gene}){ # i.e. gene is in an orth gene cluster
-	my $gene_cluster = $gene_to_cluster{$sp1}{$gene};
-	$tally_sp1_exons_in_Gcons_genes++ if (defined $gene_cluster_has_sp{$gene_cluster}{$sp2}); # counts exons
-	if (!defined $done_sp1_G{$gene}){
-	    $tally_sp1_genes_in_Gcons_genes++ if (defined $gene_cluster_has_sp{$gene_cluster}{$sp2}); # counts genes
-	}
-
-	# adds all the regulated exons for the gene in Sp1
-	if (!defined $gene_cluster_is_regulated{$gene_cluster}{$sp1}){ 
-	    $gene_cluster_is_regulated{$gene_cluster}{$sp1}.="$exon_id=$t_exon_cl1,";
-	}
-	elsif ($gene_cluster_is_regulated{$gene_cluster}{$sp1}!~/$exon_id\=$t_exon_cl1\,/){
-	    $gene_cluster_is_regulated{$gene_cluster}{$sp1}.="$exon_id=$t_exon_cl1,";
-	} 	
-    } # missing if Sp2 has a list => reg exons in the same genes
-    $done_sp1_G{$gene}=1;
-
-    if ((defined $exon_to_cluster{$sp1}{$exon_id1}) || (defined $exon_to_cluster{$sp1}{$exon_id2})){ # same as $t_exon_cl1 ne "NO_CLUSTER"
-	# it first checks the smaller coordinate. They could be inconsistent in a small number of cases.
-	my $exon_cluster;
-	if (defined $exon_to_cluster{$sp1}{$exon_id1}){
-	    $exon_cluster = $exon_to_cluster{$sp1}{$exon_id1};
-	    $exon_id = $partial_coord_conversion{$sp1}{$exon_id1}; # redefines exon_id!
-	}
-	elsif (defined $exon_to_cluster{$sp1}{$exon_id2}){
-	    $exon_cluster = $exon_to_cluster{$sp1}{$exon_id2};
-	    $exon_id = $partial_coord_conversion{$sp1}{$exon_id2}; # redefines exon_id!
-	}
-
-	$tally_sp1_exons_Gcons++ if (defined $exon_cluster_has_sp{$exon_cluster}{$sp2}); # exons with Genome conservation
-	$exon_cluster_is_regulated{$exon_cluster}{$sp1}=1; 
-	$exact_exon_with_a_match{$exon_cluster}{$exon_id}=1;
-    }
-    elsif (!$added_exon_to_array{$sp1}{$exon_id1} && !$added_exon_to_array{$sp1}{$exon_id2}) { # added to the gene's exon array as non Gcons if not previously added
-	push(@{$array_of_exons_per_gene{$sp1}{$gene}},"$i-$f=NO_CLUSTER"); 
-    }
     
     #### Defines the info here, in case exon_id is redefined by cluster match
     if ($dPSI_info eq "none"){
-	$info_by_exon{$exon_id}="REGULATED";
-	$info_by_exon{$exon_id1}="REGULATED";
-	$info_by_exon{$exon_id2}="REGULATED";
+	$info_by_exon{$sp1}{$exon_id}="REGULATED"; $info_by_exon{$sp1}{$exon_id1}="REGULATED"; $info_by_exon{$sp1}{$exon_id2}="REGULATED";
     }
     elsif ($dPSI_info eq "qual_call"){
-	$info_by_exon{$exon_id}="$l[2]";
-	$info_by_exon{$exon_id1}="$l[2]";
-	$info_by_exon{$exon_id2}="$l[2]";
+	$info_by_exon{$sp1}{$exon_id}="$l[2]"; $info_by_exon{$sp1}{$exon_id1}="$l[2]"; $info_by_exon{$sp1}{$exon_id2}="$l[2]";
     }
-    # to be developed further
+    elsif ($dPSI_info eq "dPSI"){
+	if ($l[2]=~/\d/){
+	    if ($l[2] >= $min_dPSI){
+		$info_by_exon{$sp1}{$exon_id}="UP"; $info_by_exon{$sp1}{$exon_id1}="UP"; $info_by_exon{$sp1}{$exon_id2}="UP";
+	    }
+	    elsif ($l[2] <= -$min_dPSI){
+		$info_by_exon{$sp1}{$exon_id}="DOWN"; $info_by_exon{$sp1}{$exon_id1}="DOWN"; $info_by_exon{$sp1}{$exon_id2}="DOWN";
+	    }
+	    else {
+		$info_by_exon{$sp1}{$exon_id}="NO_CHANGE"; $info_by_exon{$sp1}{$exon_id1}="NO_CHANGE"; $info_by_exon{$sp1}{$exon_id2}="NO_CHANGE";
+	    }
+	}
+	else {
+	    $info_by_exon{$sp1}{$exon_id}="NO_INFO"; $info_by_exon{$sp1}{$exon_id1}="NO_INFO"; $info_by_exon{$sp1}{$exon_id2}="NO_INFO";
+	}
+    }
+    
+    ### Only evaluates regulated exons
+    if ( $info_by_exon{$sp1}{$exon_id} eq "REGULATED" || $info_by_exon{$sp1}{$exon_id} eq "UP" || $info_by_exon{$sp1}{$exon_id} eq "DOWN"){
+	### tries to assign to ex cluster
+	my $t_exon_cl1; # redundant with some code below
+	if (defined $exon_to_cluster{$sp1}{$exon_id1}){$t_exon_cl1=$exon_to_cluster{$sp1}{$exon_id1};}
+	elsif (defined $exon_to_cluster{$sp1}{$exon_id2}){$t_exon_cl1=$exon_to_cluster{$sp1}{$exon_id2};}
+	else {$t_exon_cl1 = "NO_CLUSTER";}
+	
+	##### Gene level conservation
+	$total_sp1_genes++ unless (defined $done_sp1_G{$gene}); # to avoid multiple gene counting
+	### Check first if the exon falls in an orthologous gene 
+	if (defined $gene_to_cluster{$sp1}{$gene}){ # i.e. gene is in an orth gene cluster
+	    my $gene_cluster = $gene_to_cluster{$sp1}{$gene};
+	    $tally_sp1_exons_in_Gcons_genes++ if (defined $gene_cluster_has_sp{$gene_cluster}{$sp2}); # counts exons
+	    if (!defined $done_sp1_G{$gene}){
+		$tally_sp1_genes_in_Gcons_genes++ if (defined $gene_cluster_has_sp{$gene_cluster}{$sp2}); # counts genes
+	    }
+	    
+	    # adds all the regulated exons for the gene in Sp1
+	    if (!defined $gene_cluster_is_regulated{$gene_cluster}{$sp1}){ 
+		$gene_cluster_is_regulated{$gene_cluster}{$sp1}.="$exon_id=$t_exon_cl1,";
+	    }
+	    elsif ($gene_cluster_is_regulated{$gene_cluster}{$sp1}!~/$exon_id\=$t_exon_cl1\,/){
+		$gene_cluster_is_regulated{$gene_cluster}{$sp1}.="$exon_id=$t_exon_cl1,";
+	    } 	
+	} # missing if Sp2 has a list => reg exons in the same genes
+	$done_sp1_G{$gene}=1;
+	
+	if ((defined $exon_to_cluster{$sp1}{$exon_id1}) || (defined $exon_to_cluster{$sp1}{$exon_id2})){ # same as $t_exon_cl1 ne "NO_CLUSTER"
+	    # it first checks the smaller coordinate. They could be inconsistent in a small number of cases.
+	    my $exon_cluster;
+	    if (defined $exon_to_cluster{$sp1}{$exon_id1}){
+		$exon_cluster = $exon_to_cluster{$sp1}{$exon_id1};
+		$exon_id = $partial_coord_conversion{$sp1}{$exon_id1}; # redefines exon_id!
+	    }
+	    elsif (defined $exon_to_cluster{$sp1}{$exon_id2}){
+		$exon_cluster = $exon_to_cluster{$sp1}{$exon_id2};
+		$exon_id = $partial_coord_conversion{$sp1}{$exon_id2}; # redefines exon_id!
+	    }
+	    
+	    $tally_sp1_exons_Gcons++ if (defined $exon_cluster_has_sp{$exon_cluster}{$sp2}); # exons with Genome conservation
+	    $exon_cluster_is_regulated{$exon_cluster}{$sp1}=1; 
+	    $exact_exon_with_a_match{$exon_cluster}{$exon_id}=1;
+	}
+	elsif (!$added_exon_to_array{$sp1}{$exon_id1} && !$added_exon_to_array{$sp1}{$exon_id2}) { # added to the gene's exon array as non Gcons if not previously added
+	    push(@{$array_of_exons_per_gene{$sp1}{$gene}},"$i-$f=NO_CLUSTER"); 
+	}
+    }
+    else { # if not regulated, it will try to add it to the string of the gene
+	if (!$added_exon_to_array{$sp1}{$exon_id1} && !$added_exon_to_array{$sp1}{$exon_id2}) { # added to the gene's exon array as non Gcons if not previously added
+	    push(@{$array_of_exons_per_gene{$sp1}{$gene}},"$i-$f=NO_CLUSTER"); 
+	}
+    }
 }
 close LIST1;
 
@@ -446,74 +465,94 @@ if (defined $f_exon_list_sp2){
 	$done_sp2_EX{$exon_id1}=1; $done_sp2_EX{$exon_id2}=1;
 	$total_sp2_exons++;
 
-	### tries to assign to ex cluster
-	my $t_exon_cl2; # redundant with some code below
-	if (defined $exon_to_cluster{$sp2}{$exon_id1}){$t_exon_cl2=$exon_to_cluster{$sp2}{$exon_id1};}
-	elsif (defined $exon_to_cluster{$sp2}{$exon_id2}){$t_exon_cl2=$exon_to_cluster{$sp2}{$exon_id2};}
-	else {$t_exon_cl2 = "NO_CLUSTER";}
-
-	##### Gene level conservation
-	$total_sp2_genes++ unless (defined $done_sp2_G{$gene});
-	### Check first if the exon falls in an orthologous gene 
-	if (defined $gene_to_cluster{$sp2}{$gene}){ # i.e. gene is in a cluster
-	    my $gene_cluster = $gene_to_cluster{$sp2}{$gene};
-	    $tally_sp2_exons_in_Gcons_genes++ if (defined $gene_cluster_has_sp{$gene_cluster}{$sp1});
-	    
-	    if (defined $gene_cluster_is_regulated{$gene_cluster}{$sp1}){ # gene orth is Sp1 have regulated exons (cons or convergent?)
-		$tally_sp2_exons_in_Rcons_genes++;
-	    }
-
-	    if (!defined $done_sp2_G{$gene}){
-		$tally_sp2_genes_in_Gcons_genes++ if (defined $gene_cluster_has_sp{$gene_cluster}{$sp1});
-		$tally_sp2_genes_in_Rcons_genes++ if (defined $gene_cluster_is_regulated{$gene_cluster}{$sp1});
-	    }
-	    
-	    if (!defined $gene_cluster_is_regulated{$gene_cluster}{$sp2}){
-		$gene_cluster_is_regulated{$gene_cluster}{$sp2}.="$exon_id=$t_exon_cl2,";
-	    }
-	    elsif ($gene_cluster_is_regulated{$gene_cluster}{$sp2}!~/$exon_id\=$t_exon_cl2\,/){
-		$gene_cluster_is_regulated{$gene_cluster}{$sp2}.="$exon_id=$t_exon_cl2,";
-	    } 	
-	}
-	$done_sp2_G{$gene}=1;
-	
-	#### Exon levels conservation
-	if ((defined $exon_to_cluster{$sp2}{$exon_id1}) || (defined $exon_to_cluster{$sp2}{$exon_id2})){ 
-	    # it first checks the smaller coordinate. They could be inconsistent in a small number of cases.
-	    my $exon_cluster;
-
-	    if (defined $exon_to_cluster{$sp2}{$exon_id1}){
-		$exon_cluster = $exon_to_cluster{$sp2}{$exon_id1};
-		$exon_id = $partial_coord_conversion{$sp2}{$exon_id1}; # redefines exon_id!
-	    }
-	    elsif (defined $exon_to_cluster{$sp2}{$exon_id2}){
-		$exon_cluster = $exon_to_cluster{$sp2}{$exon_id2};
-		$exon_id = $partial_coord_conversion{$sp2}{$exon_id2}; # redefines exon_id!
-	    }
-	    
-	    $tally_sp2_exons_Gcons++ if (defined $exon_cluster_has_sp{$exon_cluster}{$sp1});
-	    $tally_sp2_exons_Rcons++ if (defined $exon_cluster_is_regulated{$exon_cluster}{$sp1});
-	    $exon_cluster_is_regulated{$exon_cluster}{$sp2}=1; 
-	    $exact_exon_with_a_match{$exon_cluster}{$exon_id}=1;
-	}
-	elsif (!$added_exon_to_array{$sp2}{$exon_id1} && !$added_exon_to_array{$sp2}{$exon_id2}) { # added to the gene's exon array as non Gcons if not previously added
-	    push(@{$array_of_exons_per_gene{$sp2}{$gene}},"$i-$f=NO_CLUSTER"); # all coordinates of the exons per gene
-	}
-
 	#### Defines the info here, in case exon_id is redefined by cluster match
 	if ($dPSI_info eq "none"){
-	    $info_by_exon{$exon_id}="REGULATED";
-	    $info_by_exon{$exon_id1}="REGULATED";
-	    $info_by_exon{$exon_id2}="REGULATED";
+	    $info_by_exon{$sp2}{$exon_id}="REGULATED"; $info_by_exon{$sp2}{$exon_id1}="REGULATED"; $info_by_exon{$sp2}{$exon_id2}="REGULATED";
 	}
-	elsif ($dPSI_info eq "qual_call"){ # not in use yet
-	    $info_by_exon{$exon_id}="$l[2]";
-	    $info_by_exon{$exon_id1}="$l[2]";
-	    $info_by_exon{$exon_id2}="$l[2]";
+	elsif ($dPSI_info eq "qual_call"){
+	    $info_by_exon{$sp2}{$exon_id}="$l[2]"; $info_by_exon{$sp2}{$exon_id1}="$l[2]"; $info_by_exon{$sp2}{$exon_id2}="$l[2]";
+	}
+	elsif ($dPSI_info eq "dPSI"){
+	    if ($l[2]=~/\d/){
+		if ($l[2] >= $min_dPSI){
+		    $info_by_exon{$sp2}{$exon_id}="UP"; $info_by_exon{$sp2}{$exon_id1}="UP"; $info_by_exon{$sp2}{$exon_id2}="UP";
+		}
+		elsif ($l[2] <= -$min_dPSI){
+		    $info_by_exon{$sp2}{$exon_id}="DOWN"; $info_by_exon{$sp2}{$exon_id1}="DOWN"; $info_by_exon{$sp2}{$exon_id2}="DOWN";
+		}
+		else {
+		    $info_by_exon{$sp2}{$exon_id}="NO_CHANGE"; $info_by_exon{$sp2}{$exon_id1}="NO_CHANGE"; $info_by_exon{$sp2}{$exon_id2}="NO_CHANGE";
+		}
+	    }
+	    else {
+		$info_by_exon{$sp2}{$exon_id}="NO_INFO"; $info_by_exon{$sp2}{$exon_id1}="NO_INFO"; $info_by_exon{$sp2}{$exon_id2}="NO_INFO";
+	    }
+	}
+	
+	### Only evaluates regulated exons
+	if ( $info_by_exon{$sp2}{$exon_id} eq "REGULATED" || $info_by_exon{$sp2}{$exon_id} eq "UP" || $info_by_exon{$sp2}{$exon_id} eq "DOWN"){
+	    ### tries to assign to ex cluster
+	    my $t_exon_cl2; # redundant with some code below
+	    if (defined $exon_to_cluster{$sp2}{$exon_id1}){$t_exon_cl2=$exon_to_cluster{$sp2}{$exon_id1};}
+	    elsif (defined $exon_to_cluster{$sp2}{$exon_id2}){$t_exon_cl2=$exon_to_cluster{$sp2}{$exon_id2};}
+	    else {$t_exon_cl2 = "NO_CLUSTER";}
+	    
+	    ##### Gene level conservation
+	    $total_sp2_genes++ unless (defined $done_sp2_G{$gene});
+	    ### Check first if the exon falls in an orthologous gene 
+	    if (defined $gene_to_cluster{$sp2}{$gene}){ # i.e. gene is in a cluster
+		my $gene_cluster = $gene_to_cluster{$sp2}{$gene};
+		$tally_sp2_exons_in_Gcons_genes++ if (defined $gene_cluster_has_sp{$gene_cluster}{$sp1});
+		
+		if (defined $gene_cluster_is_regulated{$gene_cluster}{$sp1}){ # gene orth is Sp1 have regulated exons (cons or convergent?)
+		    $tally_sp2_exons_in_Rcons_genes++;
+		}
+		
+		if (!defined $done_sp2_G{$gene}){
+		    $tally_sp2_genes_in_Gcons_genes++ if (defined $gene_cluster_has_sp{$gene_cluster}{$sp1});
+		    $tally_sp2_genes_in_Rcons_genes++ if (defined $gene_cluster_is_regulated{$gene_cluster}{$sp1});
+		}
+		
+		if (!defined $gene_cluster_is_regulated{$gene_cluster}{$sp2}){
+		    $gene_cluster_is_regulated{$gene_cluster}{$sp2}.="$exon_id=$t_exon_cl2,";
+		}
+		elsif ($gene_cluster_is_regulated{$gene_cluster}{$sp2}!~/$exon_id\=$t_exon_cl2\,/){
+		    $gene_cluster_is_regulated{$gene_cluster}{$sp2}.="$exon_id=$t_exon_cl2,";
+		} 	
+	    }
+	    $done_sp2_G{$gene}=1;
+	    
+	    #### Exon levels conservation
+	    if ((defined $exon_to_cluster{$sp2}{$exon_id1}) || (defined $exon_to_cluster{$sp2}{$exon_id2})){ 
+		# it first checks the smaller coordinate. They could be inconsistent in a small number of cases.
+		my $exon_cluster;
+		
+		if (defined $exon_to_cluster{$sp2}{$exon_id1}){
+		    $exon_cluster = $exon_to_cluster{$sp2}{$exon_id1};
+		    $exon_id = $partial_coord_conversion{$sp2}{$exon_id1}; # redefines exon_id!
+		}
+		elsif (defined $exon_to_cluster{$sp2}{$exon_id2}){
+		    $exon_cluster = $exon_to_cluster{$sp2}{$exon_id2};
+		    $exon_id = $partial_coord_conversion{$sp2}{$exon_id2}; # redefines exon_id!
+		}
+		
+		$tally_sp2_exons_Gcons++ if (defined $exon_cluster_has_sp{$exon_cluster}{$sp1});
+		$tally_sp2_exons_Rcons++ if (defined $exon_cluster_is_regulated{$exon_cluster}{$sp1});
+		$exon_cluster_is_regulated{$exon_cluster}{$sp2}=1; 
+		$exact_exon_with_a_match{$exon_cluster}{$exon_id}=1;
+	    }
+	    elsif (!$added_exon_to_array{$sp2}{$exon_id1} && !$added_exon_to_array{$sp2}{$exon_id2}) { # added to the gene's exon array as non Gcons if not previously added
+		push(@{$array_of_exons_per_gene{$sp2}{$gene}},"$i-$f=NO_CLUSTER"); # all coordinates of the exons per gene
+	    }
+	}
+	else { # if not regulated, it will try to add it to the string of the gene
+	    if (!$added_exon_to_array{$sp2}{$exon_id1} && !$added_exon_to_array{$sp2}{$exon_id2}) { # added to the gene's exon array as non Gcons if not previously added
+		push(@{$array_of_exons_per_gene{$sp2}{$gene}},"$i-$f=NO_CLUSTER"); 
+	    }
 	}
     }
     close LIST2;
-
+    
     #### Re-open LIST1
     my %done_sp1_EX_b=(); my %done_sp1_G_b=();
     open (LIST1b, $f_exon_list_sp1) || die "It cannot open exon list for $sp1 ($f_exon_list_sp1)\n";
@@ -531,189 +570,195 @@ if (defined $f_exon_list_sp2){
 	next if ((defined $done_sp1_EX_b{$exon_id1}) || (defined $done_sp1_EX_b{$exon_id2}));
 	$done_sp1_EX_b{$exon_id1}=1; $done_sp1_EX_b{$exon_id2}=1;
 
-	### tries to assign to ex cluster
-	my $t_exon_cl1; # redundant with some code below
-	if (defined $exon_to_cluster{$sp1}{$exon_id1}){$t_exon_cl1=$exon_to_cluster{$sp1}{$exon_id1};}
-	elsif (defined $exon_to_cluster{$sp1}{$exon_id2}){$t_exon_cl1=$exon_to_cluster{$sp1}{$exon_id2};}
-	else {$t_exon_cl1 = "NO_CLUSTER";}
 	
-	### Gene level conservation
-	if (defined $gene_to_cluster{$sp1}{$gene}){ # i.e. gene is in a cluster
-	    my $gene_cluster = $gene_to_cluster{$sp1}{$gene};
-	    if (defined $gene_cluster_is_regulated{$gene_cluster}{$sp2}){ # gene orth have regulated exon Sp2 (cons or convergent?)
-		$tally_sp1_exons_in_Rcons_genes++;
-
-		### This bit is to print the genes with Reg events
-		$gene_cluster_is_regulated{$gene_cluster}{$sp2}=~s/\,$//; # gets rid of final comma
-		my ($t_g1,$t_co1)=$exon_id=~/(.+?)\=(.+)/;
-		my @t_ex_sp2=split(/\,/,$gene_cluster_is_regulated{$gene_cluster}{$sp2});
-		foreach my $t_exon_id2 (@t_ex_sp2){ # all exons regulated in gene orthologs from Sp2 (one by one against those of list_sp1
-		    my ($t_g2,$t_co2,$t_exon_cl2)=$t_exon_id2=~/(.+?)\=(.+?)\=(.+)/;
-		    my ($i2,$f2) = $t_co2 =~ /\:(\d+)\-(\d+)/;
-		    ### Gets exons lengths
-		    my $le_ex1 = ($f-$i)+1;
-		    my $le_ex2 = ($f2-$i2)+1;
-
-		    ### Does the sorting and matching here in V2
-		    my @temp_sp1; my @temp_sp2;
-		    @temp_sp1 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "+"; 
-		    @temp_sp1 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "-"; 
-		    @temp_sp2 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "+"; 
-		    @temp_sp2 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "-"; 
+	### Only evaluates regulated exons
+	if ( $info_by_exon{$sp1}{$exon_id} eq "REGULATED" || $info_by_exon{$sp1}{$exon_id} eq "UP" || $info_by_exon{$sp1}{$exon_id} eq "DOWN"){
+	    ### tries to assign to ex cluster
+	    my $t_exon_cl1; # redundant with some code below
+	    if (defined $exon_to_cluster{$sp1}{$exon_id1}){$t_exon_cl1=$exon_to_cluster{$sp1}{$exon_id1};}
+	    elsif (defined $exon_to_cluster{$sp1}{$exon_id2}){$t_exon_cl1=$exon_to_cluster{$sp1}{$exon_id2};}
+	    else {$t_exon_cl1 = "NO_CLUSTER";}
+	    
+	    ### Gene level conservation
+	    if (defined $gene_to_cluster{$sp1}{$gene}){ # i.e. gene is in a cluster
+		my $gene_cluster = $gene_to_cluster{$sp1}{$gene};
+		if (defined $gene_cluster_is_regulated{$gene_cluster}{$sp2}){ # gene orth have regulated exon Sp2 (cons or convergent)
+		    $tally_sp1_exons_in_Rcons_genes++;
 		    
-		    my $match1; my $match2; # the position of the actual exons
-		    foreach my $t_ex (0..$#temp_sp1){
-			$match1 = $t_ex if ($temp_sp1[$t_ex]=~/$i/ || $temp_sp1[$t_ex]=~/$f/);
-		    }
-		    foreach my $t_ex (0..$#temp_sp2){
-			$match2 = $t_ex if ($temp_sp2[$t_ex]=~/$i2/ || $temp_sp2[$t_ex]=~/$f2/);
-		    }
-		    my $segment_sp1 = int(5*$match1/($#temp_sp1+1))+1; # in 5 segments
-		    my $segment_sp2 = int(5*$match2/($#temp_sp2+1))+1; # in 5 segments
-		    my $total_ex_sp1 = $#temp_sp1+1; # total number of exons in gene sp1
-		    my $total_ex_sp2 = $#temp_sp2+1; # total number of exons in gene sp2
-
-		    # For debugging
-#		    if ($t_g1 eq "ENSMUSG00000014602"){
-#			print "T_Sp1\t$gene_strand{$sp1}{$t_g1}\t$t_g1\t$match1\t$i\t$f\t@temp_sp1\n";
-#			print "T_Sp2\t$gene_strand{$sp2}{$t_g2}\t$t_g2\t$match2\t$i2\t$f2\t@temp_sp2\n\n";
-#		    }
-
-		    ### New approach in V2
-		    my $cons_conv_call = "UNCLEAR_0";
-		    # 1: if the exon cluster is the same
-		    if ($t_exon_cl1 eq $t_exon_cl2 && $t_exon_cl1 ne "NO_CLUSTER" && $t_exon_cl2 ne "NO_CLUSTER"){
-			$cons_conv_call = "CONSERVED_1";
-		    }
-		    # 2: both exons are in exon clusters, but they are different clusters
-		    elsif ($t_exon_cl1 ne $t_exon_cl2 && $t_exon_cl1 ne "NO_CLUSTER" && $t_exon_cl2 ne "NO_CLUSTER"){
-			$cons_conv_call= "NON_CONSERVED_2";
-		    }		    
-		    # 3: if the exon in Sp1 has a best hit against Sp2
-		    elsif ($best_exon_hits{$sp1}{$exon_id1}{$t_g2} || $best_exon_hits{$sp1}{$exon_id2}{$t_g2}){ # it could be a NO_EXON_ALN
-			my $best_hit_sp2;
-			if ($best_exon_hits{$sp1}{$exon_id1}{$t_g2} && $best_exon_hits{$sp1}{$exon_id1}{$t_g2} ne "NO_EXON_ALN"){
-			    $best_hit_sp2 = $best_exon_hits{$sp1}{$exon_id1}{$t_g2};
-			    my ($check_i, $check_f) = $best_hit_sp2 =~ /(.+?)\-(.+)/;			    
-			    if ($i2 eq $check_i || $f2 eq $check_f){
-				$cons_conv_call= "BEST_HIT_3"; # the best hit is also a regulated exon
-			    }
-			    else {
-				$cons_conv_call= "NON_CONSERVED_3A"; # simply not the best hit (revise)
-			    }
-			}
-			elsif ($best_exon_hits{$sp1}{$exon_id2}{$t_g2} && $best_exon_hits{$sp1}{$exon_id2}{$t_g2} ne "NO_EXON_ALN"){
-			    $best_hit_sp2 = $best_exon_hits{$sp1}{$exon_id2}{$t_g2};
-			    my ($check_i, $check_f) = $best_hit_sp2 =~ /(.+?)\-(.+)/;			    
-			    if ($i2 eq $check_i || $f2 eq $check_f){
-				$cons_conv_call= "BEST_HIT_3"; # the best hit is also a regulated exon
-			    }
-			    else {
-				$cons_conv_call= "NON_CONSERVED_3A"; # simply not the best hit (revise)
-			    }			    
-			}
-			else {
-			    $cons_conv_call= "NON_CONSERVED_3B"; # i.e. it's NO_EXON_ALN
-			}
-		    }
-		    # 4: the lengths are too different
-		    elsif ((abs($le_ex1-$le_ex2)/$le_ex1) > $max_dif_le_ratio || (abs($le_ex1-$le_ex2)/$le_ex2) > $max_dif_le_ratio){
-			$cons_conv_call = "NON_CONSERVED_4";
-		    }
-		    # 5: either of the genes don't have any exon cluster to be used as anchor
-		    elsif (!$g_with_exon_clusters{$sp1}{$t_g1} || !$g_with_exon_clusters{$sp2}{$t_g2}){ # either of them has no exon clusters
-			# uses the sorting info
-			if ($total_ex_sp1 <= 4 || $total_ex_sp2 <= 4){
-			    $cons_conv_call = "UNCLEAR_5"; 
-			}
-			elsif (abs($segment_sp1-$segment_sp2)>=2){
-			    $cons_conv_call= "NON_CONSERVED_5";
-			}
-			else {
-			    $cons_conv_call = "UNCLEAR_5"; 
-			}
-		    }
-		    # 6: both genes have exon clusters to use as anchors
-		    else { # both genes have exon clusters
-			my %cl_to_index1; my %cl_to_index2; # from the cluster ID to index in array
-			my $anchor_ups; my $anchor_downs;
-			my %anchor_conversion;
+		    ### This is the core of the two list comparison: it does ALL pairwise Sp1 vs Sp2 exons from the same gene orth cluster
+		    $gene_cluster_is_regulated{$gene_cluster}{$sp2}=~s/\,$//; # gets rid of final comma
+		    my ($t_g1,$t_co1)=$exon_id=~/(.+?)\=(.+)/;
+		    my @t_ex_sp2=split(/\,/,$gene_cluster_is_regulated{$gene_cluster}{$sp2});
+		    foreach my $t_exon_id_sp2 (@t_ex_sp2){ # all exons regulated in gene orthologs from Sp2 (one by one against those of list_sp1
+			my ($t_g2,$t_co2,$t_exon_cl2)=$t_exon_id_sp2=~/(.+?)\=(.+?)\=(.+)/;
+			my ($i2,$f2) = $t_co2 =~ /\:(\d+)\-(\d+)/;
+			### Gets exons lengths
+			my $le_ex1 = ($f-$i)+1;
+			my $le_ex2 = ($f2-$i2)+1;
+			
+			### Does the sorting and matching here in V2
+			my @temp_sp1; my @temp_sp2;
+			@temp_sp1 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "+"; 
+			@temp_sp1 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp1}{$t_g1}}) if $gene_strand{$sp1}{$t_g1} eq "-"; 
+			@temp_sp2 = sort {($a=~/(\d+)\-/)[0]<=>($b=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "+"; 
+			@temp_sp2 = sort {($b=~/(\d+)\-/)[0]<=>($a=~/(\d+)\-/)[0]}(@{$array_of_exons_per_gene{$sp2}{$t_g2}}) if $gene_strand{$sp2}{$t_g2} eq "-"; 
+			
+			my $match1; my $match2; # the position of the actual exons
 			foreach my $t_ex (0..$#temp_sp1){
-			    my ($value) = $temp_sp1[$t_ex] =~ /\=(.+)/;
-			    $cl_to_index1{$value}=$t_ex;
+			    $match1 = $t_ex if ($temp_sp1[$t_ex]=~/$i/ || $temp_sp1[$t_ex]=~/$f/);
 			}
 			foreach my $t_ex (0..$#temp_sp2){
-			    my ($value) = $temp_sp2[$t_ex] =~ /\=(.+)/;
-			    $cl_to_index2{$value}=$t_ex;
-			    if (defined ($cl_to_index1{$value})){ # it can take 0
-				if ($value ne "NO_CLUSTER"){ #i.e. it's a cluster = anchor
-				    $anchor_conversion{$cl_to_index1{$value}}=$t_ex;  # Sp1 => Sp2: e.g 23 => 2, 24 => 4, etc
-				    if (!defined $anchor_ups){
-					$anchor_ups = $cl_to_index1{$value} if $cl_to_index1{$value} < $match1; 
-				    } else {
-					$anchor_ups = $cl_to_index1{$value} if $cl_to_index1{$value} < $match1 && $cl_to_index1{$value} > $anchor_ups; 
-				    }
-				    if (!defined $anchor_downs){
-					$anchor_downs = $cl_to_index1{$value} if $cl_to_index1{$value} > $match1; 
-				    } else {
-					$anchor_downs = $cl_to_index1{$value} if $cl_to_index1{$value} > $match1 && $cl_to_index1{$value} < $anchor_downs; 
+			    $match2 = $t_ex if ($temp_sp2[$t_ex]=~/$i2/ || $temp_sp2[$t_ex]=~/$f2/);
+			}
+			my $segment_sp1 = int(5*$match1/($#temp_sp1+1))+1; # in 5 segments
+			my $segment_sp2 = int(5*$match2/($#temp_sp2+1))+1; # in 5 segments
+			my $total_ex_sp1 = $#temp_sp1+1; # total number of exons in gene sp1
+			my $total_ex_sp2 = $#temp_sp2+1; # total number of exons in gene sp2
+			
+			# For debugging
+#			if ($t_g1 eq "ENSMUSG00000014602"){
+#			    print "T_Sp1\t$gene_strand{$sp1}{$t_g1}\t$t_g1\t$match1\t$i\t$f\t@temp_sp1\n";
+#			    print "T_Sp2\t$gene_strand{$sp2}{$t_g2}\t$t_g2\t$match2\t$i2\t$f2\t@temp_sp2\n\n";
+#			}
+			
+			### New approach in V2
+			my $cons_conv_call = "UNCLEAR_0";
+			# 1: if the exon cluster is the same
+			if ($t_exon_cl1 eq $t_exon_cl2 && $t_exon_cl1 ne "NO_CLUSTER" && $t_exon_cl2 ne "NO_CLUSTER"){
+			    $cons_conv_call = "CONSERVED_1";
+			}
+			# 2: both exons are in exon clusters, but they are different clusters
+			elsif ($t_exon_cl1 ne $t_exon_cl2 && $t_exon_cl1 ne "NO_CLUSTER" && $t_exon_cl2 ne "NO_CLUSTER"){
+			    $cons_conv_call= "NON_CONSERVED_2";
+			}		    
+			# 3: if the exon in Sp1 has a best hit against Sp2
+			elsif ($best_exon_hits{$sp1}{$exon_id1}{$t_g2} || $best_exon_hits{$sp1}{$exon_id2}{$t_g2}){ # it could be a NO_EXON_ALN
+			    my $best_hit_sp2;
+			    if ($best_exon_hits{$sp1}{$exon_id1}{$t_g2} && $best_exon_hits{$sp1}{$exon_id1}{$t_g2} ne "NO_EXON_ALN"){
+				$best_hit_sp2 = $best_exon_hits{$sp1}{$exon_id1}{$t_g2};
+				my ($check_i, $check_f) = $best_hit_sp2 =~ /(.+?)\-(.+)/;			    
+				if ($i2 eq $check_i || $f2 eq $check_f){
+				    $cons_conv_call= "BEST_HIT_3"; # the best hit is also a regulated exon
+				}
+				else {
+				    $cons_conv_call= "NON_CONSERVED_3A"; # simply not the best hit (revise)
+				}
+			    }
+			    elsif ($best_exon_hits{$sp1}{$exon_id2}{$t_g2} && $best_exon_hits{$sp1}{$exon_id2}{$t_g2} ne "NO_EXON_ALN"){
+				$best_hit_sp2 = $best_exon_hits{$sp1}{$exon_id2}{$t_g2};
+				my ($check_i, $check_f) = $best_hit_sp2 =~ /(.+?)\-(.+)/;			    
+				if ($i2 eq $check_i || $f2 eq $check_f){
+				    $cons_conv_call= "BEST_HIT_3"; # the best hit is also a regulated exon
+				}
+				else {
+				    $cons_conv_call= "NON_CONSERVED_3A"; # simply not the best hit (revise)
+				}			    
+			    }
+			    else {
+				$cons_conv_call= "NON_CONSERVED_3B"; # i.e. it's NO_EXON_ALN
+			    }
+			}
+			# 4: the lengths are too different
+			elsif ((abs($le_ex1-$le_ex2)/$le_ex1) > $max_dif_le_ratio || (abs($le_ex1-$le_ex2)/$le_ex2) > $max_dif_le_ratio){
+			    $cons_conv_call = "NON_CONSERVED_4";
+			}
+			# 5: either of the genes don't have any exon cluster to be used as anchor
+			elsif (!$g_with_exon_clusters{$sp1}{$t_g1} || !$g_with_exon_clusters{$sp2}{$t_g2}){ # either of them has no exon clusters
+			    # uses the sorting info
+			    if ($total_ex_sp1 <= 4 || $total_ex_sp2 <= 4){
+				$cons_conv_call = "UNCLEAR_5"; 
+			    }
+			    elsif (abs($segment_sp1-$segment_sp2)>=2){
+				$cons_conv_call= "NON_CONSERVED_5";
+			    }
+			    else {
+				$cons_conv_call = "UNCLEAR_5"; 
+			    }
+			}
+			# 6: both genes have exon clusters to use as anchors
+			else { # both genes have exon clusters
+			    my %cl_to_index1; my %cl_to_index2; # from the cluster ID to index in array
+			    my $anchor_ups; my $anchor_downs;
+			    my %anchor_conversion;
+			    foreach my $t_ex (0..$#temp_sp1){
+				my ($value) = $temp_sp1[$t_ex] =~ /\=(.+)/;
+				$cl_to_index1{$value}=$t_ex;
+			    }
+			    foreach my $t_ex (0..$#temp_sp2){
+				my ($value) = $temp_sp2[$t_ex] =~ /\=(.+)/;
+				$cl_to_index2{$value}=$t_ex;
+				if (defined ($cl_to_index1{$value})){ # it can take 0
+				    if ($value ne "NO_CLUSTER"){ #i.e. it's a cluster = anchor
+					$anchor_conversion{$cl_to_index1{$value}}=$t_ex;  # Sp1 => Sp2: e.g 23 => 2, 24 => 4, etc
+					if (!defined $anchor_ups){
+					    $anchor_ups = $cl_to_index1{$value} if $cl_to_index1{$value} < $match1; 
+					} else {
+					    $anchor_ups = $cl_to_index1{$value} if $cl_to_index1{$value} < $match1 && $cl_to_index1{$value} > $anchor_ups; 
+					}
+					if (!defined $anchor_downs){
+					    $anchor_downs = $cl_to_index1{$value} if $cl_to_index1{$value} > $match1; 
+					} else {
+					    $anchor_downs = $cl_to_index1{$value} if $cl_to_index1{$value} > $match1 && $cl_to_index1{$value} < $anchor_downs; 
+					}
 				    }
 				}
 			    }
-			}
-			### does the anchors assessment
-			if (!defined $anchor_ups && !defined $anchor_downs){ # no common clusters
-			    # based on exon number
-			    if ($total_ex_sp1 <= 4 || $total_ex_sp2 <= 4){
-				$cons_conv_call = "UNCLEAR_6A"; 
+			    ### does the anchors assessment
+			    if (!defined $anchor_ups && !defined $anchor_downs){ # no common clusters
+				# based on exon number
+				if ($total_ex_sp1 <= 4 || $total_ex_sp2 <= 4){
+				    $cons_conv_call = "UNCLEAR_6A"; 
+				}
+				elsif (abs($segment_sp1-$segment_sp2)>=2){
+				    $cons_conv_call= "NON_CONSERVED_6A";
+				}
+				else {
+				    $cons_conv_call = "UNCLEAR_6A"; 
+				}
 			    }
-			    elsif (abs($segment_sp1-$segment_sp2)>=2){
-				$cons_conv_call= "NON_CONSERVED_6A";
+			    elsif (defined $anchor_ups && !defined $anchor_downs){ # anchor upstream
+				$cons_conv_call= "UNCLEAR_6B" if $match2 > $anchor_conversion{$anchor_ups}; # it's downstream the anchor
+				$cons_conv_call= "NON_CONSERVED_6B" if $match2 <= $anchor_conversion{$anchor_ups}; # it's upstream
 			    }
-			    else {
-				$cons_conv_call = "UNCLEAR_6A"; 
+			    elsif (!defined $anchor_ups && defined $anchor_downs){ # anchor downstream
+				$cons_conv_call= "UNCLEAR_6C" if $match2 < $anchor_conversion{$anchor_downs}; # it's upstream the anchor
+				$cons_conv_call= "NON_CONSERVED_6C" if $match2 >= $anchor_conversion{$anchor_downs}; # it's downstream
 			    }
-			}
-			elsif (defined $anchor_ups && !defined $anchor_downs){ # anchor upstream
-			    $cons_conv_call= "UNCLEAR_6B" if $match2 > $anchor_conversion{$anchor_ups}; # it's downstream the anchor
-			    $cons_conv_call= "NON_CONSERVED_6B" if $match2 <= $anchor_conversion{$anchor_ups}; # it's upstream
-			}
-			elsif (!defined $anchor_ups && defined $anchor_downs){ # anchor downstream
-			    $cons_conv_call= "UNCLEAR_6C" if $match2 < $anchor_conversion{$anchor_downs}; # it's upstream the anchor
-			    $cons_conv_call= "NON_CONSERVED_6C" if $match2 >= $anchor_conversion{$anchor_downs}; # it's downstream
-			}
-			else { # both anchors
-			    if ($match2 > $anchor_conversion{$anchor_ups} && $match2 < $anchor_conversion{$anchor_downs}){
-				$cons_conv_call= "UNCLEAR_6D";
-			    }
-			    else {
-				$cons_conv_call= "NON_CONSERVED_6D";
+			    else { # both anchors
+				if ($match2 > $anchor_conversion{$anchor_ups} && $match2 < $anchor_conversion{$anchor_downs}){
+				    $cons_conv_call= "UNCLEAR_6D";
+				}
+				else {
+				    $cons_conv_call= "NON_CONSERVED_6D";
+				}
 			    }
 			}
+			if (defined $outFile && defined $f_exon_list_sp2){
+			    $match1++; $match2++; # they were 0-based
+			    $info_by_exon{$sp1}{$exon_id}="NO_INFO" if (!defined $info_by_exon{$sp1}{$exon_id});
+			    $info_by_exon{$sp2}{$t_exon_id_sp2}="NO_INFO" if (!defined $info_by_exon{$sp2}{$t_exon_id_sp2});
+			    print OUT_GENES "$gene_cluster\t$t_g1\t$t_co1\t$match1\t$total_ex_sp1\t$le_ex1\t$t_exon_cl1\t$info_by_exon{$sp1}{$exon_id}\t".
+				"$t_g2\t$t_co2\t$match2\t$total_ex_sp2\t$le_ex2\t$t_exon_cl2\t$info_by_exon{$sp2}{$t_exon_id_sp2}\t$cons_conv_call\t$sp1\t$sp2\n";
+			}
+			$cons_conv_call=~s/(.+)\_[A-Z0-9]+?$/$1/;
+			$tally_sp1_exons_in_Rcons_genes_by_type{$cons_conv_call}++;
 		    }
-		    if (defined $outFile && defined $f_exon_list_sp2){
-			$match1++; $match2++; # they were 0-based			
-			print OUT_GENES "$gene_cluster\t$t_g1\t$t_co1\t$match1\t$total_ex_sp1\t$le_ex1\t$t_exon_cl1\t".
-			    "$t_g2\t$t_co2\t$match2\t$total_ex_sp2\t$le_ex2\t$t_exon_cl2\t$cons_conv_call\t$sp1\t$sp2\n";
-		    }
-		    $cons_conv_call=~s/(.+)\_[A-Z0-9]+?$/$1/;
-		    $tally_sp1_exons_in_Rcons_genes_by_type{$cons_conv_call}++;
+		}
+		if (!defined $done_sp1_G_b{$gene}){
+		    $tally_sp1_genes_in_Rcons_genes++ if (defined $gene_cluster_is_regulated{$gene_cluster}{$sp2});
 		}
 	    }
-	    if (!defined $done_sp1_G_b{$gene}){
-		$tally_sp1_genes_in_Rcons_genes++ if (defined $gene_cluster_is_regulated{$gene_cluster}{$sp2});
+	    $done_sp1_G_b{$gene}=1;
+	    
+	    ### Exon level
+	    if ((defined $exon_to_cluster{$sp1}{$exon_id1}) || (defined $exon_to_cluster{$sp1}{$exon_id2})){ 
+		# it first checks the smaller coordinate. They could be inconsistent in a small number of cases.
+		my $exon_cluster;
+		$exon_cluster = $exon_to_cluster{$sp1}{$exon_id1} if (defined $exon_to_cluster{$sp1}{$exon_id1}); 
+		$exon_cluster = $exon_to_cluster{$sp1}{$exon_id2} if (!defined $exon_to_cluster{$sp1}{$exon_id1}) && (defined $exon_to_cluster{$sp1}{$exon_id2}); 
+		
+		$tally_sp1_exons_Rcons++ if (defined $exon_cluster_is_regulated{$exon_cluster}{$sp2});
 	    }
-	}
-	$done_sp1_G_b{$gene}=1;
-
-	### Exon level
-	if ((defined $exon_to_cluster{$sp1}{$exon_id1}) || (defined $exon_to_cluster{$sp1}{$exon_id2})){ 
-	    # it first checks the smaller coordinate. They could be inconsistent in a small number of cases.
-	    my $exon_cluster;
-	    $exon_cluster = $exon_to_cluster{$sp1}{$exon_id1} if (defined $exon_to_cluster{$sp1}{$exon_id1}); 
-	    $exon_cluster = $exon_to_cluster{$sp1}{$exon_id2} if (!defined $exon_to_cluster{$sp1}{$exon_id1}) && (defined $exon_to_cluster{$sp1}{$exon_id2}); 
-
-	    $tally_sp1_exons_Rcons++ if (defined $exon_cluster_is_regulated{$exon_cluster}{$sp2});
 	}
     }
     close LIST1b;
@@ -728,18 +773,18 @@ if (defined $outFile){
 	if ((defined $exon_cluster_has_sp{$exon_cluster}{$sp1}) && (defined $exon_cluster_has_sp{$exon_cluster}{$sp2})){
 	    # here, there may be exons in clusters from sp1 and sp2 non-reg
 	    foreach my $exon_sp1 (@{$exons_by_cluster{$exon_cluster}{$sp1}}){
-		$info_by_exon{$exon_sp1}="NO_INFO" if (!defined $info_by_exon{$exon_sp1});
+		$info_by_exon{$sp1}{$exon_sp1}="NO_INFO" if (!defined $info_by_exon{$sp1}{$exon_sp1});
 		my ($gene_sp1,$coord_sp1) = $exon_sp1 =~ /(.+?)\=(.+)/;
 		my ($start,$end) = $coord_sp1 =~ /\:(\d+)\-(\d+)/;
 		my $length = $end-$start+1;
-		print OUT "$exon_cluster\t$sp1\t$gene_sp1\t$coord_sp1\t$length\t$info_by_exon{$exon_sp1}\n";
+		print OUT "$exon_cluster\t$sp1\t$gene_sp1\t$coord_sp1\t$length\t$info_by_exon{$sp1}{$exon_sp1}\n";
 	    }
 	    foreach my $exon_sp2 (@{$exons_by_cluster{$exon_cluster}{$sp2}}){
-		$info_by_exon{$exon_sp2}="NO_INFO" if (!defined $info_by_exon{$exon_sp2});
+		$info_by_exon{$sp2}{$exon_sp2}="NO_INFO" if (!defined $info_by_exon{$sp2}{$exon_sp2});
 		my ($gene_sp2,$coord_sp2) = $exon_sp2 =~ /(.+?)\=(.+)/;
 		my ($start,$end) = $coord_sp2 =~ /\:(\d+)\-(\d+)/;
 		my $length = $end-$start+1;
-		print OUT "$exon_cluster\t$sp2\t$gene_sp2\t$coord_sp2\t$length\t$info_by_exon{$exon_sp2}\n";
+		print OUT "$exon_cluster\t$sp2\t$gene_sp2\t$coord_sp2\t$length\t$info_by_exon{$sp2}{$exon_sp2}\n";
 	    }
 	}
     }
