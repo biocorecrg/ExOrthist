@@ -344,11 +344,11 @@ my $tally_sp2_exons_in_Rcons_genes = 0;
 my $tally_sp2_genes_in_Rcons_genes = 0;
 my $tally_sp2_exons_Rcons = 0; # due to paralogy, it may be non-symmetrict to sp1
 
-my %done_sp2_EX=(); # to store already seen PARTIAL exons
-my %done_sp2_G=(); # count genes
+my %done_sp2_EX; # to store already seen PARTIAL exons
+my %done_sp2_G; # count genes
 
-my %info_by_exon=(); # all necessary info
-
+my %info_by_exon; # all necessary info
+my %conv_to_orig_exon_id; # exon_ID is converted from list to cluster coordinates (exon => CDS!). This stores the conversion
 
 open (LIST1, $f_exon_list_sp1) || die "It cannot open exon list for $sp1 ($f_exon_list_sp1)\n";
 while (<LIST1>){
@@ -360,6 +360,7 @@ while (<LIST1>){
     my $exon_id1 = "$gene=$i"; # geneID=exon_start
     my $exon_id2 = "$gene=$f"; # geneID=exon_end
     my $exon_id = "$gene=$l[1]"; # fullID: geneID=coord
+    my $original_id= "$gene=$l[1]"; # fullID: geneID=coord
 
     ### to avoid multiple counting of exon variants (e.g. as in rMATS or SUPPA)
     next if ((defined $done_sp1_EX{$exon_id1}) || (defined $done_sp1_EX{$exon_id2}));
@@ -442,6 +443,8 @@ while (<LIST1>){
 	    push(@{$array_of_exons_per_gene{$sp1}{$gene}},"$i-$f=NO_CLUSTER"); 
 	}
     }
+    ### Stores original ID
+    $conv_to_orig_exon_id{$sp1}{$exon_id}=$original_id;
 }
 close LIST1;
 
@@ -458,6 +461,7 @@ if (defined $f_exon_list_sp2){
 	my $exon_id1 = "$gene=$i"; # geneID=exon_start
 	my $exon_id2 = "$gene=$f"; # geneID=exon_end
 	my $exon_id = "$gene=$l[1]"; # fullID: geneID=coord
+	my $original_id = "$gene=$l[1]"; # fullID: geneID=coord
 	
 	### to avoid multiple counting of exon variants (e.g. as in rMATS or SUPPA)
 	next if ((defined $done_sp2_EX{$exon_id1}) || (defined $done_sp2_EX{$exon_id2}));
@@ -548,6 +552,8 @@ if (defined $f_exon_list_sp2){
 		push(@{$array_of_exons_per_gene{$sp2}{$gene}},"$i-$f=NO_CLUSTER"); 
 	    }
 	}
+	### Stores original ID
+	$conv_to_orig_exon_id{$sp2}{$exon_id}=$original_id;	
     }
     close LIST2;
     
@@ -733,10 +739,22 @@ if (defined $f_exon_list_sp2){
 			}
 			if (defined $outFile && defined $f_exon_list_sp2){
 			    $match1++; $match2++; # they were 0-based
-			    $info_by_exon{$sp1}{$exon_id}="NO_INFO" if (!defined $info_by_exon{$sp1}{$exon_id});
-			    $info_by_exon{$sp2}{$t_exon_id_sp2}="NO_INFO" if (!defined $info_by_exon{$sp2}{$t_exon_id_sp2});
-			    print OUT_GENES "$gene_cluster\t$t_g1\t$t_co1\t$match1\t$total_ex_sp1\t$le_ex1\t$t_exon_cl1\t$info_by_exon{$sp1}{$exon_id}\t".
-				"$t_g2\t$t_co2\t$match2\t$total_ex_sp2\t$le_ex2\t$t_exon_cl2\t$info_by_exon{$sp2}{$t_exon_id_sp2}\t$cons_conv_call\t$sp1\t$sp2\n";
+			    my $exon_sp1 = $exon_id; # clean up naming
+			    my $exon_sp2 = $t_exon_id_sp2;
+			    ### Reconverts ID if needed
+			    if ($conv_to_orig_exon_id{$sp1}{$exon_sp1}){ # i.e. if it has been converted
+				$exon_sp1 = $conv_to_orig_exon_id{$sp1}{$exon_sp1};
+			    }			    
+			    if ($conv_to_orig_exon_id{$sp2}{$exon_sp2}){ # i.e. if it has been converted
+				$exon_sp2 = $conv_to_orig_exon_id{$sp2}{$exon_sp2};
+			    }			    
+			    $info_by_exon{$sp1}{$exon_sp1}="NO_INFO" if (!defined $info_by_exon{$sp1}{$exon_sp1});
+			    $info_by_exon{$sp2}{$exon_sp2}="NO_INFO" if (!defined $info_by_exon{$sp2}{$exon_sp2});
+			    my ($orig_co_sp1) = $exon_sp1 =~ /\=(.+)/; 
+			    my ($orig_co_sp2) = $exon_sp2 =~ /\=(.+)/;
+			    
+			    print OUT_GENES "$gene_cluster\t$t_g1\t$orig_co_sp1\t$match1\t$total_ex_sp1\t$le_ex1\t$t_exon_cl1\t$info_by_exon{$sp1}{$exon_sp1}\t".
+				"$t_g2\t$orig_co_sp2\t$match2\t$total_ex_sp2\t$le_ex2\t$t_exon_cl2\t$info_by_exon{$sp2}{$exon_sp2}\t$cons_conv_call\t$sp1\t$sp2\n";
 			}
 			$cons_conv_call=~s/(.+)\_[A-Z0-9]+?$/$1/;
 			$tally_sp1_exons_in_Rcons_genes_by_type{$cons_conv_call}++;
@@ -771,6 +789,9 @@ if (defined $outFile){
 	if ((defined $exon_cluster_has_sp{$exon_cluster}{$sp1}) && (defined $exon_cluster_has_sp{$exon_cluster}{$sp2})){
 	    # here, there may be exons in clusters from sp1 and sp2 non-reg
 	    foreach my $exon_sp1 (@{$exons_by_cluster{$exon_cluster}{$sp1}}){
+		if ($conv_to_orig_exon_id{$sp1}{$exon_sp1}){ # i.e. if it has been converted
+		    $exon_sp1 = $conv_to_orig_exon_id{$sp1}{$exon_sp1};
+		}
 		$info_by_exon{$sp1}{$exon_sp1}="NO_INFO" if (!defined $info_by_exon{$sp1}{$exon_sp1});
 		my ($gene_sp1,$coord_sp1) = $exon_sp1 =~ /(.+?)\=(.+)/;
 		my ($start,$end) = $coord_sp1 =~ /\:(\d+)\-(\d+)/;
@@ -778,6 +799,9 @@ if (defined $outFile){
 		print OUT "$exon_cluster\t$sp1\t$gene_sp1\t$coord_sp1\t$length\t$info_by_exon{$sp1}{$exon_sp1}\n";
 	    }
 	    foreach my $exon_sp2 (@{$exons_by_cluster{$exon_cluster}{$sp2}}){
+		if ($conv_to_orig_exon_id{$sp2}{$exon_sp2}){ # i.e. if it has been converted
+		    $exon_sp2 = $conv_to_orig_exon_id{$sp2}{$exon_sp2};
+		}
 		$info_by_exon{$sp2}{$exon_sp2}="NO_INFO" if (!defined $info_by_exon{$sp2}{$exon_sp2});
 		my ($gene_sp2,$coord_sp2) = $exon_sp2 =~ /(.+?)\=(.+)/;
 		my ($start,$end) = $coord_sp2 =~ /\:(\d+)\-(\d+)/;
