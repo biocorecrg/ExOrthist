@@ -85,13 +85,11 @@ while (<EX_CLUSTERS>){
     if ($gene_to_cluster{$gene}){ # if the gene has orthologs
 	my @temp = split(/\:/,$coord);
 	my $id2 = "$gene=$temp[1]";
-	my $exon_name = $exon_conversion{$id2};
+	my $exon_name = $exon_conversion{$id2}; # this is the unique ID (OV_EX_dm6_1)
 	
 	if (!defined $done_exon{$exon_name}){
 	    $tally_exons_in_clusters{$species}++;
 	    $done_exon{$exon_name}=1;
-	    # print OUT "$_\n";
-
 	    ### count by cluster
 	    $tally_by_exon_cluster{$exon_cluster}{$species}++;
 	    $total_exon_clusters++ if !defined $done_cluster{$exon_cluster};
@@ -144,20 +142,39 @@ my $perc_3=sprintf("%.2f",100*$tally_strings{MANY_3}/$total_strings);
 my $perc_4=sprintf("%.2f",100*$tally_strings{MANY_4}/$total_strings);
 my $perc_inc=sprintf("%.2f",100*$tally_strings{INCOMPLETE}/$total_strings);
 
+my $tally_strings12; # for 1:2 or 2:1
+my $perc_12;
+if (length($default_string1)==2){
+    $tally_strings{12}=0 if !defined $tally_strings{12};
+    $tally_strings{21}=0 if !defined $tally_strings{21};
+    $tally_strings12=$tally_strings{12}+$tally_strings{21};
+    $perc_12=sprintf("%.2f",100*$tally_strings12/$total_strings);    
+}
+
+### Number of other clusters
+my $other_strings = $total_strings-$tally_strings{$default_string1}-$tally_strings{$default_string2}-$tally_strings{MANY_3}-$tally_strings{MANY_4};
+$other_strings = $other_strings - $tally_strings12 if length($default_string1)==2;
+my $perc_others = sprintf("%.2f",100*$other_strings/$total_strings);
+
 print "\nTotal exon clusters\t$total_exon_clusters\n";
 print "Clusters $default_string1\t$tally_strings{$default_string1}\t$perc_1\%\n";
+print "Clusters 12/21\t$tally_strings12\t$perc_12\%\n" if length($default_string1)==2;
 print "Clusters $default_string2\t$tally_strings{$default_string2}\t$perc_2\%\n";
 print "Clusters >=3 exons/species\t$tally_strings{MANY_3}\t$perc_3\%\n";
 print "Clusters >=4 exons/species\t$tally_strings{MANY_4}\t$perc_4\%\n";
-print "Incomplete clusters\t$tally_strings{INCOMPLETE}\t$perc_inc\%\n";
-foreach my $species (sort keys %tally_exons){
-    my $perc = "NA";
-    $tally_missing{$species}=0 if !defined $tally_missing{$species};
-    if ($tally_strings{INCOMPLETE}>0){
-	$perc = sprintf("%.2f",100*$tally_missing{$species}/$tally_strings{INCOMPLETE});
-	print "  - $species\t$tally_missing{$species}\t$perc\%\n";
-    }
-    else {
-	print "  - $species\t$tally_missing{$species}\tNA\n";
+print "Other clusters\t$other_strings\t$perc_others\%\n";
+
+if (length($default_string1)>2){
+    print "\nIncomplete clusters\t$tally_strings{INCOMPLETE}\t$perc_inc\%\n";
+    foreach my $species (sort keys %tally_exons){
+	my $perc = "NA";
+	$tally_missing{$species}=0 if !defined $tally_missing{$species};
+	if ($tally_strings{INCOMPLETE}>0){
+	    $perc = sprintf("%.2f",100*$tally_missing{$species}/$tally_strings{INCOMPLETE});
+	    print "  - $species\t$tally_missing{$species}\t$perc\%\n";
+	}
+	else {
+	    print "  - $species\t$tally_missing{$species}\tNA\n";
+	}
     }
 }
