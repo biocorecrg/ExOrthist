@@ -21,6 +21,7 @@ my $min_dPSI = 15;
 my $outFile;
 my $helpFlag;
 my $max_dif_le_ratio = 1.5; # max (le1-le2)/le1 or (le1-le2)/le2 allowed
+my $allow_overlapping_exons; # option to allow overlapping exons
 
 Getopt::Long::Configure("no_auto_abbrev");
 GetOptions( "gene_clusters=s" => \$f_gene_cluster,
@@ -35,6 +36,7 @@ GetOptions( "gene_clusters=s" => \$f_gene_cluster,
 	    "dPSI_info=s" => \$dPSI_info,
 	    "min_dPSI=i" => $min_dPSI,
 	    "outFile" => \$outFile,
+	    "allow_overlap" => \$allow_overlapping_exons,
 	    "help" => \$helpFlag
     );
 
@@ -51,7 +53,7 @@ Compulsory Options:
      -gene_clusters FILE       File with clusters of gene orthology relationships (tsv).
      -exon_clusters FILE       File with clusters of exon orthology relationships (multi-species or pairwise [recommended])(tsv).
      -exon_list_sp1 FILE       File with exons from query species. It must contain qualitative or quantitative information on deltaPSIs.
-#                                  * Format (tsv): GeneID Exon_coord Info
+                                  * Format (tsv): GeneID Exon_coord Info
 
 
 Discretionary Options:
@@ -67,6 +69,7 @@ Discretionary Options:
                                   * auto: decision among dPSI, qual_call and non will be done automatically [default].
      -min_dPSI int             Minimum absolute delta PSI used to make a qualitatitive UP or DOWN call if dPSI is provided as dPSI_info [def = 15].
      -outFile                  It creates an output file with the exons in conserved clusters (otherwise, it does NOT create it).
+     -allow_overlap            It does not filter out multiple entries of the same exon with different donor/acceptors. Not recommended [def = OFF]
 
 
 *** Questions \& Bugs: mirimia\@gmail.com
@@ -158,7 +161,7 @@ if (defined $f_exon_list_sp2){
 	die "[Aborted] No info column should be provided\n" if $tally_info2{EMPTY} != $all_list2;
     }
 }
-print "dPSI information detected = $dPSI_info\n\n";
+print "\ndPSI information detected = $dPSI_info\n\n";
 ############################ Finish detecting format of dPSI
 
 
@@ -364,7 +367,7 @@ while (<LIST1>){
     my $original_id= "$gene=$l[1]"; # fullID: geneID=coord
 
     ### to avoid multiple counting of exon variants (e.g. as in rMATS or SUPPA)
-    next if ((defined $done_sp1_EX{$exon_id1}) || (defined $done_sp1_EX{$exon_id2}));
+    next if (((defined $done_sp1_EX{$exon_id1}) || (defined $done_sp1_EX{$exon_id2})) && !defined $allow_overlapping_exons);
     $done_sp1_EX{$exon_id1}=1; $done_sp1_EX{$exon_id2}=1;
     
     #### Defines the info here, in case exon_id is redefined by cluster match
@@ -465,7 +468,7 @@ if (defined $f_exon_list_sp2){
 	my $original_id = "$gene=$l[1]"; # fullID: geneID=coord
 	
 	### to avoid multiple counting of exon variants (e.g. as in rMATS or SUPPA)
-	next if ((defined $done_sp2_EX{$exon_id1}) || (defined $done_sp2_EX{$exon_id2}));
+	next if (((defined $done_sp2_EX{$exon_id1}) || (defined $done_sp2_EX{$exon_id2})) && !defined $allow_overlapping_exons);
 	$done_sp2_EX{$exon_id1}=1; $done_sp2_EX{$exon_id2}=1;
 
 	#### Defines the info here, in case exon_id is redefined by cluster match
