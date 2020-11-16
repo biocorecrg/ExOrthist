@@ -35,10 +35,8 @@ open (LIST, $f_gene_cluster) || die "It cannot open the gene clusters ($f_gene_c
 while (<LIST>){ ##checking list of consistent events
     chomp($_);
     my @l=split(/\t/,$_); 
-#    if ($l[4] ne "Intronless"){ # what file is this??
-	$gene_to_cluster{$l[2]} = $l[0];
-	$gene_to_species{$l[2]} = $l[1];
-#    }
+    $gene_to_cluster{$l[2]} = $l[0];
+    $gene_to_species{$l[2]} = $l[1];
 }
 close LIST;
 
@@ -163,4 +161,3 @@ foreach my $species (sort keys %tally_exons){
 	print "  - $species\t$tally_missing{$species}\tNA\n";
     }
 }
-
