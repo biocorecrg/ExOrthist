@@ -161,7 +161,11 @@ if (defined $f_exon_list_sp2){
 	die "[Aborted] No info column should be provided\n" if $tally_info2{EMPTY} != $all_list2;
     }
 }
-print "\ndPSI information detected = $dPSI_info\n\n";
+if ($dPSI_info ne "dPSI"){
+    print "\ndPSI information detected = $dPSI_info\n\n";
+} else {
+    print "\ndPSI information detected = $dPSI_info ($min_dPSI)\n\n";
+}
 ############################ Finish detecting format of dPSI
 
 
