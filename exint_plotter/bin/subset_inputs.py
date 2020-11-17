@@ -35,8 +35,10 @@ my_gtf_sub_df = my_gtf_sub_df.drop(columns=["GeneID"])
 my_gtf_sub_df.to_csv(my_species+"_subsetted_annot.gtf", header=False, index=False, sep="\t", na_rep="NA")
 
 #Subset Overlap file
-my_overlap_df = pd.read_table(my_overlap_file, header=None, index_col=False, sep="\t")
-my_overlap_sub_df = my_overlap_df[my_overlap_df.iloc[:,1].isin(selected_genes)]
+my_overlap_df = pd.read_table(my_overlap_file, header=None, index_col=False, sep="\t", names=["OverlapID", "GeneID", "ExCoords", "Strand"])
+#added after modification of main.nf output, 17/11/2020
+my_overlap_df = my_overlap_df.drop(columns=["Strand"])
+my_overlap_sub_df = my_overlap_df.loc[my_overlap_df["GeneID"].isin(selected_genes)]
 my_overlap_sub_df.to_csv(my_species+"_subsetted_overlap_info.txt", header=False, index=False, sep="\t", na_rep="NA")
 
 #Get exint_info (format: ProteinID|GeneID (ref protein), ex num.
