@@ -22,7 +22,10 @@ my_ex_int_num_df = pd.read_table(my_ref_prots_file, sep="\t", header=0)
 my_gtf = my_gtf[my_gtf.iloc[:,my_gtf.shape[1]-1].str.contains("protein_id")]
 my_gtf_subset = my_gtf.iloc[:,my_gtf.shape[1]-1]
 my_gtf_subset = my_gtf_subset[my_gtf_subset.str.contains("protein_id")]
-my_raw_prot_id = [part for element in list(my_gtf_subset) for part in element.split(";") if "protein_id" in part]
+#select the first subfield containing the protein ID. Useful in case of weird annotations
+protein_id_subfield = list(my_gtf_subset)[0].split(";").index([element for element in list(my_gtf_subset)[0].split(";") if "protein_id" in element][0])
+my_raw_prot_id = [element.split(";")[protein_id_subfield] for element in list(my_gtf_subset)]
+#my_raw_prot_id = [part for element in list(my_gtf_subset) for part in element.split(";") if "protein_id" in part]
 my_gtf["proteinID"] = [re.sub(".*[ ]", "", re.sub('"', "", element)) for element in my_raw_prot_id]
 
 ref_proteins_list = [re.sub("\\|.*", "", element) for element in list(my_ex_int_num_df["RefProt"])]
