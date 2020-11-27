@@ -94,6 +94,7 @@ process isolate_cluster_id {
 	"""
 }
 
+
 /*
  * Filter only for the species actually having exons in the exon clusters.
  */
@@ -555,9 +556,10 @@ process plot_exint {
 	val(isoform_interesting_exs)
 	file("*") from plot_input
 	output:
-	"${baseDir}/exint_plots"
+	//"${baseDir}/exint_plots"
+	file("exint_plot*.pdf")
 	script:
 	"""
-	Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${params.output}/${params.geneID}/ ${baseDir}/bin ${gene_clusters} ${ordered_target} ${isoform_interesting_exs} ${relevant_exons} 
+	Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${baseDir}/bin ${gene_clusters} ${ordered_target} ${isoform_interesting_exs} ${relevant_exons} 
 	"""
 }
