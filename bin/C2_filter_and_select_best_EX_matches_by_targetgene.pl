@@ -64,7 +64,7 @@ while (<INONE>){
     my $rs=0; # whether the intron positions are conserved (def = NO)
     my @line=split(/\t/,$_);
     
-    ### First it gets the best hit by target get by score alone (no filter). Equivalent to former C1 script.
+    ### First it gets the best hit by target gene by total score alone (no filter yet). Equivalent to former C1 script.
     my @t_g1=split(/\|/,$line[3]); my @t_g2=split(/\|/,$line[6]);
     my $t_id1=$t_g1[1]."\t".$line[5];
     if (!defined $pre_exon_score{$t_id1}{$t_g2[1]}){
@@ -78,7 +78,7 @@ while (<INONE>){
 	}
     }
         
-    ### Does the filtering and selection of best match POST-filtering
+    ### Not it does the filtering and selection of best match POST-filtering
     if ($line[7] ne "NO_EXON_ALN"){
 	# takes the coordinate and uses the two coordiantes to calculate the length of each exon
 	my $ts1=$line[5]; $ts1=~s/\-/\:/;
@@ -114,7 +114,7 @@ while (<INONE>){
 		die "ERROR: The number of introns needs to be 0, 1 or 2\n";
 	    }
 
-	    # IF INTRON POSITIONS ARE CONSERVED:
+	    # if intron positions are deemed conserved
 	    if ($rs==1){
 		# tests sequence conservation of the three exons
 		# added a loophole by which tiny MICs get through without similarity
