@@ -23,28 +23,19 @@ suppressWarnings(library("hashmap"))
 args <- commandArgs(TRUE)
 my_gene = args[1]
 my_query_species = args[2]
-my_folder = args[3]
-my_script_folder = args[4]
-gene_clusters = args[5]
-my_ordered_species_raw = args[6] #The order of the species is defined within the nextflow.
-my_isoform_exons_raw = args[7]
+my_script_folder = args[3]
+gene_clusters = args[4]
+my_ordered_species_raw = args[5] #The order of the species is defined within the nextflow.
+my_isoform_exons_raw = args[6]
 my_isorform_id = as.vector(unlist(strsplit(my_isoform_exons_raw, ",")))[1]
 #if (nchar(my_isorform_id) == 0) {my_isorform_id = "None"}
 my_isoform_exons = as.vector(unlist(strsplit(my_isoform_exons_raw, ",")))[2:length(as.vector(unlist(strsplit(my_isoform_exons_raw, ","))))]
-my_interesting_exons = args[8]
+my_interesting_exons = args[7]
 interesting_exons = as.vector(unlist(strsplit(my_interesting_exons, ",")))
-
-#if (length(args)==8) {
-  #my_interesting_exons = args[8]
-  #interesting_exons = as.vector(read.table(my_interesting_exons, header=FALSE)$V1)
-  #interesting_exons = as.vector(unlist(strsplit(my_interesting_exons, ",")))
-  #} else {
-  #  interesting_exons = ""
-#}
 
 
 ######## Set up
-my_input_folder = paste0(my_folder, "/processed_tables/")
+my_input_folder = paste0(getwd(), "/")
 ordered_target_species = unlist(strsplit(my_ordered_species_raw, split=","))
 source(paste0(my_script_folder, "/exint_plotter_functions.R"))
 
@@ -397,6 +388,6 @@ my_width = as.numeric(nrow(subset(plotting_table, GeneID==my_gene)))+10 #number 
 my_height = length(unique(as.vector(plotting_table$GeneID))) #Number of orthologs
 if (length(unique(as.vector(plotting_table$GeneID))) < 5) {my_height = 5} #adjust cases with very few genes 
 if (my_isorform_id == "None") {output_file = "exint_plot.pdf"} else {output_file = paste0("exint_plot_", my_isorform_id, ".pdf")}
-pdf(paste0(my_folder, output_file), width=my_width, height=my_height)
+pdf(paste0(my_input_folder, output_file), width=my_width, height=my_height)
 my_plot
 dev.off()
