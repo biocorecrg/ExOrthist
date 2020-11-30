@@ -18,17 +18,17 @@ my_gene_clusters_file = args.gene_clusters
 my_output_file = args.output
 
 ### Main
-my_ex_index_df = pd.read_table(my_index_file, sep="\t", header=None, names=["Coords", "Pos", "GeneID", "TranscriptID"])
-my_ex_tot_df = pd.read_table(my_tot_file, sep="\t", header=None, names=["GeneID", "TranscriptID", "TotEx"])
+my_ex_index_df = pd.read_table(my_index_file, sep="\t", header=None, names=["Coords", "Pos", "GeneID", "ProteinID"])
+my_ex_tot_df = pd.read_table(my_tot_file, sep="\t", header=None, names=["GeneID", "ProteinID", "TotEx"])
 
 my_ex_index_df["Pos"] = [int(element) for element in list(my_ex_index_df["Pos"])] #make sure that the pos in an integer
-my_ex_index_df_grouped = my_ex_index_df.groupby("TranscriptID")
+my_ex_index_df_grouped = my_ex_index_df.groupby("ProteinID")
 my_first_ex_list = []
 for name, group in my_ex_index_df_grouped:
   my_first_ex_list.append(list(group.loc[group.Pos==min(list(group["Pos"]))]["Coords"])[0]) #select the first element of the list
 
-my_last_ex_dict = pd.Series(my_ex_tot_df.TotEx.values, index=my_ex_tot_df.TranscriptID).to_dict()
-my_ex_index_df["TotEx"] = my_ex_index_df["TranscriptID"].map(my_last_ex_dict)
+my_last_ex_dict = pd.Series(my_ex_tot_df.TotEx.values, index=my_ex_tot_df.ProteinID).to_dict()
+my_ex_index_df["TotEx"] = my_ex_index_df["ProteinID"].map(my_last_ex_dict)
 my_last_ex_list = list(my_ex_index_df.loc[my_ex_index_df["Pos"]==my_ex_index_df["TotEx"]]["Coords"])
 my_internal_ex_list = [element for element in list(my_ex_index_df["Coords"]) if element not in my_first_ex_list+my_last_ex_list]
 my_first_last_ex_raw = list(set(my_first_ex_list))+list(set(my_last_ex_list))

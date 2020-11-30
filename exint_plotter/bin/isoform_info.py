@@ -30,15 +30,17 @@ my_gtf_subset = my_gtf_subset[my_gtf_subset.str.contains("exon_number")]
 #building the output
 my_raw_gene_id = [part for element in list(my_gtf_subset) for part in element.split(";") if "gene_id" in part]
 my_gene_id = [re.sub(".*[ ]", "", re.sub('"', "", element)) for element in my_raw_gene_id]
-my_raw_transcript_id = [part for element in list(my_gtf_subset) for part in element.split(";") if "transcript_id" in part]
-my_transcript_id = [re.sub(".*[ ]", "", re.sub('"', "", element)) for element in my_raw_transcript_id]
+#my_raw_transcript_id = [part for element in list(my_gtf_subset) for part in element.split(";") if "transcript_id" in part]
+#my_transcript_id = [re.sub(".*[ ]", "", re.sub('"', "", element)) for element in my_raw_transcript_id]
+my_raw_protein_id = [part for element in list(my_gtf_subset) for part in element.split(";") if "protein_id" in part]
+my_protein_id = [re.sub(".*[ ]", "", re.sub('"', "", element)) for element in my_raw_protein_id]
 my_raw_exon_num = [part for element in list(my_gtf_subset) for part in element.split(";") if "exon_number" in part]
 my_exon_num = [re.sub(".*[ ]", "", re.sub('"', "", element)) for element in my_raw_exon_num]
-ex_num_df = pd.concat([pd.Series(my_gene_id), pd.Series(my_transcript_id), pd.Series(my_exon_num)], axis=1)
-ex_num_df.columns = ["GeneID", "TranscriptID", "ExNum"]
+ex_num_df = pd.concat([pd.Series(my_gene_id), pd.Series(my_protein_id), pd.Series(my_exon_num)], axis=1)
+ex_num_df.columns = ["GeneID", "ProteinID", "ExNum"]
 ex_num_df = ex_num_df.drop_duplicates() #remove duplicated rows (exons with different splices sites)
 ex_num_df["ExNum"] = [int(element) for element in list(ex_num_df["ExNum"])] #change data type of ExNum to integer
-grouped_df = ex_num_df.groupby("TranscriptID")
+grouped_df = ex_num_df.groupby("ProteinID")
 final_df = pd.DataFrame()
 for name, group in grouped_df:
   my_group = group.loc[group.ExNum == max(list(group["ExNum"]))]
@@ -55,11 +57,11 @@ my_coords = [element+":"+str(element1)+"-"+str(element2) for element, element1, 
 data_tuples = list(zip(my_coords, my_last))
 intermediate_df = pd.DataFrame(data_tuples, columns=["Coords", "Info"])
 filtered_df = intermediate_df[intermediate_df["Info"].str.contains("exon_number")]
-#In theory, the gene_id, transcript_id, exon_num lists are in the same order, and I can use them directly
+#In theory, the gene_id, protein_id, exon_num lists are in the same order, and I can use them directly
 filtered_df["GeneID"] = my_gene_id
-filtered_df["TranscriptID"] = my_transcript_id
+filtered_df["ProteinID"] = my_protein_id
 filtered_df["ExNum"] = my_exon_num
 filtered_df = filtered_df.drop(columns=["Info"])
-final_df = filtered_df[["Coords", "ExNum", "GeneID", "TranscriptID"]] #reorder the columns
+final_df = filtered_df[["Coords", "ExNum", "GeneID", "ProteinID"]] #reorder the columns
 final_df = final_df.drop_duplicates()
 final_df.to_csv(my_output_2, sep="\t", header=False, index=False) #save first output file
