@@ -200,7 +200,7 @@ while (<IN>){
 	if ($score{$tmpex}>=5){ # originally it was 20
 	    $rex{$tmpex}=$l[0]."\t".$l[1]."\t".$l[2]."\t".$l[3]."\t".$l[4]."\t".$l[5]."\t".$l[6]."\t"."1\t".$ex{$tmpex}."\t".$sp1."\t".$sp2;
 	} else { 
-	    $rex{$tmpex}=$l[0]."\t".$l[1]."\t".$l[2]."\t".$l[3]."\t".$l[4]."\t".$l[5]."\t".$l[6]."\t0\t$l[8]\tNO_EX_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2";
+	    $rex{$tmpex}=$l[0]."\t".$l[1]."\t".$l[2]."\t".$l[3]."\t".$l[4]."\t".$l[5]."\t".$l[6]."\t0\t$l[8]\tNO_EXON_ALN\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\t$sp1\t$sp2";
 	}
     }
 }   
