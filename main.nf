@@ -380,8 +380,7 @@ folder_jscores.join(anno_2_score_ex_int).map{
  * Score EX matches from aln info
  */
  
-//Select best match per target gene
-process select_best_EX_match_by_targetgene {
+process score_EX_matches {
     tag { "${comp_id}" }
     label('big_mem')
     //I need to modify the name so that it has the species pair in the output.
@@ -391,9 +390,8 @@ process select_best_EX_match_by_targetgene {
     set val(comp_id), file("*") from data_to_score
 
     output:
-    set val(comp_id), file("${comp_id}/best_scored_EX_matches_by_targetgene.txt") into bestscore_per_filt
     file("${comp_id}/all_PROT_EX_INT_aln_features_*")
-    file("${comp_id}/all_scored_EX_matches.txt")
+    set val(comp_id), file("${comp_id}/all_scored_EX_matches.txt") into all_scores_to_filt
 
 	script:
     def species = comp_id.split("-")
@@ -403,24 +401,26 @@ process select_best_EX_match_by_targetgene {
     ${species[0]}/${species[0]}.exint ${species[1]}/${species[1]}.exint \
     ${species[0]}/${species[0]}_protein_ids_intron_pos_CDS.txt ${species[1]}/${species[1]}_protein_ids_intron_pos_CDS.txt \
     ${comp_id}/all_PROT_EX_INT_aln_features_${comp_id}.txt;
-    C1_score_and_select_best_EX_match_by_targetgene.pl ${comp_id}/all_PROT_EX_INT_aln_features_${comp_id}.txt ${comp_id}
+    C1_score_EX_matches.pl ${comp_id}/all_PROT_EX_INT_aln_features_${comp_id}.txt ${comp_id}
     """
 }
 
 //${comp_id}/all_PROT_aln_features.txt ${comp_id}/Best_scores_pair_exons.txt ${comp_id}/all_INT_aln_features.txt \
 
 /*
- * Filter the best matches above score cutoffs
+ * Filter the best matches above score cutoffs by target gene.
  */
 
-process filter_EX_matches_by_scores {
+process filter_and_select_best_EX_matches_by_targetgene {
     tag { "${comp_id}" }
+    publishDir "${params.output}/${comp_id}", mode: "copy", pattern: "best_scored_EX_matches_by_targetgene.txt" 
 
     input:
-    set val(comp_id), file(best_score), val(dist_range) from bestscore_per_filt.join(dist_ranges_ch)
+    set val(comp_id), file(all_scores), val(dist_range) from all_scores_to_filt.join(dist_ranges_ch)
 
     output:
     file("*.tab") into filterscore_per_joining
+    file("best_scored_EX_matches_by_targetgene.txt")
 
     script:
     def species = comp_id.split("-")
@@ -431,7 +431,7 @@ process filter_EX_matches_by_scores {
     if (dist_range == "short")
 	dist_range_par = "${params.short_dist}".split(",")
     """
-    C2_filter_EX_matches_by_scores.pl  -b ${best_score} -sps ${species[0]},${species[1]} -int ${dist_range_par[0]} -id ${dist_range_par[1]} -max_size ${dist_range_par[2]}
+    C2_filter_and_select_best_EX_matches_by_targetgene.pl -b ${all_scores} -sps ${species[0]},${species[1]} -int ${dist_range_par[0]} -id ${dist_range_par[1]} -max_size ${dist_range_par[2]}
     """
 }
 
