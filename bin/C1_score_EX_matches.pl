@@ -78,7 +78,7 @@ while (<IN>){
 	    if ($esc{$e2}) { $sC2=($esc{$e2} * 0.15); } # prev = 0.16
 	    if ($line[5] ne "NO_EXON_ALN") { 
 		$sA=($line[7] * 0.20); # prev = 0.18
-		$TSC=$sA+$sI2+$sC2; ##Total Score: max of 0.6
+		$TSC=sprintf("%.4f",($sA+$sI2+$sC2)/0.6); ##Total Score: max of 0.6
 		print OUTONE "$c\tExon\tN_terminal\t$line[1]\t$line[2]\t$line[3]\t";
 		print OUTONE "$line[4]\t$line[5]\t$line[6]\tNA\tNA\t$sA\t$sI2\t$sC2\t$TSC\t$line[8]\t$line[9]\n";
 		$string=$c."\tExon"."\t"."N_terminal\t".$line[1]."\t".$line[2]."\t".$line[3]."\t";
@@ -86,7 +86,7 @@ while (<IN>){
 	    }
 	    else { 
 		$sA = -1; ##Nothing aligned => previously -0.1 (14/11/20)
-		$TSC=$sA+$sI2+$sC2; ##Total Score: max of 0.6
+		$TSC=sprintf("%.4f",($sA+$sI2+$sC2)/0.6); ##Total Score: max of 0.6
 		print OUTONE "$c\tExon\tN_terminal\t$line[1]\t$line[2]\t$line[3]\t";
 		print OUTONE "$line[4]\t$line[5]\tNA\tNA\tNA\t$sA\t$sI2\t$sC2\t$TSC\t$line[8]\t$line[9]\n";
 		$string=$c."\tExon"."\t"."N_terminal\t".$line[1]."\t".$line[2]."\t".$line[3]."\t";
@@ -101,7 +101,7 @@ while (<IN>){
 	    if ($esc{$e1}) { $sC1=($esc{$e1} * 0.15); } # prev = 0.16
 	    if ($line[5] ne "NO_EXON_ALN") { 
 		$sA=($line[7] * 0.20); # prev = 0.18
-		$TSC=$sC1+$sI1+$sA; ##Total Score: max of 0.6
+		$TSC=sprintf("%.4f",($sC1+$sI1+$sA)/0.6); ##Total Score: max of 0.6
 		print OUTONE "$c\tExon\tC_terminal\t$line[1]\t$line[2]\t$line[3]\t";
 		print OUTONE "$line[4]\t$line[5]\t$line[6]\t$sC1\t$sI1\t$sA\tNA\tNA\t$TSC\t$line[8]\t$line[9]\n";
 		$string=$c."\t"."Exon"."\t"."C_terminal\t".$line[1]."\t".$line[2]."\t".$line[3]."\t";
@@ -109,7 +109,7 @@ while (<IN>){
 	    }
 	    else { 
 		$sA = -1; ##Nothing aligned => previously -0.1 (14/11/20) 
-		$TSC=$sC1+$sI1+$sA; ##Total Score: max of 0.6
+		$TSC=sprintf("%.4f",($sC1+$sI1+$sA)/0.6); ##Total Score: max of 0.6
 		print OUTONE "$c\tExon\tC_terminal\t$line[1]\t$line[2]\t$line[3]\t";			
 		print OUTONE "$line[4]\t$line[5]\tNA\t$sC1\t$sI1\t$sA\tNA\tNA\t$TSC\t$line[8]\t$line[9]\n";
 		$string=$c."\t"."Exon"."\t"."C_terminal\t".$line[1]."\t".$line[2]."\t".$line[3]."\t";
@@ -139,7 +139,7 @@ while (<IN>){
 
 	    if ($line[5] ne "NO_EXON_ALN") { 
 		$sA=$line[7] * 0.20; # prev = 0.18
-		$TSC=$sC1+$sI1+$sA+$sI2+$sC2;			
+		$TSC=sprintf("%.4f",$sC1+$sI1+$sA+$sI2+$sC2);			
 		print OUTONE "$c\tExon\tInternal\t$line[1]\t$line[2]\t$line[3]\t";
 		print OUTONE "$line[4]\t$line[5]\t$line[6]\t$sC1\t$sI1\t$sA\t$sI2\t$sC2\t$TSC\t$line[8]\t$line[9]\n";
 		$string=$c."\t"."Exon"."\t"."Internal\t".$line[1]."\t".$line[2]."\t".$line[3]."\t";
@@ -147,7 +147,7 @@ while (<IN>){
 	    }
 	    else { 
 		$sA = -1; ##Nothing aligned => previously -0.1 (14/11/20)  
-		$TSC=$sC1+$sI1+$sA+$sI2+$sC2;
+		$TSC=sprintf("%.4f",$sC1+$sI1+$sA+$sI2+$sC2);
 		print OUTONE "$c\tExon\tInternal\t$line[1]\t$line[2]\t$line[3]\t";			
 		print OUTONE "$line[4]\t$line[5]\tNA\t$sC1\t$sI1\t$sA\t$sI2\t$sC2\t$TSC\t$line[8]\t$line[9]\n";
 		$string=$c."\t"."Exon"."\t"."Internal\t".$line[1]."\t".$line[2]."\t".$line[3]."\t";
