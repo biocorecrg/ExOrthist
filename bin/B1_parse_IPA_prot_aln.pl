@@ -1157,6 +1157,7 @@ sub score_exons {
 		if ($l[0] && $l[1]) { $size=($l[1]-$l[0])+1; } else { $size=1000000; }		    
 		$nr1=-1;
 		for ($r=$l[0]; $r<=$l[1]; $r++){ # looping from initial to final position of the exon to get the sim and id values
+		    $size-- if !$s1_s2_res{$r}; # to get the properly aligned values (30/11/20)
 		    if ($s1_scores_sim{$r}){ # For SIM values
 			if ($s1_scores_sim{$r} ne "gap"){
 			    $sim_score++;
@@ -1185,7 +1186,7 @@ sub score_exons {
 		#### Up to here calculated ID and SIM values
 		$tex="";
 		%check=();
-		if ($sim_score>=0){ ##modified to print all exons that aligned even when sim_score is low, they will be filtered in other programs
+		if ($sim_score > 0){ ##modified to print all exons that aligned even when sim_score is low, they will be filtered in other programs. (done > instead of >=; 30/11/20)
 		    if ($rs2){ #  end in SP2 protein (a numeric value for start is given for granted)
 			for ($k=$rs1; $k<=$rs2; $k++){ # we loop through the positions matched in Sp2
 			    if ($exon{$n2."_".$k}){ # all the positions should match an exon in Sp2
@@ -1203,7 +1204,7 @@ sub score_exons {
 			}
 			if ($tex){ # which means, there is at least a match
 			    if ($rs1==0){ $rs1=1; }
-			    if ($tex=~/\,/){ ## if the exon need to be realign is written in a special file for further processing
+			    if ($tex=~/\,/){ ## if the exon need to be realigned is written in a special file for further processing
 				# we loop through $l[0] and $l[1] (start and end of Sp1 exon)
 				# and match each of these to $s1_s2_res{$r} [pseudo_rs]
 				# tally_per_exon per unique pseudo_rs [remember doing it for Sp2 too]
@@ -1316,6 +1317,7 @@ sub score_exons {
 		else { $size=1000000; }		    
 		$nr1=-1;
 		for ($r=$l[0]; $r<=$l[1]; $r++){
+		    $size-- if !$s2_s1_res{$r}; # to get the properly aligned values (30/11/20)
 		    if ($s2_scores_sim{$r}){
 			if ($s2_scores_sim{$r} ne "gap"){
 			    $sim_score++; 
@@ -1345,7 +1347,7 @@ sub score_exons {
 		}		    
 		$tex="";
 		%check=();
-		if ($sim_score>=0){ ###modified to print all exons that aligned event when sim_score is low, they will be filtered in other programs
+		if ($sim_score > 0){ ###modified to print all exons that aligned event when sim_score is low, they will be filtered in other programs (from >= to >, 30/11/20)
 		    if ($rs2){
 			for ($k=$rs1; $k<=$rs2; $k++){
 			    if ($exon{$n1."_".$k}){ # $n1 => prot|gene
