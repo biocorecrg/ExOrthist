@@ -94,17 +94,40 @@ process isolate_cluster_id {
 	"""
 }
 
+my_geneID = "${params.geneID}"
+if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
+
+process isolate_query_species {
+	tag {"${my_geneID}"}
+	input:
+	val(my_geneID)
+	file(gene_clusters)
+	output:
+	stdout into (query_species, query_species1, query_species2, query_species3)
+	script:
+	"""
+	#!/usr/bin/env python
+
+	import pandas as pd
+	
+	my_df = pd.read_csv("${gene_clusters}", sep="\t", header=None, index_col=False)
+	query_species = list(my_df[my_df.iloc[:,2]=="${my_geneID}"].iloc[:,1])[0]
+	print(str(query_species), end='')
+	"""
+}
 
 /*
  * Filter only for the species actually having exons in the exon clusters.
  */
 //The pipeline crushes otherwise. But there is a distinction: if a gene gets plotted with no exons, it means that its exons make it to the exon clusters. They simply do not have any ortholog exons to the query species.
+//Interrupt the pipeline in case the query gene is not in the exon clusters
 my_exon_clusters = file(params.exonclusters)
 process select_species_with_orthologs {
 	tag {"${clusterID}"}
 	input:
 	file(my_exon_clusters)
 	val(clusterID) from gene_clusterID3
+	val(my_geneID)
 	output:
 	stdout into selected_species
 	script:
@@ -112,13 +135,17 @@ process select_species_with_orthologs {
 	#!/usr/bin/env python
 	import pandas as pd
 	import re
+	import sys
 
 	my_df = pd.read_table("${my_exon_clusters}", sep="\t", header=0, index_col=False)
 	my_df["GeneClusterID"] = [re.sub("\\..*", "", element) for element in my_df["ExCluster_ID"]]
+	gene_ids_list = list(my_df[my_df.GeneClusterID=="${clusterID}"]["GeneID"])
 	selected_species = list(set(list(my_df[my_df.GeneClusterID=="${clusterID}"]["Species"])))
-	#print(selected_species)
-	for element in selected_species:
-	  print(str(element), end=',')
+	if "${my_geneID}" in gene_ids_list and len(selected_species) >=2:
+	  for element in selected_species:
+	    print(str(element), end=',')
+	else:
+	  sys.exit("Query gene does not have any exon orthologs in the other species")
 	"""
 }
 
@@ -357,28 +384,6 @@ process add_fake_coords {
 //We need this to eventually select a hit by sequence when no orthology is found.
 //With the next 2 processes, I am generating temporary files which should be removed
 //But the best hits scores files are too big to be read every single time
-
-my_geneID = "${params.geneID}"
-if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
-
-process isolate_query_species {
-	tag {"${my_geneID}"}
-	input:
-	val(my_geneID)
-	file(gene_clusters)
-	output:
-	stdout into (query_species, query_species1, query_species2, query_species3)
-	script:
-	"""
-	#!/usr/bin/env python
-
-	import pandas as pd
-	
-	my_df = pd.read_csv("${gene_clusters}", sep="\t", header=None, index_col=False)
-	query_species = list(my_df[my_df.iloc[:,2]=="${my_geneID}"].iloc[:,1])[0]
-	print(str(query_species), end='')
-	"""
-}
 
 //Generate a channel with all combinations of species query with each species target
 //Take the species from GTFs name
