@@ -1252,10 +1252,10 @@ sub score_exons {
 				    $temp_last_exon_2 = "exon_$last_exon_number{$n2}";
 				    my @temp_ex_hit = split(/\t/,$nex[0]); # prot|gene exon_N co_prot chr co_i co_f strand
 				    if ($ln[1] eq "exon_1" || $ln[1] eq $temp_last_exon_1){ # it's the first OR last exon
-					$onehit{$idex}=1;
+					$onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
 				    }
 				    elsif ($temp_ex_hit[1] ne "exon_1" && $temp_ex_hit[1] ne $temp_last_exon_2){ # it's internal and the hit too
-					$onehit{$idex}=1;
+					$onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
 				    } 
 				    else {} # internal vs first/last
 				}
@@ -1275,10 +1275,10 @@ sub score_exons {
 				$temp_last_exon_2 = "exon_$last_exon_number{$n2}";
 				my @temp_ex_hit = split(/\t/,$tex); # prot|gene exon_N co_prot chr co_i co_f strand
 				if ($ln[1] eq "exon_1" || $ln[1] eq $temp_last_exon_1){ # it's the first OR last exon
-				    $onehit{$idex}=1;
+				    $onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
 				}
 				elsif ($temp_ex_hit[1] ne "exon_1" && $temp_ex_hit[1] ne $temp_last_exon_2){ # it's internal and the hit too
-				    $onehit{$idex}=1;
+				    $onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
 				} 
 				else {} # internal vs first/last
 			    }
@@ -1412,10 +1412,10 @@ sub score_exons {
 				    $temp_last_exon_2 = "exon_$last_exon_number{$n1}";
 				    my @temp_ex_hit = split(/\t/,$nex[0]); # prot|gene exon_N co_prot chr co_i co_f strand
 				    if ($ln[1] eq "exon_1" || $ln[1] eq $temp_last_exon_1){ # it's the first OR last exon
-					$onehit{$idex}=1;
+					$onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
 				    }
 				    elsif ($temp_ex_hit[1] ne "exon_1" && $temp_ex_hit[1] ne $temp_last_exon_2){ # it's internal and the hit too
-					$onehit{$idex}=1;
+					$onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
 				    } 
 				    else {} # internal vs first/last
 				}
@@ -1435,10 +1435,10 @@ sub score_exons {
 				$temp_last_exon_2 = "exon_$last_exon_number{$n1}";
 				my @temp_ex_hit = split(/\t/,$tex); # prot|gene exon_N co_prot chr co_i co_f strand
 				if ($ln[1] eq "exon_1" || $ln[1] eq $temp_last_exon_1){ # it's the first OR last exon
-				    $onehit{$idex}=1;
+				    $onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
 				}
 				elsif ($temp_ex_hit[1] ne "exon_1" && $temp_ex_hit[1] ne $temp_last_exon_2){ # it's internal and the hit too
-				    $onehit{$idex}=1;
+				    $onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
 				} 
 				else {} # internal vs first/last
 			    }
