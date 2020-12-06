@@ -293,13 +293,13 @@ process split_EX_pairs_to_realign {
     tag { "${folders}" }
 
     input:
-    set comp_id, file(sp1), file(sp2), path(folders), val(req_file) from aligned_subclusters_4_splitting
+    set comp_id, file(sp1), file(sp2), path(folders), file(ex_to_split) from aligned_subclusters_4_splitting
     //val(ex_aln_per_part)
     output:
     set comp_id, file(sp1), file(sp2), path(folders), file("${folders}/EXs_to_realign_part_*.txt") into aligned_subclusters_4_realign
     script:
     """
-	B2_split_EX_pairs_to_realign.pl ${folders} ${params.alignmentnum}
+	B2_split_EX_pairs_to_realign.py -o ${folders} -i ${folders}/${ex_to_split} -n ${params.alignmentnum}
     """
 }
 
@@ -363,7 +363,6 @@ process merge_PROT_EX_INT_aln_info {
 	"""
 	    mkdir ${comp_id}
 	    rm FOLDERS_*/EXs_to_realign*
-	    rm FOLDERS_*/tmp.txt
 	    mv FOLDERS_*/* ${comp_id}
 
     	B4_merge_PROT_EX_INT_aln_info.pl ${comp_id}
