@@ -508,6 +508,7 @@ process format_EX_clusters_input {
 /*
 * Split the file of exon pairs
 */
+//Unclustered are the exons ending up in single-exon clusters
 process cluster_EXs {
 
     input:
@@ -515,10 +516,11 @@ process cluster_EXs {
 
     output:
     file("EX${cluster_part}") into ex_clusters
+    file("unclustered_EXs_${cluster_part}") into unclustered_exs
 
 	script:
 	"""
-    D2_cluster_EXs.R ${cluster_part} EX${cluster_part}
+    D2_cluster_EXs.R ${cluster_part} EX${cluster_part} unclustered_EXs_${cluster_part}
     """
 }
 
@@ -530,17 +532,14 @@ process format_EX_clusters_output {
 
     input:
     file("*") from ex_clusters.collect()
+    file("*") from unclustered_exs.collect()
 
     output:
     file("EX_clusters.tab") into exon_cluster_for_reclustering
     file("EX_clusters_info.tab.gz")
-    //file("EX_clusters_vastdb.tab") optional true
+    file("unclustered_EXs.txt")
 
 	script:
-	//def vastbcmd = ""
-	//if (params.vastdb!= "") {
-	//	vastbcmd = "D3.1_add_vastid_to_EX_clusters.pl ${params.vastdb} EX_clusters.tab EX_clusters_vastdb.tab"
-	//}
 	"""
 	D3_format_EX_clusters_output.pl
 	"""
