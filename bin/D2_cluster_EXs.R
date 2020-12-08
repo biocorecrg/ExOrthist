@@ -4,6 +4,7 @@ args<-commandArgs(TRUE)
 if (length(args)<2) {stop("[USAGE] Rscript --vanilla cluster.R <file1> <file2> ")}
 file1 <- args[1]
 file2 <- args[2]
+file3 <- args[3]
 
 library("igraph", quietly = TRUE, warn.conflicts = FALSE, verbose = FALSE)
 library("hashmap", quietly = TRUE, warn.conflicts = FALSE, verbose = FALSE)
@@ -18,6 +19,7 @@ my_final_clusters = as.data.frame(as.matrix(membership(my_clusters))); colnames(
 ######## Exon re-intronduction #############
 #Consider cases of exons which get in single-exon clusters but actually present a reciprocal best with an exon in another cluster.
 #Add this exon to the cluster of (one of) its reciprocal best(s).
+single_exon_clusters_tosave = vector() #initialize a dataframe where to separately save the single-exon clusters
 single_exon_cluster_IDs = names(table(my_final_clusters)[table(my_final_clusters)==1])
 for (my_clusterID in single_exon_cluster_IDs) {
   exon_id = rownames(subset(my_final_clusters, ClusterID==my_clusterID))
@@ -28,10 +30,14 @@ for (my_clusterID in single_exon_cluster_IDs) {
     my_final_clusters[exon_id,"ClusterID"] = new_cluster_ID
     } else {
       my_final_clusters$names = rownames(my_final_clusters)
+      single_exon_clusters_tosave = rbind(single_exon_clusters_tosave, my_final_clusters[rownames(my_final_clusters) == exon_id,])
       my_final_clusters = my_final_clusters[!(rownames(my_final_clusters) == exon_id),] #remove the single-exon cluster from the final graph.
       rownames(my_final_clusters) =  my_final_clusters$names;  my_final_clusters$names = NULL; 
   }
 }
+#save unclustered exons to file
+single_exon_clusters_tosave_df = as.data.frame(single_exon_clusters_tosave)
+write.table(single_exon_clusters_tosave_df, file=file3, quote=FALSE, sep="\t", row.names = FALSE, col.names=FALSE)
 
 ######## Compute values for membership score #############
 #Compute the total number of genes in clusters.

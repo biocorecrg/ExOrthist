@@ -293,13 +293,13 @@ process split_EX_pairs_to_realign {
     tag { "${folders}" }
 
     input:
-    set comp_id, file(sp1), file(sp2), path(folders), val(req_file) from aligned_subclusters_4_splitting
+    set comp_id, file(sp1), file(sp2), path(folders), file(ex_to_split) from aligned_subclusters_4_splitting
     //val(ex_aln_per_part)
     output:
     set comp_id, file(sp1), file(sp2), path(folders), file("${folders}/EXs_to_realign_part_*.txt") into aligned_subclusters_4_realign
     script:
     """
-	B2_split_EX_pairs_to_realign.pl ${folders} ${params.alignmentnum}
+	B2_split_EX_pairs_to_realign.py -o ${folders} -i ${folders}/${ex_to_split} -n ${params.alignmentnum}
     """
 }
 
@@ -363,7 +363,6 @@ process merge_PROT_EX_INT_aln_info {
 	"""
 	    mkdir ${comp_id}
 	    rm FOLDERS_*/EXs_to_realign*
-	    rm FOLDERS_*/tmp.txt
 	    mv FOLDERS_*/* ${comp_id}
 
     	B4_merge_PROT_EX_INT_aln_info.pl ${comp_id}
@@ -509,6 +508,7 @@ process format_EX_clusters_input {
 /*
 * Split the file of exon pairs
 */
+//Unclustered are the exons ending up in single-exon clusters
 process cluster_EXs {
 
     input:
@@ -516,10 +516,11 @@ process cluster_EXs {
 
     output:
     file("EX${cluster_part}") into ex_clusters
+    file("unclustered_EXs_${cluster_part}") into unclustered_exs
 
 	script:
 	"""
-    D2_cluster_EXs.R ${cluster_part} EX${cluster_part}
+    D2_cluster_EXs.R ${cluster_part} EX${cluster_part} unclustered_EXs_${cluster_part}
     """
 }
 
@@ -531,17 +532,14 @@ process format_EX_clusters_output {
 
     input:
     file("*") from ex_clusters.collect()
+    file("*") from unclustered_exs.collect()
 
     output:
     file("EX_clusters.tab") into exon_cluster_for_reclustering
     file("EX_clusters_info.tab.gz")
-    //file("EX_clusters_vastdb.tab") optional true
+    file("unclustered_EXs.txt")
 
 	script:
-	//def vastbcmd = ""
-	//if (params.vastdb!= "") {
-	//	vastbcmd = "D3.1_add_vastid_to_EX_clusters.pl ${params.vastdb} EX_clusters.tab EX_clusters_vastdb.tab"
-	//}
 	"""
 	D3_format_EX_clusters_output.pl
 	"""
