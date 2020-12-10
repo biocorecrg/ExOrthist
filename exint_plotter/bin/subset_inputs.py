@@ -46,23 +46,3 @@ my_refprot_df = pd.read_table(my_ref_prots_file, header=None, index_col=False, s
 my_refprot_sub_df = my_refprot_df.loc[my_refprot_df.GeneID.isin(selected_genes)]
 my_refprot_sub_df = my_refprot_sub_df.drop(columns=["GeneID"])
 my_refprot_sub_df.to_csv(my_species+"_subsetted_ref_proteins.txt", sep="\t", header=True, index=False, na_rep="NA")
-
-#selected_proteins = list(my_refprot_sub_df["ProteinID"])
-#create a dictionary ProteinID - exon_num
-#my_protein_id = [re.sub(".*[ ]", "", re.sub('"', "", part)) for element in my_raw_data for part in element.split(";") if "protein_id" in part]
-#my_ex_num = [re.sub(".*[ ]", "", re.sub('"', "", part)) for element in my_raw_data for part in element.split(";") if "exon_number" in part]
-#protein_id_ex_num_df = pd.DataFrame({"ProteinID" : my_protein_id, "ExNum" : [int(element) for element in my_ex_num]})
-#protein_id_ex_num_df = protein_id_ex_num_df.loc[protein_id_ex_num_df.ProteinID.isin(selected_proteins)] #filter only for the ref proteins relative to this cluster file
-#protein_id_ex_num_df_grouped = protein_id_ex_num_df.groupby("ProteinID")
-#
-#my_exintnum_df = pd.DataFrame()
-#for name, group in protein_id_ex_num_df_grouped:
-#  my_entry = group.loc[group.ExNum==max(list(group["ExNum"]))] 
-#  my_exintnum_df = pd.concat([my_exintnum_df, my_entry])
-#
-#my_protID_exnum_dict = pd.Series(my_exintnum_df.ExNum.values, index=my_exintnum_df.ProteinID).to_dict()
-#my_refprot_sub_df["ExNum"] = my_refprot_sub_df["ProteinID"].map(my_protID_exnum_dict)
-#my_refprot_sub_df["RefProt"] = [element+"|"+element1 for element, element1 in zip(list(my_refprot_sub_df["ProteinID"]), list(my_refprot_sub_df["GeneID"]))]
-#my_exint_final_df = my_refprot_sub_df.drop(columns=["GeneID", "ProteinID"]) #drop extra columns
-#my_exint_final_df = my_exint_final_df[["RefProt", "ExNum"]] #reorder columns
-#my_exint_final_df.to_csv(my_species+"_subsetted_ref_exon_int_number.txt", sep="\t", header=True, index=False, na_rep="NA")
