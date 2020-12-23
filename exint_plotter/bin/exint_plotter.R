@@ -2,86 +2,39 @@
 ########## EXINT PLOTTER  #############
 #######################################
 
-#The script will take as argument:
-#1. The geneID
-#2. The output folder
-
-### The reference species can be derived from the geneID.
-#This is just for now, for the debugging. This part will have to be modified accordingly.
-#.libPaths(c("/Users/federica/mnt/software/R/3.5", "/Users/federica/mnt/software/R", .libPaths()))
-#.libPaths(c("/software/mi/Rlib3.6/", "/software/as/el7.2/EasyBuild/CRG/software/R/3.6.0-foss-2019a/lib64/R/library", .libPaths()))
-
-#upload libraries
+#Upload libraries
 suppressWarnings(library("ggplot2")) 
 suppressWarnings(library("ggpubr"))
 suppressWarnings(library("cowplot"))
 suppressWarnings(library("reshape2"))
 suppressWarnings(library("hashmap"))
 
-
-#How it will be when reading the arguments
+#Read arguments
 args <- commandArgs(TRUE)
 my_gene = args[1]
 my_query_species = args[2]
 my_script_folder = args[3]
 gene_clusters = args[4]
-my_ordered_species_raw = args[5] #The order of the species is defined within the nextflow.
+my_ordered_species_raw = args[5]
 my_isoform_exons_raw = args[6]
 my_isorform_id = as.vector(unlist(strsplit(my_isoform_exons_raw, ",")))[1]
-#if (nchar(my_isorform_id) == 0) {my_isorform_id = "None"}
 my_isoform_exons = as.vector(unlist(strsplit(my_isoform_exons_raw, ",")))[2:length(as.vector(unlist(strsplit(my_isoform_exons_raw, ","))))]
 my_interesting_exons = args[7]
 interesting_exons = as.vector(unlist(strsplit(my_interesting_exons, ",")))
 
-
-######## Set up
+#Set up
 my_input_folder = paste0(getwd(), "/")
 ordered_target_species = unlist(strsplit(my_ordered_species_raw, split=","))
 source(paste0(my_script_folder, "/exint_plotter_functions.R"))
 
-###### for testing
-#my_gene="ENSG00000006788"
-# my_gene="ENSG00000152601"
-# my_query_species="Hs2"
-# my_folder = paste0("/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/exint_plotter/output_exint/", my_gene, "/")
-# #gene_clusters = "/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/exint_plotter/data/clusters/gene_clusters"
-# gene_clusters = "/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/output_prot_sim/gene_cluster_file.gz"
-# my_input_folder = paste0(my_folder, "/processed_tables/")
-# #my_ordered_species_raw="Hs2,Mm2,Bta"
-# my_ordered_species_raw="Hs2,Mm2,Dme"
-# ordered_target_species = unlist(strsplit(my_ordered_species_raw, split=","))
-# interesting_exons = ""
-# my_isoform_exons = "None"
-
-# interesting_exons = as.vector(read.table("/Users/federica/mnt/projects/regulatory_ancenstry/src/nextflow/EXORTHIST/ExOrthist/exint_plotter/data/clusters/interesting_exons.txt", header=FALSE)$V1)
-# my_isoform_exons = c("chr17:10362360-10362503", "chr17:10362118-10362274", "chr17:10360161-10360188")
-
-
-
-
-######## Main code ##########
+#Main code
 ########### QUERY SPECIES SECTION ################
-#I need to find a way to define the species_query and the order of the other_species starting from the geneID.
-#provide order of the species that you want to plot.
-#In principle they should be ordered by evolutionary distance.
-
-########
 species_query_table = read.delim(paste0(my_input_folder, my_query_species, "_exons_cluster_info-fakecoords.tab"), sep="\t", header=TRUE, row=1)
 species_query_table = species_query_table[species_query_table$State!="",] #removing some weird spurious entries
 
 my_gene_table = subset(species_query_table, GeneID == my_gene) #select the gene of interest
 my_gene_table$FakeCoords = as.character(paste0(my_gene_table$FakeStart, ";", my_gene_table$FakeStop)) #generate coordinates ID
-query_coords_dict = hashmap(as.character(my_gene_table$ClusterID), my_gene_table$FakeCoords) #dictionary with key=cluster ID, value =  pair of fake coordinates.
-raw_clusterID = unique(sub("\\..*", "", as.vector(my_gene_table$ClusterID))) #Remove the ".???" suffix (relative to the exon cluster) from the gene clusterID.
-my_gene_clusterID = raw_clusterID[grep("^GF", raw_clusterID)] #this I will use to upload the best-hits table by gene_cluster. It will be much faster.
-
-my_pos_table = read.delim(paste0(my_input_folder, my_query_species, "_all_exons_positions.tab"),
-                          header=FALSE,
-                          col.names=c("GeneID", "GeneClusterID", "ExonID", "position"), 
-                          stringsAsFactors = FALSE) #upload table with all exons index by cluster.
-my_exon_position_dict = hashmap(my_pos_table$ExonID, my_pos_table$position) #dictionary with exonID, exon index.
-my_gene_table$ExPosition = my_exon_position_dict$find(my_gene_table$ExonID) #add the exon position the the query_species table.
-my_gene_table$ExPosition[is.na(my_gene_table$ExPosition)] = "Internal" #whatever exon without label we keep as Internal.
+query_coords_dict = hashmap(as.character(my_gene_table$EX_clusterID), my_gene_table$FakeCoords) #dictionary with key=cluster ID, value =  pair of fake coordinates.
 
 ####### ORTHOLOGS #########
 #Get orthologs either from the general clusters or from the files provided by the user.
@@ -95,8 +48,7 @@ names(my_gene_orthologs) = as.vector(subset(species_orthologs_table, ClusterID =
 
 ###########################
 #Generate final table
-final_table = subset(my_gene_table, State != "Intron") #This could be simplified in the input. I do not really need the intron information so far.
-my_gene_table = final_table #This is weird
+final_table = my_gene_table
 final_table$Levels = rep(1, nrow(final_table))
 final_table$Species = rep(my_query_species, nrow(final_table))
 #Get exon coordinates from ExonID. 
@@ -116,18 +68,15 @@ for (my_target_species in considered_species) {
   
   #cycle on all the orthologoues genes in target species
   for (target_gene in my_gene_orthologs[names(my_gene_orthologs) == my_target_species]) {
-    my_gene_target_table_complete = subset(target_species_table, GeneID==target_gene)
-    my_gene_target_table_complete$FakeCoords = query_coords_dict$find(my_gene_target_table_complete$ClusterID) #translate GeneClusterID with the fake coords in query species.
-    
-    #temporarily remove the Introns from the gene_target_table
-    my_gene_target_table =  subset(my_gene_target_table_complete, State != "Intron") #I should not add the Introns in the first place.
+    my_gene_target_table = subset(target_species_table, GeneID==target_gene)
+    my_gene_target_table$FakeCoords = query_coords_dict$find(my_gene_target_table$EX_clusterID) #translate GeneClusterID with the fake coords in query species.
     #Get exon coordinates starting from the ExonID
     my_stop_coords = sub(".*-", "", my_gene_target_table$ExonID)
     my_start_coords = sub(".*:", "", sub("-.*", "", my_gene_target_table$ExonID))
     my_gene_target_table$ExonLength = as.numeric(my_stop_coords) - as.numeric(my_start_coords)
     
     #upload best hits table
-    best_hits_table = read.delim(paste0(my_input_folder, my_query_species, "_", my_target_species, "-best_scores_hits_exons.translated_coords"), header=TRUE)
+    best_hits_table = read.delim(paste0(my_input_folder, my_query_species, "_", my_target_species, "-best_scores_with_overlapIDs.txt"), header=TRUE)
     
     ### remove useless columns
     best_hits_table$ExonID_query = rep(NA, nrow(best_hits_table))
@@ -135,13 +84,12 @@ for (my_target_species in considered_species) {
     #This in theory is just to remove columns
     best_hits_table = subset(best_hits_table, select=-c(Score_C1, Score_I1, Score_I2, Score_C2))
     best_hits_table = unique(best_hits_table) #Check this. IDK why we should have duplicated rows.
-    
-    
+      
     ##################################################################################################################
     ####### Consider the case where more exons in query species belong to the same exon cluster ######################
     ##################################################################################################################
     
-    #This part I actually still have to code. Within each cluster, I should assign the one with the best total score.
+    #Within each cluster, I should assign the one with the best total score. To be considered for the following releases.
     
     ##################################################################################################################
     ####### Consider the case where in query species there is an exon not in the exon clusters #######################
@@ -149,7 +97,7 @@ for (my_target_species in considered_species) {
     ##################################################################################################################
     
     #belonging to an exon cluster whose cluster is not represented in query species || not belonging to an exon cluster
-    not_conserved_query = unique(as.vector(my_gene_table$ExonID[!(my_gene_table$ClusterID %in% my_gene_target_table$ClusterID)])) 
+    not_conserved_query = unique(as.vector(my_gene_table$ExonID[!(my_gene_table$EX_clusterID %in% my_gene_target_table$EX_clusterID)])) 
     all_best_hits_df = vector()
     id_to_keep = as.vector(subset(my_gene_target_table, !(grepl(";", FakeCoords)))$ExonID) #select only the target exons still not matched by exon cluster.
     
@@ -171,8 +119,7 @@ for (my_target_species in considered_species) {
       }
       
       all_best_hits_df = as.data.frame(all_best_hits_df) #make sure it is a dataframe.
-      
-      
+       
       if (nrow(all_best_hits_df) > 0) { 
         colnames(all_best_hits_df) = c("target_ID", "query_ID", "Total_score")
         #In case of duplicated best hits (same target exon being the best hit for more query exons), keep the one with the highest total score. 
@@ -208,7 +155,7 @@ for (my_target_species in considered_species) {
     ##################################################################################################################
     
     #consider also the case where in the target species an exon belong to the exon clusters but to none of the clusters in query species
-    my_gene_target_table$ClusterID = as.vector(my_gene_target_table$ClusterID) #isolate all the exon cluster IDs.
+    my_gene_target_table$EX_clusterID = as.vector(my_gene_target_table$EX_clusterID) #isolate all the exon cluster IDs.
     my_gene_target_table$Start = sub(".*:", "", sub("-.*", "", my_gene_target_table$ExonID)) #add the start to ordered the table (From the ExonID)
     my_gene_target_table = my_gene_target_table[order(my_gene_target_table$Start),] #order the table by start coordinate.
     
@@ -231,26 +178,15 @@ for (my_target_species in considered_species) {
     
     ##### Final modifications
     #dictionary with key=exon cluster ID, values=number of exons belonging to that cluster (same fake coords)
-    my_levels_dict = hashmap(names(table(as.vector(my_gene_target_table$ClusterID))), unname(table(as.vector(my_gene_target_table$ClusterID))))
-    my_gene_target_table$Levels = my_levels_dict$find(my_gene_target_table$ClusterID)
+    my_levels_dict = hashmap(names(table(as.vector(my_gene_target_table$FakeCoords))), unname(table(as.vector(my_gene_target_table$FakeCoords))))
+    my_gene_target_table$Levels = my_levels_dict$find(my_gene_target_table$FakeCoords)
     my_gene_target_table$Species = rep(my_target_species, nrow(my_gene_target_table)) #add species.
     my_gene_target_table$Start = NULL #remove start
-    
-    ###### work on the  exon position
-    #position means first, last, internal
-    my_target_pos_table = read.delim(paste0(my_input_folder, my_target_species, "_all_exons_positions.tab"),
-                                     header=FALSE,
-                                     col.names=c("GeneID", "GeneClusterID", "ExonID", "position"), 
-                                     stringsAsFactors = FALSE)
-    my_target_exon_position_dict = hashmap(my_target_pos_table$ExonID, my_target_pos_table$position)
-    my_gene_target_table$ExPosition = my_target_exon_position_dict$find(my_gene_target_table$ExonID) #Add position using ExonID as key
-    my_gene_target_table$ExPosition[is.na(my_gene_target_table$ExPosition)] = "Internal" #whatever is not classified we will plot as a normal rectangle (internal).
-    
+       
     #Append to final table.
     final_table = rbind(final_table, my_gene_target_table)
   }
 }
-
 
 ###########################################################
 ########### Prepare plotting input ########################
@@ -260,7 +196,7 @@ plotting_table$GeneID = as.vector(plotting_table$GeneID)
 plotting_table$Species = as.vector(plotting_table$Species)
 
 #########
-#in case there are more genes per species
+#In case there are more genes per species
 my_ordered_genes = unique(as.vector(plotting_table$GeneID))
 my_genes_order_dict = hashmap(rev(my_ordered_genes), seq(1, length(my_ordered_genes))) #create ordered index for plotting.
 plotting_table$Order = my_genes_order_dict$find(plotting_table$GeneID)
@@ -291,7 +227,6 @@ plotting_table$ExonNumberPlot = factor(plotting_table$ExonNumberPlot, levels=uni
 #Adding special colors for the exons to highlight and their orthologs.
 all_colors_vector = terrain.colors(length(interesting_exons)+1)[1:length(interesting_exons)] #generate as many colors as interesting exons
 plotting_table$Filling_status = rep("default", nrow(plotting_table)) #set default filling for all exons
-#group_colors_vector = c("default"="lightsteelblue3")
 group_colors_vector = c("default"="gray66")
 index=1
 for (my_exon in interesting_exons) {
@@ -320,6 +255,8 @@ if ("first;last" %in% unique(as.vector(plotting_table$ExPosition))) {
 
 #Only plot the exon length for the reference gene.
 plotting_table$ExonLength[plotting_table$GeneID != my_gene] = NA
+
+print(plotting_table)
 
 ######### Get unique table for names
 unique_table_for_names = unique(plotting_table[c("Species", "ExonNumberPlot", "GeneID", "Order")])
@@ -356,7 +293,6 @@ my_plot = ggplot()  +
   geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.75, label=plotting_table$ExonLength+1), size=7) + #plot the exon length
   
   scale_fill_manual(values=group_colors_vector, name = "Exs", labels=c("default", paste0(interesting_exons, " (", my_query_species,")"))) + #the order of the labels should be the same as in group_colors_vector.
-  #scale_fill_manual(values=group_colors_vector, name = "Exs", breaks=paste0(interesting_exons, " (", my_query_species,")")) + #the order of the labels should be the same as in group_colors_vector.
   scale_alpha_manual(values=c("annotated"=1, "not_annotated"=0)) + #color depending on the annotation status.
   scale_linetype_manual(values=c("Exon"="solid", "Exon_added"="dashed")) +
   scale_size_manual(values=c("brown2"=2, "black"=0.5)) +
@@ -376,18 +312,15 @@ my_plot = ggplot()  +
         plot.title = element_text(color="black", hjust=0, size=20, face="bold")
   )  +
   xlim(-60,max(plotting_table$FakeStop)+5) + #limit axis +
-  #ggtitle(paste0(unique(subset(plotting_table, Species==my_query_species)$GeneID), " and Orthologs:\nHighlighted isoform: ", my_isorform_id)) +
   ggtitle(paste0("Query gene: ", my_query_species, title_gene_name, ", ", title_geneID,  "\nHighlighted isoform: ", my_isorform_id)) +
   guides(alpha=FALSE, size=FALSE, linetype=FALSE)
-  
-
-  
-#Save pdf to output file (in a folder called exint plot)
+   
+#Save pdf to output file
 #This is generate the right proportions in the plot.
 my_width = as.numeric(nrow(subset(plotting_table, GeneID==my_gene)))+10 #number of exons 
 my_height = length(unique(as.vector(plotting_table$GeneID))) #Number of orthologs
 if (length(unique(as.vector(plotting_table$GeneID))) < 5) {my_height = 5} #adjust cases with very few genes 
-if (my_isorform_id == "None") {output_file = "exint_plot.pdf"} else {output_file = paste0("exint_plot_", my_isorform_id, ".pdf")}
+if (my_isorform_id == "None") {output_file = paste0(my_gene, "_exint_plot.pdf")} else {output_file = paste0(my_gene, "-", my_isorform_id, "_exint_plot.pdf")}
 pdf(paste0(my_input_folder, output_file), width=my_width, height=my_height)
 my_plot
 dev.off()
