@@ -14,6 +14,7 @@ my $f_exon_list_sp2;
 my $f_all_exon_sp1;
 my $f_all_exon_sp2;
 my $pairwise_folder;
+my $main_folder;
 my $sp1;
 my $sp2;
 my $dPSI_info = "auto";
@@ -30,6 +31,7 @@ GetOptions( "gene_clusters=s" => \$f_gene_cluster,
 	    "exon_list_sp2=s" => \$f_exon_list_sp2,
 	    "all_exons_sp1=s" => \$f_all_exon_sp1,
 	    "all_exons_sp2=s" => \$f_all_exon_sp2,
+	    "main_folder=s" => \$main_folder,
 	    "pairwise_folder=s" => \$pairwise_folder,
 	    "sp1=s" => \$sp1,
 	    "sp2=s" => \$sp2,
@@ -39,6 +41,26 @@ GetOptions( "gene_clusters=s" => \$f_gene_cluster,
 	    "allow_overlap" => \$allow_overlapping_exons,
 	    "help" => \$helpFlag
     );
+
+### First defines the input files
+if (defined $main_folder){
+    $main_folder=~s/\/$//;
+    $f_gene_cluster="$main_folder/gene_cluster_file.gz";
+    $f_gene_cluster="$main_folder/gene_cluster_file" unless (-e $f_gene_cluster);
+    $f_exon_cluster="$main_folder/EX_clusters.tab";
+    
+    my $sorted_sp1=(sort{$a cmp $b}($sp1,$sp2))[0];
+    my $sorted_sp2=(sort{$a cmp $b}($sp1,$sp2))[1];
+
+    $pairwise_folder="$main_folder/$sorted_sp1-$sorted_sp2";
+    $f_all_exon_sp1="$main_folder/$sp1/$sp1"."_overlap_CDS_exons.txt";
+    $f_all_exon_sp2="$main_folder/$sp2/$sp2"."_overlap_CDS_exons.txt";
+
+    die "Cannot find gene clusters: $f_gene_cluster\n" unless (-e $f_gene_cluster);
+    die "Cannot find exon clusters: $f_exon_cluster\n" unless (-e $f_exon_cluster);
+    die "Cannot find exons for $sp1: $f_all_exon_sp1\n" unless (-e $f_all_exon_sp1);
+    die "Cannot find exons for $sp2: $f_all_exon_sp2\n" unless (-e $f_all_exon_sp2);
+}
 
 ### Help
 if (!defined ($f_gene_cluster) || !defined($f_exon_cluster) || !defined($f_exon_list_sp1) || !defined($sp1) || !defined($sp2) ||  defined ($helpFlag)){
@@ -50,18 +72,20 @@ Script to compare subsets of exons of interest between two species.
 Compulsory Options:
      -sp1 query_species        Identifier of query species (it must match that used for the main module).
      -sp2 target_species       Identifier of target species (it must match that used for the main module).
-     -gene_clusters FILE       File with clusters of gene orthology relationships (tsv).
-     -exon_clusters FILE       File with clusters of exon orthology relationships (multi-species or pairwise [recommended])(tsv).
      -exon_list_sp1 FILE       File with exons from query species. It must contain qualitative or quantitative information on deltaPSIs.
                                   * Format (tsv): GeneID Exon_coord Info
+
+  Either:
+     -main_folder FOLDER       Output folder for main.nf
+
+  Or:
+     -gene_clusters FILE       File with clusters of gene orthology relationships (tsv).
+     -exon_clusters FILE       File with clusters of exon orthology relationships (multi-species or pairwise [recommended])(tsv).
 
 
 Discretionary Options:
      -exon_list_sp2 FILE       File with exons from target species. It must contain qualitative or quantitative information on deltaPSIs.
                                   * If provided, the comparisons is done bidirectional (i.e. both species will be used as target and query).
-     -pairwise_folder FOLDER   ExOrthist folder for the pairwise species comparison (e.g. Sp1-Sp2/). Needed if exon_list_sp2 is provided. 
-     -all_exons_sp1 FILE       Improves conservation vs convergence calls. File with all exons used by ExOrthist (i.e. Sp1/Sp1_overlap_CDS_exons.txt)
-     -all_exons_sp2 FILE       Improves conservation vs convergence calls. File with all exons used by ExOrthist (i.e. Sp2/Sp2_overlap_CDS_exons.txt)
      -dPSI_info auto           Type of information provided for each exon. Any of the following: dPSI, qual_call, none, auto.
                                   * none: no information is provided. All exons in the lists are treated as regulated.
                                   * dPSI: a value between -100 and 100. If a numeric value is provided (non NA), the exon is assumed to have sufficient coverage.
@@ -70,6 +94,13 @@ Discretionary Options:
      -min_dPSI int             Minimum absolute delta PSI used to make a qualitatitive UP or DOWN call if dPSI is provided as dPSI_info [def = 15].
      -outFile                  It creates an output file with the exons in conserved clusters (otherwise, it does NOT create it).
      -allow_overlap            It does not filter out multiple entries of the same exon with different donor/acceptors. Not recommended [def = OFF]
+
+
+  Unless main_folder is provided:
+     -pairwise_folder FOLDER   ExOrthist folder for the pairwise species comparison (e.g. Sp1-Sp2/). Needed if exon_list_sp2 is provided. 
+     -all_exons_sp1 FILE       Improves conservation vs convergence calls. File with all exons used by ExOrthist (i.e. Sp1/Sp1_overlap_CDS_exons.txt)
+     -all_exons_sp2 FILE       Improves conservation vs convergence calls. File with all exons used by ExOrthist (i.e. Sp2/Sp2_overlap_CDS_exons.txt)
+
 
 
 *** Questions \& Bugs: mirimia\@gmail.com
@@ -177,7 +208,12 @@ my %tally_genes=(); # hash to check for potentially incorrect species namings
 my %gene_to_cluster=(); # conversion from geneID to clusterID
 my %gene_cluster_has_sp=(); # exists if there is a gene for cluster X for Sp Y 
 
-open (GCL, $f_gene_cluster) || die "It cannot open the gene orthology file ($f_gene_cluster)\n";
+if ($f_gene_cluster=~/\.gz$/){
+    open (GCL, "gunzip -c $f_gene_cluster |") || die "It cannot open the gene orthology file ($f_gene_cluster)\n";
+}
+else {
+    open (GCL, $f_gene_cluster) || die "It cannot open the gene orthology file ($f_gene_cluster)\n";
+}
 while (<GCL>){
     chomp($_);
     my @l=split(/\t/,$_);
