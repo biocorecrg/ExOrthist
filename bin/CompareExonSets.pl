@@ -65,7 +65,7 @@ if (defined $main_folder){
 ### Help
 if (!defined ($f_gene_cluster) || !defined($f_exon_cluster) || !defined($f_exon_list_sp1) || !defined($sp1) || !defined($sp2) ||  defined ($helpFlag)){
     die "
-Usage: CompareExonsSets.pl -sp1 query_species -sp2 target_species -gene_clusters FILE -exon_clusters FILE -exon_list_sp1 FILE [OPTIONS]
+Usage: CompareExonsSets.pl -sp1 query_species -sp2 target_species -exon_list_sp1 FILE [OPTIONS]
 
 Script to compare subsets of exons of interest between two species.
 
@@ -638,8 +638,11 @@ if (defined $f_exon_list_sp2){
 		    my ($t_g1,$t_co1)=$exon_id=~/(.+?)\=(.+)/;
 		    my @t_ex_sp2=split(/\,/,$gene_cluster_is_regulated{$gene_cluster}{$sp2});
 		    foreach my $t_exon_id_sp2 (@t_ex_sp2){ # all exons regulated in gene orthologs from Sp2 (one by one against those of list_sp1
-			my ($t_g2,$t_co2,$t_exon_cl2)=$t_exon_id_sp2=~/(.+?)\=(.+?)\=(.+)/;
+			my ($t_g2,$t_co2,$t_exon_cl2)=$t_exon_id_sp2=~/(.+?)\=(.+?)\=(.+)/; # gene=coord=exon_cluster (in sp2)
 			my ($i2,$f2) = $t_co2 =~ /\:(\d+)\-(\d+)/;
+			my $exon_id1_sp2="$t_g2=$i2"; # equivalent to $exon_id1 (from Sp2)
+			my $exon_id2_sp2="$t_g2=$f2"; # equivalent to $exon_id2 (from Sp1)
+
 			### Gets exons lengths
 			my $le_ex1 = ($f-$i)+1;
 			my $le_ex2 = ($f2-$i2)+1;
@@ -669,58 +672,74 @@ if (defined $f_exon_list_sp2){
 #			    print "T_Sp2\t$gene_strand{$sp2}{$t_g2}\t$t_g2\t$match2\t$i2\t$f2\t@temp_sp2\n\n";
 #			}
 			
+			### Checks for best hits before starting the final evaluation
+			my $best_hit_sp1_in_sp2; # formerly $best_hit_sp2
+			my $best_hit_sp2_in_sp1; 
+			
+			# best hit is just: start_co-end_co
+			$best_hit_sp1_in_sp2 = $best_exon_hits{$sp1}{$exon_id2}{$t_g2} if $best_exon_hits{$sp1}{$exon_id2}{$t_g2};
+			$best_hit_sp1_in_sp2 = $best_exon_hits{$sp1}{$exon_id1}{$t_g2} if $best_exon_hits{$sp1}{$exon_id1}{$t_g2};
+			$best_hit_sp2_in_sp1 = $best_exon_hits{$sp2}{$exon_id2_sp2}{$t_g1} if $best_exon_hits{$sp2}{$exon_id2_sp2}{$t_g1};
+			$best_hit_sp2_in_sp1 = $best_exon_hits{$sp2}{$exon_id1_sp2}{$t_g1} if $best_exon_hits{$sp2}{$exon_id1_sp2}{$t_g1};
+			
 			### New approach in V2
 			my $cons_conv_call = "UNCLEAR_0";
 			# 1: if the exon cluster is the same
 			if ($t_exon_cl1 eq $t_exon_cl2 && $t_exon_cl1 ne "NO_CLUSTER" && $t_exon_cl2 ne "NO_CLUSTER"){
-			    $cons_conv_call = "CONSERVED_1";
+			    $cons_conv_call = "CONSERVED";
 			}
 			# 2: both exons are in exon clusters, but they are different clusters
 			elsif ($t_exon_cl1 ne $t_exon_cl2 && $t_exon_cl1 ne "NO_CLUSTER" && $t_exon_cl2 ne "NO_CLUSTER"){
-			    $cons_conv_call= "NON_CONSERVED_2";
+			    $cons_conv_call= "NON_CONSERVED_A";
 			}		    
 			# 3: if the exon in Sp1 has a best hit against Sp2
-			elsif ($best_exon_hits{$sp1}{$exon_id1}{$t_g2} || $best_exon_hits{$sp1}{$exon_id2}{$t_g2}){ # it could be a NO_EXON_ALN
-			    my $best_hit_sp2;
-			    if ($best_exon_hits{$sp1}{$exon_id1}{$t_g2} && $best_exon_hits{$sp1}{$exon_id1}{$t_g2} ne "NO_EXON_ALN"){
-				$best_hit_sp2 = $best_exon_hits{$sp1}{$exon_id1}{$t_g2};
-				my ($check_i, $check_f) = $best_hit_sp2 =~ /(.+?)\-(.+)/;			    
+			### Modifications on 26/12/20
+			# - ask also if Sp2 has a best hit against Sp1
+			# - if NO_EXON_ALN just leave out to next steps??
+			# - evaluate best_hit_both, best_hit_sp1, best_hit_sp2, non-cons (really different)
+			elsif (($best_hit_sp1_in_sp2 && $best_hit_sp1_in_sp2 ne "NO_EXON_ALN") || ($best_hit_sp2_in_sp1 && $best_hit_sp2_in_sp1 ne "NO_EXON_ALN")){
+			    my ($hit_in_sp1, $hit_in_sp2); 
+			    if ($best_hit_sp1_in_sp2 && $best_hit_sp1_in_sp2 ne "NO_EXON_ALN"){
+				my ($check_i, $check_f) = $best_hit_sp1_in_sp2 =~ /(.+?)\-(.+)/;			    
 				if ($i2 eq $check_i || $f2 eq $check_f){
-				    $cons_conv_call= "BEST_HIT_3"; # the best hit is also a regulated exon
-				}
-				else {
-				    $cons_conv_call= "NON_CONSERVED_3A"; # simply not the best hit (revise)
+				    $hit_in_sp2 = 1;
 				}
 			    }
-			    elsif ($best_exon_hits{$sp1}{$exon_id2}{$t_g2} && $best_exon_hits{$sp1}{$exon_id2}{$t_g2} ne "NO_EXON_ALN"){
-				$best_hit_sp2 = $best_exon_hits{$sp1}{$exon_id2}{$t_g2};
-				my ($check_i, $check_f) = $best_hit_sp2 =~ /(.+?)\-(.+)/;			    
-				if ($i2 eq $check_i || $f2 eq $check_f){
-				    $cons_conv_call= "BEST_HIT_3"; # the best hit is also a regulated exon
+			    if ($best_hit_sp2_in_sp1 && $best_hit_sp2_in_sp1 ne "NO_EXON_ALN"){
+				my ($check_i, $check_f) = $best_hit_sp2_in_sp1 =~ /(.+?)\-(.+)/;			    
+				if ($i eq $check_i || $f eq $check_f){
+				    $hit_in_sp1 = 1;
 				}
-				else {
-				    $cons_conv_call= "NON_CONSERVED_3A"; # simply not the best hit (revise)
-				}			    
+			    }
+			    ### Checks the hits
+			    if ($hit_in_sp1 && $hit_in_sp2){
+				$cons_conv_call= "BEST_HIT_BOTH";
+			    }
+			    elsif (!$hit_in_sp1 && $hit_in_sp2){
+				$cons_conv_call= "BEST_HIT_SP1";
+			    }
+			    elsif ($hit_in_sp1 && !$hit_in_sp2){
+				$cons_conv_call= "BEST_HIT_SP2";
 			    }
 			    else {
-				$cons_conv_call= "NON_CONSERVED_3B"; # i.e. it's NO_EXON_ALN
+				$cons_conv_call= "NON_CONSERVED_B";
 			    }
 			}
 			# 4: the lengths are too different
 			elsif ((abs($le_ex1-$le_ex2)/$le_ex1) > $max_dif_le_ratio || (abs($le_ex1-$le_ex2)/$le_ex2) > $max_dif_le_ratio){
-			    $cons_conv_call = "NON_CONSERVED_4";
+			    $cons_conv_call = "NON_CONSERVED_C";
 			}
 			# 5: either of the genes don't have any exon cluster to be used as anchor
 			elsif (!$g_with_exon_clusters{$sp1}{$t_g1} || !$g_with_exon_clusters{$sp2}{$t_g2}){ # either of them has no exon clusters
 			    # uses the sorting info
 			    if ($total_ex_sp1 <= 4 || $total_ex_sp2 <= 4){
-				$cons_conv_call = "UNCLEAR_5"; 
+				$cons_conv_call = "UNCLEAR_E"; 
 			    }
 			    elsif (abs($segment_sp1-$segment_sp2)>=2){
-				$cons_conv_call= "NON_CONSERVED_5";
+				$cons_conv_call= "NON_CONSERVED_E";
 			    }
 			    else {
-				$cons_conv_call = "UNCLEAR_5"; 
+				$cons_conv_call = "UNCLEAR_E"; 
 			    }
 			}
 			# 6: both genes have exon clusters to use as anchors
@@ -755,29 +774,29 @@ if (defined $f_exon_list_sp2){
 			    if (!defined $anchor_ups && !defined $anchor_downs){ # no common clusters
 				# based on exon number
 				if ($total_ex_sp1 <= 4 || $total_ex_sp2 <= 4){
-				    $cons_conv_call = "UNCLEAR_6A"; 
+				    $cons_conv_call = "UNCLEAR_D"; 
 				}
 				elsif (abs($segment_sp1-$segment_sp2)>=2){
-				    $cons_conv_call= "NON_CONSERVED_6A";
+				    $cons_conv_call= "NON_CONSERVED_D";
 				}
 				else {
-				    $cons_conv_call = "UNCLEAR_6A"; 
+				    $cons_conv_call = "UNCLEAR_D"; 
 				}
 			    }
 			    elsif (defined $anchor_ups && !defined $anchor_downs){ # anchor upstream
-				$cons_conv_call= "UNCLEAR_6B" if $match2 > $anchor_conversion{$anchor_ups}; # it's downstream the anchor
-				$cons_conv_call= "NON_CONSERVED_6B" if $match2 <= $anchor_conversion{$anchor_ups}; # it's upstream
+				$cons_conv_call= "UNCLEAR_D" if $match2 > $anchor_conversion{$anchor_ups}; # it's downstream the anchor
+				$cons_conv_call= "NON_CONSERVED_D" if $match2 <= $anchor_conversion{$anchor_ups}; # it's upstream
 			    }
 			    elsif (!defined $anchor_ups && defined $anchor_downs){ # anchor downstream
-				$cons_conv_call= "UNCLEAR_6C" if $match2 < $anchor_conversion{$anchor_downs}; # it's upstream the anchor
-				$cons_conv_call= "NON_CONSERVED_6C" if $match2 >= $anchor_conversion{$anchor_downs}; # it's downstream
+				$cons_conv_call= "UNCLEAR_D" if $match2 < $anchor_conversion{$anchor_downs}; # it's upstream the anchor
+				$cons_conv_call= "NON_CONSERVED_D" if $match2 >= $anchor_conversion{$anchor_downs}; # it's downstream
 			    }
 			    else { # both anchors
 				if ($match2 > $anchor_conversion{$anchor_ups} && $match2 < $anchor_conversion{$anchor_downs}){
-				    $cons_conv_call= "UNCLEAR_6D";
+				    $cons_conv_call= "UNCLEAR_D";
 				}
 				else {
-				    $cons_conv_call= "NON_CONSERVED_6D";
+				    $cons_conv_call= "NON_CONSERVED_D";
 				}
 			    }
 			}
@@ -800,8 +819,10 @@ if (defined $f_exon_list_sp2){
 			    print OUT_GENES "$gene_cluster\t$t_g1\t$orig_co_sp1\t$match1\t$total_ex_sp1\t$le_ex1\t$t_exon_cl1\t$info_by_exon{$sp1}{$exon_sp1}\t".
 				"$t_g2\t$orig_co_sp2\t$match2\t$total_ex_sp2\t$le_ex2\t$t_exon_cl2\t$info_by_exon{$sp2}{$exon_sp2}\t$cons_conv_call\t$sp1\t$sp2\n";
 			}
-			$cons_conv_call=~s/(.+)\_[A-Z0-9]+?$/$1/;
-			$tally_sp1_exons_in_Rcons_genes_by_type{$cons_conv_call}++;
+			$tally_sp1_exons_in_Rcons_genes_by_type{CONSERVED}++ if $cons_conv_call =~ /^CONSERVED/;
+			$tally_sp1_exons_in_Rcons_genes_by_type{BEST_HIT}++ if $cons_conv_call =~ /BEST_HIT/;
+			$tally_sp1_exons_in_Rcons_genes_by_type{NON_CONSERVED}++ if $cons_conv_call =~ /NON_CONSERVED/;
+			$tally_sp1_exons_in_Rcons_genes_by_type{UNCLEAR}++ if $cons_conv_call =~ /UNCLEAR/;
 		    }
 		}
 		if (!defined $done_sp1_G_b{$gene}){
