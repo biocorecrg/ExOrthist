@@ -37,7 +37,7 @@ GetOptions( "gene_clusters=s" => \$f_gene_cluster,
 	    "sp2=s" => \$sp2,
 	    "dPSI_info=s" => \$dPSI_info,
 	    "min_dPSI=i" => $min_dPSI,
-	    "outFile" => \$outFile,
+	    "print_out" => \$outFile,
 	    "allow_overlap" => \$allow_overlapping_exons,
 	    "help" => \$helpFlag
     );
@@ -92,7 +92,8 @@ Discretionary Options:
                                   * qual_call: a qualitative information. Valid values: UP, DOWN, REGULATED, NO_CHANGE, NO_COVERAGE (=NA or missing).
                                   * auto: decision among dPSI, qual_call and non will be done automatically [default].
      -min_dPSI int             Minimum absolute delta PSI used to make a qualitatitive UP or DOWN call if dPSI is provided as dPSI_info [def = 15].
-     -outFile                  It creates an output file with the exons in conserved clusters (otherwise, it does NOT create it).
+     -print_out                It creates an output file with the exons in conserved clusters (otherwise, it does NOT create it). 
+                                  If an exon_list_sp2 is provided, it generates a file with all pairwise exon comparisons of regulated exons.
      -allow_overlap            It does not filter out multiple entries of the same exon with different donor/acceptors. Not recommended [def = OFF]
 
 
