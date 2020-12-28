@@ -5,7 +5,7 @@ import pandas as pd
 import re
 
 #read arguments
-parser = argparse.ArgumentParser(description="Recluster the gene clusters by species pairs based on orthopairs")
+parser = argparse.ArgumentParser(description="Subset the exon clusters by species pairs based on the pairwise reclustered gene orthogroups")
 parser.add_argument("--exon_pairs", "-ep", required=True)
 parser.add_argument("--reclustered_genes", "-rg", required=True)
 parser.add_argument("--exon_clusters", "-ec", required=True)
