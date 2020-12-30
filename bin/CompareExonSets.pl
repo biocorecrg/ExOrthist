@@ -693,12 +693,8 @@ if (defined $f_exon_list_sp2){
 			elsif ($t_exon_cl1 ne $t_exon_cl2 && $t_exon_cl1 ne "NO_CLUSTER" && $t_exon_cl2 ne "NO_CLUSTER"){
 			    $cons_conv_call= "NON_CONSERVED_A";
 			}		    
-			# 3: if the exon in Sp1 has a best hit against Sp2
-			### Modifications on 26/12/20
-			# - ask also if Sp2 has a best hit against Sp1
-			# - if NO_EXON_ALN just leave out to next steps??
-			# - evaluate best_hit_both, best_hit_sp1, best_hit_sp2, non-cons (really different)
-			elsif (($best_hit_sp1_in_sp2 && $best_hit_sp1_in_sp2 ne "NO_EXON_ALN") || ($best_hit_sp2_in_sp1 && $best_hit_sp2_in_sp1 ne "NO_EXON_ALN")){
+			# 3: if the exon in Sp1 has a best hit against Sp2 and/or vice-versa
+			elsif (($best_hit_sp1_in_sp2 && $best_hit_sp1_in_sp2 ne "NO_EXON_ALN") && ($best_hit_sp2_in_sp1 && $best_hit_sp2_in_sp1 ne "NO_EXON_ALN")){
 			    my ($hit_in_sp1, $hit_in_sp2); 
 			    if ($best_hit_sp1_in_sp2 && $best_hit_sp1_in_sp2 ne "NO_EXON_ALN"){
 				my ($check_i, $check_f) = $best_hit_sp1_in_sp2 =~ /(.+?)\-(.+)/;			    
