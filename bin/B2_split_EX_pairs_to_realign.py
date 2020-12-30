@@ -4,7 +4,7 @@ import argparse
 import pandas as pd
 
 #read arguments
-parser = argparse.ArgumentParser(description="Recluster the gene clusters by species pairs based on orthopairs")
+parser = argparse.ArgumentParser(description="Split the pool of exon pairs to be realigned into batches of aln_num pairs")
 parser.add_argument("--output_folder", "-o", required=True)
 parser.add_argument("--input_file", "-i", required=True)
 parser.add_argument("--aln_num", "-n", required=True)
