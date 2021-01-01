@@ -924,14 +924,14 @@ if (defined $f_exon_list_sp2){
     print "
 - Gene-level stats:
    - $sp1 => $sp2
-Genes with exons from $sp1 in the exon lists\t$total_sp1_genes
-Genes with exons from $sp1 with gene orthologs in $sp2\t$tally_sp1_genes_in_Gcons_genes\t$perc_sp1_genes_Gcons_genes\%
-Genes with exons from $sp1 with gene orthologs with regulated exons in $sp2\t$tally_sp1_genes_in_Rcons_genes\t$perc_sp1_genes_Rcons_genes\%
+Genes with $sp1 exons in the exon list\t$total_sp1_genes
+Genes with $sp1 exons with gene orthologs in $sp2\t$tally_sp1_genes_in_Gcons_genes\t$perc_sp1_genes_Gcons_genes\%
+Genes with $sp1 exons with gene orthologs with regulated exons in $sp2\t$tally_sp1_genes_in_Rcons_genes\t$perc_sp1_genes_Rcons_genes\%
 
    - $sp2 => $sp1
-Genes with exons from $sp2 in the exon lists\t$total_sp2_genes
-Genes with exons from $sp2 with gene orthologs in $sp1\t$tally_sp2_genes_in_Gcons_genes\t$perc_sp2_genes_Gcons_genes\%
-Genes with exons from $sp2 with gene orthologs with regulated exons in $sp1\t$tally_sp2_genes_in_Rcons_genes\t$perc_sp2_genes_Rcons_genes\%
+Genes with $sp2 exon in the exon list\t$total_sp2_genes
+Genes with $sp2 exons with gene orthologs in $sp1\t$tally_sp2_genes_in_Gcons_genes\t$perc_sp2_genes_Gcons_genes\%
+Genes with $sp2 exons with gene orthologs with regulated exons in $sp1\t$tally_sp2_genes_in_Rcons_genes\t$perc_sp2_genes_Rcons_genes\%
 
 
 - Exon-level stats:
@@ -939,11 +939,11 @@ Genes with exons from $sp2 with gene orthologs with regulated exons in $sp1\t$ta
 Exons from $sp1 in exon list\t$total_sp1_exons
 Exons from $sp1 with gene orthologs in $sp2\t$tally_sp1_exons_in_Gcons_genes\t$perc_sp1_exons_Gcons_genes\%
 Exons from $sp1 with gene orthologs with regulated exons in $sp2\t$tally_sp1_exons_in_Rcons_genes\t$perc_sp1_exons_Rcons_genes\%
-    Total pairwise exon comparisons between regulated exons in $sp1 and $sp2 orthologs\t$total_exons_in_Rcons_genes
-         Orthologous exon in $sp2\t$tally_sp1_exons_in_Rcons_genes_by_type{CONSERVED}\t$perc_sp1_exons_Rcons_genes_cons\%
-         Best exon hit in $sp2\t$tally_sp1_exons_in_Rcons_genes_by_type{BEST_HIT}\t$perc_sp1_exons_Rcons_genes_hit\%
-         Non-orthologous exon in $sp2\t$tally_sp1_exons_in_Rcons_genes_by_type{NON_CONSERVED}\t$perc_sp1_exons_Rcons_genes_not\%
-         Unclear\t$tally_sp1_exons_in_Rcons_genes_by_type{UNCLEAR}\t$perc_sp1_exons_Rcons_genes_unclear\%
+   Total pairwise exon comparisons $sp1 vs $sp2 in gene orthologs\t$total_exons_in_Rcons_genes
+       Orthologous exon in $sp2\t$tally_sp1_exons_in_Rcons_genes_by_type{CONSERVED}\t$perc_sp1_exons_Rcons_genes_cons\%
+       Best exon hit in $sp2\t$tally_sp1_exons_in_Rcons_genes_by_type{BEST_HIT}\t$perc_sp1_exons_Rcons_genes_hit\%
+       Non-orthologous exon in $sp2\t$tally_sp1_exons_in_Rcons_genes_by_type{NON_CONSERVED}\t$perc_sp1_exons_Rcons_genes_not\%
+       Unclear\t$tally_sp1_exons_in_Rcons_genes_by_type{UNCLEAR}\t$perc_sp1_exons_Rcons_genes_unclear\%
 Exons from $sp1 with exon orthologs in $sp2 (G-conserved)\t$tally_sp1_exons_Gcons\t$perc_sp1_exons_Gcons_exons\%\t$perc_sp1_exons_Gcons_exons_OrthGenes\% (in Orth genes)
 Exons from $sp1 with regulated exon orthologs in $sp2 (R-conserved)\t$tally_sp1_exons_Rcons\t$perc_sp1_exons_Rcons_exons\%\t$perc_sp1_exons_Rcons_exons_OrthGenes\% (in Orth genes)
     Percent of R-conserved exons from $sp1 out of G-conserved exons\t$perc_sp1_exons_Rcons_exons_Gcons\%
@@ -990,9 +990,9 @@ else {
 
     print "
 - Gene-level stats ($sp1 => $sp2):
-Genes with exons from $sp1 in the exon lists\t$total_sp1_genes
-Genes with exons from $sp1 with gene orthologs in $sp2\t$tally_sp1_genes_in_Gcons_genes\t$perc_sp1_genes_Gcons_genes\%
-Genes with exons from $sp1 with gene orthologs with regulated exons in $sp2\t$tally_sp1_genes_in_Rcons_genes\t$perc_sp1_genes_Rcons_genes\%
+Genes with $sp1 exons in the exon lists\t$total_sp1_genes
+Genes with $sp1 exons with gene orthologs in $sp2\t$tally_sp1_genes_in_Gcons_genes\t$perc_sp1_genes_Gcons_genes\%
+Genes with $sp1 exons with gene orthologs with regulated exons in $sp2\t$tally_sp1_genes_in_Rcons_genes\t$perc_sp1_genes_Rcons_genes\%
 
 - Exon-level stats ($sp1 => $sp2):
 Exons from $sp1 in exon list\t$total_sp1_exons
