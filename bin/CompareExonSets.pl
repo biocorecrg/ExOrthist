@@ -800,7 +800,7 @@ if (defined $f_exon_list_sp2){
 			if (defined $outFile && defined $f_exon_list_sp2){
 			    $match1++; $match2++; # they were 0-based
 			    my $exon_sp1 = $exon_id; # clean up naming
-			    my $exon_sp2 = $t_exon_id_sp2;
+			    my $exon_sp2 = "$t_g2=$t_co2"; 
 			    ### Reconverts ID if needed
 			    if ($conv_to_orig_exon_id{$sp1}{$exon_sp1}){ # i.e. if it has been converted
 				$exon_sp1 = $conv_to_orig_exon_id{$sp1}{$exon_sp1};
@@ -992,15 +992,12 @@ else {
 - Gene-level stats ($sp1 => $sp2):
 Genes with $sp1 exons in the exon lists\t$total_sp1_genes
 Genes with $sp1 exons with gene orthologs in $sp2\t$tally_sp1_genes_in_Gcons_genes\t$perc_sp1_genes_Gcons_genes\%
-Genes with $sp1 exons with gene orthologs with regulated exons in $sp2\t$tally_sp1_genes_in_Rcons_genes\t$perc_sp1_genes_Rcons_genes\%
 
 - Exon-level stats ($sp1 => $sp2):
 Exons from $sp1 in exon list\t$total_sp1_exons
 Exons from $sp1 with gene orthologs in $sp2\t$tally_sp1_exons_in_Gcons_genes\t$perc_sp1_exons_Gcons_genes\%
-Exons from $sp1 with gene orthologs with regulated exons in $sp2\t$tally_sp1_exons_in_Rcons_genes\t$perc_sp1_exons_Rcons_genes\%
-Exons from $sp1 with exon orthologs in $sp2 (G-conserved)\t$tally_sp1_exons_Gcons\t$perc_sp1_exons_Gcons_exons\%\t$perc_sp1_exons_Gcons_exons_OrthGenes\% (in Orth genes)
-Exons from $sp1 with regulated exon orthologs in $sp2 (R-conserved)\t$tally_sp1_exons_Rcons\t$perc_sp1_exons_Rcons_exons\%\t$perc_sp1_exons_Rcons_exons_OrthGenes\% (in Orth genes)
-
+Exons from $sp1 with exon orthologs in $sp2 (G-conserved)\t$tally_sp1_exons_Gcons\t$perc_sp1_exons_Gcons_exons\%
+    Only genes with orthologs in $sp2\t\t$perc_sp1_exons_Gcons_exons_OrthGenes\%
 
 ";
 # it could do the "unique cluster" counts for exon and genes
