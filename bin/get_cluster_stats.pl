@@ -17,7 +17,7 @@ GetOptions( "gene_clusters=s" => \$f_gene_cluster,
 
 if (!defined $exonsDB_folder){
     die "
-Usage: Get_stats_exon_cls.pl -main_output FOLDER (-gene_clusters FILE -exon_clusters FILE) 
+Usage: get_cluster_stats.pl -main_output FOLDER (-gene_clusters FILE -exon_clusters FILE) 
 
 Script to get basic stats from ExOrthist clusters.
 

@@ -65,7 +65,7 @@ if (defined $main_folder){
 ### Help
 if (!defined ($f_gene_cluster) || !defined($f_exon_cluster) || !defined($f_exon_list_sp1) || !defined($sp1) || !defined($sp2) ||  defined ($helpFlag)){
     die "
-Usage: CompareExonsSets.pl -sp1 query_species -sp2 target_species -exon_list_sp1 FILE [OPTIONS]
+Usage: compare_exon_sets.pl -sp1 query_species -sp2 target_species -exon_list_sp1 FILE [OPTIONS]
 
 Script to compare subsets of exons of interest between two species.
 
