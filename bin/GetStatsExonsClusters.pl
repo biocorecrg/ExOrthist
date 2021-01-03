@@ -12,14 +12,21 @@ my $exonsDB_folder;
 Getopt::Long::Configure("no_auto_abbrev");
 GetOptions( "gene_clusters=s" => \$f_gene_cluster,
 	    "exon_clusters=s" => \$f_exon_cluster,
-	    "exons_db=s" => \$exonsDB_folder
+	    "main_output=s" => \$exonsDB_folder
     );
 
-if (!defined $f_gene_cluster || !defined $f_exon_cluster || !defined $exonsDB_folder){
+if (!defined $exonsDB_folder){
     die "
-Usage: Get_stats_exon_cls.pl -gene_clusters FILE -exon_clusters FILE -exons_db FOLDER
+Usage: Get_stats_exon_cls.pl -main_output FOLDER (-gene_clusters FILE -exon_clusters FILE) 
 
 Script to get basic stats from ExOrthist clusters.
+
+OPTIONS
+   -main_output FOLDER/    Path to the output folder of main.nf [mandatory]
+
+   -gene_clusters FILE     Alternative gene clusters file [optional]
+   -exon_clusters FILE     Alternative exon clusters file [optional]
+
     
 ";
 }
@@ -27,11 +34,26 @@ Script to get basic stats from ExOrthist clusters.
 my @exon_files=glob("$exonsDB_folder/*/*_overlap_CDS_exons.txt");
 die "[Aborted] It cannot find any files with exon info\n" if $#exon_files < 0;
 
+### defines the files:
+if (!defined $f_gene_cluster){
+    $f_gene_cluster = "$exonsDB_folder/gene_cluster_file.gz";
+} 
+if (!defined $f_exon_cluster){
+    $f_exon_cluster = "$exonsDB_folder/EX_clusters.tab";
+}
+die "The gene cluster file ($f_gene_cluster) could not be found\n" unless (-e $f_gene_cluster);
+die "The exon cluster file ($f_exon_cluster) could not be found\n" unless (-e $f_exon_cluster);
+
+
 #GF00001 Bta ENSBTAG00000045550 SPAN6
 my %gene_to_cluster=(); 
 my %gene_to_species=();
 
-open (LIST, $f_gene_cluster) || die "It cannot open the gene clusters ($f_gene_cluster file)\n";
+if ($f_gene_cluster=~/\.gz$/){
+    open (LIST, "gunzip -c $f_gene_cluster |") || die "It cannot open the gene clusters ($f_gene_cluster file)\n";
+} else {
+    open (LIST, $f_gene_cluster) || die "It cannot open the gene clusters ($f_gene_cluster file)\n";
+}
 while (<LIST>){ ##checking list of consistent events
     chomp($_);
     my @l=split(/\t/,$_); 
@@ -156,25 +178,27 @@ my $other_strings = $total_strings-$tally_strings{$default_string1}-$tally_strin
 $other_strings = $other_strings - $tally_strings12 if length($default_string1)==2;
 my $perc_others = sprintf("%.2f",100*$other_strings/$total_strings);
 
-print "\nTotal exon clusters\t$total_exon_clusters\n";
+print "\nCluster type\tNumber\t\% total clusters\n";
+print "Total exon clusters\t$total_exon_clusters\t100\%\n";
 print "Clusters $default_string1\t$tally_strings{$default_string1}\t$perc_1\%\n";
 print "Clusters 12/21\t$tally_strings12\t$perc_12\%\n" if length($default_string1)==2;
 print "Clusters $default_string2\t$tally_strings{$default_string2}\t$perc_2\%\n";
 print "Clusters >=3 exons/species\t$tally_strings{MANY_3}\t$perc_3\%\n";
 print "Clusters >=4 exons/species\t$tally_strings{MANY_4}\t$perc_4\%\n";
-print "Other clusters\t$other_strings\t$perc_others\%\n";
+print "Other clusters\t$other_strings\t$perc_others\%\n" if length($default_string1)==2;
 
 if (length($default_string1)>2){
-    print "\nIncomplete clusters\t$tally_strings{INCOMPLETE}\t$perc_inc\%\n";
+    print "Clusters missing species\t$tally_strings{INCOMPLETE}\t$perc_inc\%\n";
+    print "\nSpecies missed\tNumber\t\% from missing\n";
     foreach my $species (sort keys %tally_exons){
 	my $perc = "NA";
 	$tally_missing{$species}=0 if !defined $tally_missing{$species};
 	if ($tally_strings{INCOMPLETE}>0){
 	    $perc = sprintf("%.2f",100*$tally_missing{$species}/$tally_strings{INCOMPLETE});
-	    print "  - $species\t$tally_missing{$species}\t$perc\%\n";
+	    print "$species\t$tally_missing{$species}\t$perc\%\n";
 	}
 	else {
-	    print "  - $species\t$tally_missing{$species}\tNA\n";
+	    print "$species\t$tally_missing{$species}\tNA\n";
 	}
     }
 }
