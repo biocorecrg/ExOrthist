@@ -146,8 +146,8 @@ foreach my $exon_cluster (sort keys %tally_by_exon_cluster){
     $total_strings++;
 }
 
-print "Summary statistics of orthogroups (OGs)\n";
-print "Species\tTotal CDS exons\tExons in orth genes\tExons in OGs\t% recovered\n";
+print "Summary statistics of exon orthogroups (OGs)\n"; 
+print "Species\tTotal CDS exons\tExons in gene OGs\tExons in OGs\t% recovered\n";
 foreach my $species (sort keys %tally_exons){
     my $perc_covered = sprintf ("%.2f",100*($tally_exons_in_clusters{$species}/$tally_exons{$species}));
     print "$species\t$tally_exons_all{$species}\t$tally_exons{$species}\t$tally_exons_in_clusters{$species}\t$perc_covered\%\n";
