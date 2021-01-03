@@ -146,7 +146,8 @@ foreach my $exon_cluster (sort keys %tally_by_exon_cluster){
     $total_strings++;
 }
 
-print "Species\tAnnotated CDS exons\tExons in Genes in clusters\tExons in exon clusters\t%covered\n";
+print "Summary statistics of orthogroups (OGs)\n";
+print "Species\tTotal CDS exons\tExons in orth genes\tExons in OGs\t% recovered\n";
 foreach my $species (sort keys %tally_exons){
     my $perc_covered = sprintf ("%.2f",100*($tally_exons_in_clusters{$species}/$tally_exons{$species}));
     print "$species\t$tally_exons_all{$species}\t$tally_exons{$species}\t$tally_exons_in_clusters{$species}\t$perc_covered\%\n";
@@ -178,18 +179,18 @@ my $other_strings = $total_strings-$tally_strings{$default_string1}-$tally_strin
 $other_strings = $other_strings - $tally_strings12 if length($default_string1)==2;
 my $perc_others = sprintf("%.2f",100*$other_strings/$total_strings);
 
-print "\nCluster type\tNumber\t\% total clusters\n";
-print "Total exon clusters\t$total_exon_clusters\t100\%\n";
-print "Clusters $default_string1\t$tally_strings{$default_string1}\t$perc_1\%\n";
-print "Clusters 12/21\t$tally_strings12\t$perc_12\%\n" if length($default_string1)==2;
-print "Clusters $default_string2\t$tally_strings{$default_string2}\t$perc_2\%\n";
-print "Clusters >=3 exons/species\t$tally_strings{MANY_3}\t$perc_3\%\n";
-print "Clusters >=4 exons/species\t$tally_strings{MANY_4}\t$perc_4\%\n";
-print "Other clusters\t$other_strings\t$perc_others\%\n" if length($default_string1)==2;
+print "\nExon OG type\tNumber\t\% from total OGs\n";
+print "Total exon OGs\t$total_exon_clusters\t100\%\n";
+print "OGs 1:1\t$tally_strings{$default_string1}\t$perc_1\%\n";
+print "OGs 1:2/2:1\t$tally_strings12\t$perc_12\%\n" if length($default_string1)==2;
+print "OGs 2:2\t$tally_strings{$default_string2}\t$perc_2\%\n";
+print "OGs >=3 exons/species\t$tally_strings{MANY_3}\t$perc_3\%\n";
+print "OGs >=4 exons/species\t$tally_strings{MANY_4}\t$perc_4\%\n";
+print "Other OGs\t$other_strings\t$perc_others\%\n" if length($default_string1)==2;
 
 if (length($default_string1)>2){
-    print "Clusters missing species\t$tally_strings{INCOMPLETE}\t$perc_inc\%\n";
-    print "\nSpecies missed\tNumber\t\% from missing\n";
+    print "OGs missing species\t$tally_strings{INCOMPLETE}\t$perc_inc\%\n";
+    print "\nMissing species\tNumber\t\% from missing\n";
     foreach my $species (sort keys %tally_exons){
 	my $perc = "NA";
 	$tally_missing{$species}=0 if !defined $tally_missing{$species};
