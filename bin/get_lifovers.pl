@@ -24,7 +24,7 @@ GetOptions(  "annot_sp1=s" => \$annot_sp1,
 
 if (!defined $annot_sp1 || defined $help){
     die "
-Usage: GetLiftOverFile.pl OPTIONS
+Usage: get_lifovers.pl OPTIONS
 
 Options:
    -annot_sp1 GTF/LIST     GTF (Sp1.gtf) or list of exons (Sp1.exons) for species 1 (query).
