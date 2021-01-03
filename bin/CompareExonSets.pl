@@ -942,7 +942,7 @@ Exons from $sp1 with exon orthologs in $sp2 (G-conserved)\t$tally_sp1_exons_Gcon
     Out of genes with orthologs\t\t$perc_sp1_exons_Gcons_exons_OrthGenes\%
 Exons from $sp1 with regulated exon orthologs in $sp2 (R-conserved)\t$tally_sp1_exons_Rcons\t$perc_sp1_exons_Rcons_exons\%
     Out of genes with orthologs\t\t$perc_sp1_exons_Rcons_exons_OrthGenes\% 
-        Percent of R-conserved / G-conserved exons in $sp1\t\t$perc_sp1_exons_Rcons_exons_Gcons\%
+    Percent of R-conserved / G-conserved exons in $sp1\t\t$perc_sp1_exons_Rcons_exons_Gcons\%
 Exons from $sp1 with gene orthologs with regulated exons in $sp2\t$tally_sp1_exons_in_Rcons_genes\t$perc_sp1_exons_Rcons_genes\%
 
    - $sp2 => $sp1
@@ -952,12 +952,12 @@ Exons from $sp2 with exon orthologs in $sp1 (G-conserved)\t$tally_sp2_exons_Gcon
     Out of genes with orthologs\t\t$perc_sp2_exons_Gcons_exons_OrthGenes\%
 Exons from $sp2 with regulated exon orthologs in $sp1 (R-conserved)\t$tally_sp2_exons_Rcons\t$perc_sp2_exons_Rcons_exons\%
     Out of genes with orthologs\t\t$perc_sp2_exons_Rcons_exons_OrthGenes\% 
-        Percent of R-conserved / G-conserved exons in $sp2\t\t$perc_sp2_exons_Rcons_exons_Gcons\%
+    Percent of R-conserved / G-conserved exons in $sp2\t\t$perc_sp2_exons_Rcons_exons_Gcons\%
 Exons from $sp2 with gene orthologs with regulated exons in $sp1\t$tally_sp2_exons_in_Rcons_genes\t$perc_sp2_exons_Rcons_genes\%
 
    - Pairwise regulated exon comparisons $sp1 <=> $sp2 in gene orthologs\t$total_exons_in_Rcons_genes
 Orthologous exons (R-conserved)\t$tally_sp1_exons_in_Rcons_genes_by_type{CONSERVED}\t$perc_sp1_exons_Rcons_genes_cons\%
-Exon best-hits\t$tally_sp1_exons_in_Rcons_genes_by_type{BEST_HIT}\t$perc_sp1_exons_Rcons_genes_hit\%
+Best-hit exons\t$tally_sp1_exons_in_Rcons_genes_by_type{BEST_HIT}\t$perc_sp1_exons_Rcons_genes_hit\%
 Non-orthologous exons\t$tally_sp1_exons_in_Rcons_genes_by_type{NON_CONSERVED}\t$perc_sp1_exons_Rcons_genes_not\%
 Unclear cases\t$tally_sp1_exons_in_Rcons_genes_by_type{UNCLEAR}\t$perc_sp1_exons_Rcons_genes_unclear\%
 
