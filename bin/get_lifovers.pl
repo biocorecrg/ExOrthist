@@ -32,7 +32,7 @@ Options:
    -annot_sp2 GTF          GTF for species 2 (target).
    -chain_file FILE        LiftOver chain alignment from Sp1ToSp2.
    -gene_clusters FILE     Gene orthology clusters including Sp1 and Sp2. 
-#                              Format (tsv): ClusterID   Species    GeneID
+                              Format (tsv): ClusterID   Species    GeneID
    -type CDS/exon          If a GTF is provided for annot_sp1, parses either CDS or exon lines (def = CDS).
    -canonical_ss           If flag is active, it will require at last one cannonical splice site (def = off).
                               If active, it will need the filter Sp2.fasta in the same directory.
