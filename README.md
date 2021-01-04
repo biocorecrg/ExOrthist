@@ -560,7 +560,6 @@ Orthologous exons (R-conserved)		4	2.19%
 Best-hit exons				8	4.37%
 Non-orthologous exons			162	88.52%
 Unclear cases				9	4.92%
-
 ```
 
 Finally, if the flag **--print_out** is provided, two files are generated with the output of the pairwise comparison: OrthoGenes_with_reg_exons-sp1-sp2.tab and Conserved_exons-sp1-sp2.tab, which contain the information about each exon as well as the result of the orthology test.
