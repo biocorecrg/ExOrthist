@@ -474,16 +474,13 @@ ExOrthist compare_exon_sets module
 
 ExOrthist contains a module to perform evolutionary comparisons of sets of exons (e.g. regulated exons) between pairs of species. There are two main types of analyses: providing an exon set for a query species or an exon set for both species. In the first case, it will report a series of conservation statistics at the genomic level in the target species. In the second case, it will report statistics at the genomic level, but it will also assess the overlap between the two sets (i.e. regulatory conservation). 
 
-### Running compare_exon_sets
-------------
-
 The module relies on a single perl script, `compare_exon_sets.pl` which takes as arguments the two species identifiers (as used in `main.nf`), one or two lists of exons of interest, and the main output folder for `main.nf`. Alternatively to the latter, individual arguments can be used to provide specific gene or exon orthogroup files and CDS exons.
 
 The input query exon list(s) must contain gene ID, exon coordinate and, optionally, a third column with regulatory information. There are three types of regulatory information that can be provided, using the option **--dPSI_info**: (a) **none**, no information provided in the third column (all exons in the list are considered REGULATED); (b) **qual_call**, qualitative information of the regulation (valid values: UP, DOWN, REGULATED, NO_CHANGE, NO_COVERAGE (=NA or missing)); (c) **dPSI**: a numeric value from -100 to 100 corresponding to a change in inclusion levels (PSI) between two conditions. For **dPSI**, a delta PSI cut-off for an exon to be considered as UP or DOWN regulated should be provided using the option **--min_dPSI**. Finally, if **--dPSI_info** is not provided, `compare_exon_sets.pl` will automatically detect the type of regulatory information.
 
-Running only one list of exons for species 1: 
-- it gets only conservation: at the gene and exon levels. define g-conservation [Bioessays]
-- gene and exon level.
+### Running compare_exon_sets for a single exon set
+
+When a single set of exons is provided, `compare_exon_sets.pl` will assess the conservation of each exon from the query species (sp1) in the genome of the target species (sp2). This conservation is referred to as [Genome-conservation](https://onlinelibrary.wiley.com/doi/abs/10.1002/bies.080092) and will be assessed at two levels: (i) gene-level: whether or not the exon is in a gene with an ortholog in the target species; and (ii) exon-level: whether or not the exon has an ortholog in the target species (i.e. they are part of the same exon orthogroup). Example output text of the summary statistics:
 
 ```
 - Gene-level stats (mm10 => dm6):		
@@ -498,12 +495,16 @@ Exons from mm10 with exon orthologs in dm6 (G-conserved)	43	5.20%
 
 ```
 
-With two exon lists for species 1 and species 2:
+### Running compare_exon_sets for a two exon sets
 
-- reciprocal. Genomic conservation, but also genomic conservation.
-- R-cons [Bioessays], just on overlap.
+When two sets of exons are provided, one for each compared species, both will be used as target and query (sp1 <=> sp2). Therefore, for each set of exons, `compare_exon_sets.pl` will assess the Genome-conservation at the gene and exon levels, but the [Regulatory-conservation](https://onlinelibrary.wiley.com/doi/abs/10.1002/bies.080092), as explained in the following scheme:
 
-Fig 5A
+<br />
+
+<img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/Compare_exon_sets_A-01.png" />
+
+
+For the first exon comparison, a Regulatory-conserved (R-conserved) exon is a Genome-conserved (G-conserved) exon whose ortholog is also regulated (i.e. the overlap between the two provided list at the level of exon orthogroups). Example output text of the summary statistics:
 
 ```
 - Gene-level stats:		
@@ -542,7 +543,14 @@ Exons from dm6 with gene orthologs with regulated exons in mm10		77	18.92%
 
 ```
 
-- pairwise comparisons: 4 types, sup figure.
+Moreover, for all regulated exons in both species that fall in an orthologous gene, `compare_exon_sets.pl` will perform a pairwise comparison to define whether the pair of exons are: (i) R-conserved; (ii) best exon matches (even if they do not fulfill all the conditions required, see [XXXX]()); (iii) non-orthologous, when it can be confidently determined that the two exons fall in different regions of the proteins; or (iv) unclear, when neither of this can be determine confidently. The different scenarios and sub-scenarios are summarized in the following figure: 
+
+<br />
+
+<img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/Compare_exon_sets_B-01.png" />
+
+
+An this is an example output text of the summary statistics for the pairwise comparisons:
 
 ```
 - Pairwise regulated exon comparisons mm10 <=> dm6 in gene orthologs	183	
@@ -553,7 +561,10 @@ Unclear cases				9	4.92%
 
 ```
 
-- if **-print_out**, two files are provided:
+Finally, if the flag **--print_out** is provided, two files are generated with the output of the pairwise comparison: OrthoGenes_with_reg_exons-sp1-sp2.tab and Conserved_exons-sp1-sp2.tab, which contain the information about each exon as well as the result of the orthology test.
 
 
+References
+------------
+XXXXXX. ExOrthist bioRxiv.
 
