@@ -369,23 +369,23 @@ ExOrthist includes a script (`get_cluster_stats.pl`) to calculate some basic sta
 perl ~/ExOrthist/bin/GetStatsExonsClusters.pl --main_output hg38_mm10_bosTau9-test/
 
 Summary statistics of exon orthogroups (OGs)				
-Species	Total CDS exons	Exons in orth genes	Exons in OGs	% recovered
-bosTau9	198432	186534	170678	91.50%
-hg38	208106	192725	174243	90.41%
-mm10	205956	188058	173892	92.47%
+Species		Total CDS exons	Exons in geneOGs	Exons in OGs	% recovered
+bosTau9		198432		186534			170678		91.50%
+hg38		208106		192725			174243		90.41%
+mm10		205956		188058			173892		92.47%
 				
-Exon OG type	Number	% from total OGs		
-Total exon OGs	177949	100%		
-OGs 1:1	148255	83.31%		
-OGs 2:2	303	0.17%		
+Exon OG type		Number	% from total OGs		
+Total exon OGs		177949	100%		
+OGs 1:1			148255	83.31%		
+OGs 2:2			303	0.17%		
 OGs >=3 exons/species	715	0.40%		
 OGs >=4 exons/species	280	0.16%		
 OGs missing species	25832	14.52%		
 				
-Missing species	Number	% from missing		
-bosTau9	10585	40.98%		
-hg38	7104	27.50%		
-mm10	8143	31.52%		
+Missing species		Number	% from missing		
+bosTau9			10585	40.98%		
+hg38			7104	27.50%		
+mm10			8143	31.52%		
 ```
 
 ExOrthist exint_plotter module
