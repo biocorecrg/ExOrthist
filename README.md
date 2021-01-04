@@ -503,7 +503,7 @@ When two sets of exons are provided, one for each compared species, both will be
 
 <br />
 
-<img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/Compare_exon_sets_A-01.png" />
+<img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/Compare_exon_sets_A-01.png" width=300 height=350 />
 
 
 For the first exon comparison, a Regulatory-conserved (R-conserved) exon is a Genome-conserved (G-conserved) exon whose ortholog is also regulated (i.e. the overlap between the two provided list at the level of exon orthogroups). Example output text of the summary statistics:
@@ -546,7 +546,6 @@ Exons from dm6 with gene orthologs with regulated exons in mm10		77	18.92%
 ```
 
 Moreover, for all regulated exons in both species that fall in an orthologous gene, `compare_exon_sets.pl` will perform a pairwise comparison to define whether the pair of exons are: (i) R-conserved; (ii) best exon matches (even if they do not fulfill all the conditions required, see [XXXX]()); (iii) non-orthologous, when it can be confidently determined that the two exons fall in different regions of the proteins; or (iv) unclear, when neither of this can be determine confidently. The different scenarios and sub-scenarios are summarized in the following figure: 
-
 <br />
 
 <img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/Compare_exon_sets_B-01.png" />
