@@ -296,7 +296,7 @@ my_plot = ggplot()  +
   scale_alpha_manual(values=c("annotated"=1, "not_annotated"=0)) + #color depending on the annotation status.
   scale_linetype_manual(values=c("Exon"="solid", "Exon_added"="dashed")) +
   scale_size_manual(values=c("brown2"=2, "black"=0.5)) +
-  scale_color_manual(values=c("0"="coral3","1"="forestgreen","2"="mediumblue", "shit"="shit"), name = "Intron Phases",  labels=c("0", "1", "2"), breaks=c("0", "1", "2")) +
+  scale_color_manual(values=c("0"="coral3","1"="mediumblue","2"="forestgreen", "extra"="extra"), name = "Intron Phases",  labels=c("0", "1", "2"), breaks=c("0", "1", "2")) +
   
   theme(axis.title = element_blank(),
         axis.text = element_blank(),
