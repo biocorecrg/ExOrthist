@@ -126,9 +126,9 @@ If the pipeline crashes at any step, it can be re-launched using the -resume opt
 nextflow run main.nf -bg -resume > log.txt
 ```
 
-## Test run   
+#### Test run   
 
-The ExOrthist repository includes a folder named **test** containing all the input files necessary for a test run. The relative configuration files (nextflow.config and params.config) are also provided, and can be used as templates for customized runs.  
+The ExOrthist repository includes a folder named **test** containing all the input files necessary for a test run. The relative configuration files (`nextflow.config` and `params.config`) are also provided, and can be used as templates for customized runs.  
 
 The test run will extract the exon orthology for 50 gene orthogroups shared between Dme (*Drosophila melanogaster*), Ame (*Apis mellifera*) and Cdi (*Cloeon dipterum*) selected from an [Orthofinder](https://github.com/davidemms/OrthoFinder) run. In order to familiarize yourself with the ExOrthist output, simply run the following code from the ExOrthist-master directory:  
 ```bash
@@ -137,12 +137,11 @@ nextflow run main.nf [-with-docker | -with-singularity] > test_log.txt
 ExOrthist will save all outputs in the **output_test** directory. All arguments and outputs are explained in details in the following sections.  
 
 
-## Arguments
+### Arguments
 
-# params.config file
+#### params.config file
 
-For the pipeline to run, a params.config file with the following format has to be present in the working directory.  
-A template of the params.config file is provided together with the pipeline.
+For the pipeline to run, a `params.config` file with the following format has to be present in the working directory.  A template of the `params.config` file is provided together with the pipeline.
 ```
 params {
     cluster      = "$baseDir/inputs/hg38_mm10_bosTau9.tab.gz""
@@ -161,9 +160,10 @@ params {
     email        = ""
 }
 ```
-Alternatively, the arguments in the params.config can be specified as independent command line flags. The command line-provided values overwrite the ones defined in the params.config file.  
+Alternatively, the arguments in the `params.config` can be specified as independent command line flags. The command line-provided values overwrite the ones defined in the `params.config` file.  
 
-### Required arguments
+#### Required arguments
+
 **--genomes:** a folder with genome files (fasta). The prefix (i.e. the species ID) must match the corresponding annotation file. The files can be compressed (.gz). Example:  
 ```
 hg38_gDNA.fasta
@@ -195,11 +195,11 @@ hg38	mm10    short
 hg38	bosTau9 short
 mm10	bosTau9 short
 ```
-**--long_dist**, **--medium_dist**, **--short_dist**: list of stringency parameters for the pairwise orthology call corresponding to each evolutionary range. The list is in the format **“int_num,ex_sim,ex_len,prot_sim”**.  
-**int_num**: number of required surrounding introns with a conserved pahse. Accepted values: 0, 1, 2. When set to 0, the exon orthology call will not take intron conservation into account.  
-**ex_sim:** minimum percentage of sequence similarity between exon pairs. The same cutoff is applied for the conservation of the focus exon and its up/downstream exons.  
-**ex_len:** minimum ratio between lengths of an exon pair (shortest/longest).  
-**prot_sim:** minimum protein similarity required for a query and target protein isoforms to be compared. Example:
+**--long_dist**, **--medium_dist**, **--short_dist**: list of stringency parameters for the pairwise orthology call corresponding to each evolutionary range. The list is in the format **"int_num,ex_sim,ex_len,prot_sim"**.  
+  **int_num**: whether the two intron positions around the exon (2), only one (1) or none (0) must be conserved. When set to 0, the exon orthology call will not take conservation of intron positions into account.  
+  **ex_sim:** minimum percentage of sequence similarity between exon pairs. The same cutoff is applied to the conservation of the query exon and its up/downstream exons.  
+  **ex_len:** minimum ratio between the lengths of an exon pair (shortest/longest). Values from 0 to 1. Values closer to 1 require more similar exon lengths.
+  **prot_sim:** minimum global protein similarity required for a query and target protein isoforms to be compared. Example for each evolutionary distance range:
 ```
 --short_dist "2,0.7,0.6,0.25"
 --medium_dist "2,0.5,0.5,0.25"
@@ -208,7 +208,7 @@ mm10	bosTau9 short
 **--output:** output folder destination.  
 
 ### Facultative arguments
-**--extraexons:** a folder with tsv files of not-annotated exons. The prefix (i.e. the species ID) must match the annotation, genome and cluster files. Example:  
+**--extraexons:** a folder with tsv files of non-annotated exons. The prefix (i.e. the species ID) must match the annotation, genome and cluster files. Example:  
 ```
 hg38_extraexons.tab
 mm10_extraexons.tab
@@ -222,8 +222,7 @@ HsaEX0000056	ENSG00000258038	chr14:28837253-28837330	chr14:28832006-28832060	chr
 HsaEX0000064	ENSG00000258498	chr14:101558633-101558834	chr14:101559800-101560025	chr14:101557754-101557819
 HsaEX0000091	ENSG00000137871	chr15:56917065-56917212	chr15:56917540-56918571	chr15:56890014-56890167
 ```
-**--bonafide_pairs:** a tsv file with exon pairs considered bona fide orthology relationships to be incorporated in the exon orthology [[see Algorithm, section C](#c-scoring-and-best-matches-selection)]. The input for this argument can be generated by the user by manual curation but also by running the script `get_liftovers.pl` to obtain liftOver-based relationships among closely related species [see [below](#addition-of-manually-curated-exon-orthology-pairs)].
-Example (the header is expected):  
+**--bonafide_pairs:** a tsv file with exon pairs considered *bona fide* orthologs to be incorporated in the exon orthology inference [[see Algorithm, section C](#c-scoring-and-best-matches-selection)]. The input for this argument can be generated by the user by manual curation, but also by running the script `get_liftovers.pl` to obtain liftOver-based relationships among closely related species [see [below](#addition-of-manually-curated-exon-orthology-pairs)]. Example (the header is expected):  
 ```
 GeneID_Sp1 Exon_Coord_Sp1 GeneID_Sp2 Exon_Coord_Sp2
 ENSG00000171055	chr2:36552056-36552268:-	ENSMUSG00000056121	chr17:78377717-78377890:-
@@ -244,8 +243,9 @@ ENSG00000189129 ENSMUSG00000095304
 ENSG00000189129 ENSMUSG00000072674
 ENSG00000167863 ENSMUSG00000034566
 ```
-**--prevaln:** path to the output folder of a previous ExOrthist run. If this argument is provided, the previously generated protein alignments are integrated in the current run. Only the alignments between newly introduced protein pairs (for previously run species) or extra species pairs will be generated de-novo [[see Algorithm, section B](#b-pairwise-alignments-and-feature-extraction)].   
+**--prevaln:** path to the output folder of a previous ExOrthist run. If this argument is provided, the previously generated protein alignments are integrated in the current run. Only the alignments between newly introduced protein pairs (for previously run species) or extra species pairs will be generated *de novo* [[see Algorithm, section B](#b-pairwise-alignments-and-feature-extraction)].
 **--email:** email address for notifications (yourmail@yourdomain)  
+
 
 Algorithm
 ------------
@@ -254,7 +254,8 @@ Conceptually, ExOrthist works in four steps.
 ### A. Input generation   
 ExOrthist first generates files with annotation information for each considered species, which will be the input of all species pairwise comparisons. 
 
-##### Output  
+#### Output  
+
 ExOrthist creates a folder in the output directory for each species, containing the following files:  
 
 * **\${species}\_ref_proteins.txt**: geneID and proteinID of reference proteins.  
@@ -267,10 +268,12 @@ ExOrthist creates a folder in the output directory for each species, containing 
 * **\${species}\_annot\_exons_prot_ids.txt**: proteinID and geneID of all genes with annotated exons.  
 * **\${species}\_annot_fake.gtf.gz**: merge of the original gtf (annotated exons) and a facultative “fake” GTF where entries for provided not-annotated exons are added (see below).  
 
-ExOrthist is also able to consider not-annotated exons in the orthology inference, which can be added via the **--extraexons** argument [[see Arguments](#arguments)]. If not-annotated exons are added, ExOrthist also generates the following files:
+Importantly, ExOrthist works **only** with CDS exon coordinates ("cds" lines in the GTF). Therefore, UTR exons are excluded and the coordinates and lengths of first and last coding exons do not usually match the actual exon coordinates in the genome ("exon" lines in the GTF).
 
-* **FakeTranscripts-${species}-vB.gtf**: gtf file where a fake transcript for each of the not-annotated exons is introduced. ExOrthist first maps the upstream and downstream exons (provided in input) to the annotated transcripts. When both exons exactly match the same transcript, this becomes the template of the fake transcript to which the not-annotated exon is added; otherwise, ExOrthist uses partial matches of the upstream or downstream exon to identify the template transcript.
-* **LOG_FakeTranscripts-${species}-vB.tab**: it contains info of the mapping of not-annotated exons to the relative fake transcript.  
+ExOrthist is also able to consider non-annotated exons in the orthology inference, which can be added via the **--extraexons** argument [[see Arguments](#arguments)]. If non-annotated exons are added, ExOrthist also generates the following files:
+
+* **FakeTranscripts-${species}-vB.gtf**: gtf file where a fake transcript for each of the not-annotated exons is introduced. ExOrthist first maps the upstream and downstream exons (which must be provided in the input) to the annotated transcripts. When both exons exactly match the same transcript, this becomes the template of the fake transcript to which the non-annotated exon is added; otherwise, ExOrthist uses partial matches of the upstream or downstream exon to identify the template transcript.
+* **LOG_FakeTranscripts-${species}-vB.tab**: it contains info of the mapping of non-annotated exons to the relative fake transcript.  
 
 Finally, the **--cluster** gene cluster file [[see Arguments](#arguments)] is copied and gzipped in the output directory as **gene_cluster_file.gz**. This copy is necessary to run the exint_plotter module without external dependencies.  
 
@@ -568,5 +571,10 @@ Finally, if the flag **--print_out** is provided, two files are generated with t
 
 References
 ------------
+#### Main ExOrthist reference:
 XXXXXX. ExOrthist bioRxiv.
 
+#### Gene orthology software
+Orthofinder
+
+Broccoli
