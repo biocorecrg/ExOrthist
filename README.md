@@ -503,7 +503,7 @@ When two sets of exons are provided, one for each compared species, both will be
 
 <br />
 
-<img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/Compare_exon_sets_A-01.png" width=785 height=925 />
+<img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/Compare_exon_sets_A-01.png" width=925 height=785 />
 
 
 For the first exon comparison, a Regulatory-conserved (R-conserved) exon is a Genome-conserved (G-conserved) exon whose ortholog is also regulated (i.e. the overlap between the two provided list at the level of exon orthogroups). Example output text of the summary statistics:
