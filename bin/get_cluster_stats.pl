@@ -109,14 +109,14 @@ while (<EX_CLUSTERS>){
 	my $id2 = "$gene=$temp[1]";
 	my $exon_name = $exon_conversion{$id2}; # this is the unique ID (OV_EX_dm6_1)
 	
-	if (!defined $done_exon{$exon_name}){
+#	if (!defined $done_exon{$exon_name}){ # does not count redundant exons multiple times
 	    $tally_exons_in_clusters{$species}++;
 	    $done_exon{$exon_name}=1;
 	    ### count by cluster
 	    $tally_by_exon_cluster{$exon_cluster}{$species}++;
 	    $total_exon_clusters++ if !defined $done_cluster{$exon_cluster};
 	    $done_cluster{$exon_cluster}=1;
-	}
+#	}
     }
 }
 
