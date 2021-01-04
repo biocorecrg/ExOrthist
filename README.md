@@ -363,24 +363,30 @@ ExOrthist provides the possibility to subset the exon orthology files based on r
 * **reclustered_exons_${species_pair}.tab**: exon orthologous relationships within the reclustered orthogroups for each species pair.  
 
 ##### Exon clusters statistics 
-ExOrthists allows to calculate basics statistics on the generated exon clusters with the get_cluster_stats.pl perl script. Example:  
-```
-Species	Annotated CDS exons	Exons in Genes in clusters	Exons in exon clusters	%covered
-bosTau9	198432	186534	156373	83.83%
-hg38	208106	192725	160409	83.23%
-mm10	205956	188058	153849	81.81%
+ExOrthist includes a script (`get_cluster_stats.pl`) to calculate some basic statistics on the generated exon clusters (orthogroups; OGs). This script only requires the output folder of `main.nf` as input. It consists of three related tables: a) the number of CDS exons from each species and the percent of those present in the final OGs (i.e. with at least one ortholog); b) different types of OGs depending on the homology relationshipts (1:1, etc); and c) for those OGs in which at least one species is missing an ortholog, the number of cases missed per species. Example run: 
 
-Total exon clusters	164582
-Clusters 111	132752	80.66%
-Clusters 222	218	0.13%
-Clusters >=3 exons/species	469	0.28%
-Clusters >=4 exons/species	193	0.12%
-Incomplete clusters	29455	17.90%
-  - bosTau9	10151	34.46%
-  - hg38	6406	21.75%
-  - mm10	13004	44.15%
 ```
-Further information about the usage is provided in the script's help.
+perl ~/ExOrthist/bin/GetStatsExonsClusters.pl --main_output hg38_mm10_bosTau9-test/
+
+Summary statistics of exon orthogroups (OGs)				
+Species	Total CDS exons	Exons in orth genes	Exons in OGs	% recovered
+bosTau9	198432	186534	170678	91.50%
+hg38	208106	192725	174243	90.41%
+mm10	205956	188058	173892	92.47%
+				
+Exon OG type	Number	% from total OGs		
+Total exon OGs	177949	100%		
+OGs 1:1	148255	83.31%		
+OGs 2:2	303	0.17%		
+OGs >=3 exons/species	715	0.40%		
+OGs >=4 exons/species	280	0.16%		
+OGs missing species	25832	14.52%		
+				
+Missing species	Number	% from missing		
+bosTau9	10585	40.98%		
+hg38	7104	27.50%		
+mm10	8143	31.52%		
+```
 
 ExOrthist exint_plotter module
 ------------
