@@ -278,6 +278,7 @@ ExOrthist is also able to consider non-annotated exons in the orthology inferenc
 Finally, the **--cluster** gene cluster file [[see Arguments](#arguments)] is copied and gzipped in the output directory as **gene_cluster_file.gz**. This copy is necessary to run the exint_plotter module without external dependencies.  
 
 ### B. Pairwise alignments and feature extraction  
+
 For each species pair and gene orthogroup, ExOrthist executes the following steps.  
 It first generates Intron Position Aware (IPA) pairwise alignments between all protein isoforms of species1 and species2. These alignments are divided into chunks of chuncks of **--alignmentnum** [[see Arguments](#arguments)], which will be processed in parallel. Considering species1 as query and species2 as target (and vice versa), ExOrthist parses the IPA alignments to derive: 
 
