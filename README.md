@@ -63,9 +63,10 @@ Table of contents
   + [Arguments](#arguments-1)
   + [Output](#output-4)
   + [Plot structure](#plot-structure)
-* [ExOrthist compare_exon_sets module](#exorthist-compare_exons-module)
+* [ExOrthist compare_exon_sets module](#exorthist-compare_exon_sets-module)
   + [Overview](#overview-2)
-  + [Running ExOrthist compare_exon_sets.pl](#running-exorthist-compareexonsetspl)
+  + [Running compare_exon_sets for a single exon set](#running-compare_exon_sets-for-a-single-exon-set)
+  + [Running compare_exon_sets for two exon sets](#running-compare_exon_sets-for-two-exon-sets)
 
 Requirements
 ------------
@@ -495,7 +496,8 @@ Exons from mm10 with exon orthologs in dm6 (G-conserved)	43	5.20%
 
 ```
 
-### Running compare_exon_sets for a two exon sets
+
+### Running compare_exon_sets for two exon sets
 
 When two sets of exons are provided, one for each compared species, both will be used as target and query (sp1 <=> sp2). Therefore, for each set of exons, `compare_exon_sets.pl` will assess the Genome-conservation at the gene and exon levels, but the [Regulatory-conservation](https://onlinelibrary.wiley.com/doi/abs/10.1002/bies.080092), as explained in the following scheme:
 
