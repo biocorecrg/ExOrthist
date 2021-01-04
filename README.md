@@ -320,11 +320,11 @@ The up/downstream intron conservation, the exon sequence conservation and the up
 In the end, among these pre-filtered matches, the match with the highest global score is selected for each query exon and target gene. While the ExOrthist logic requires a query exon to match a unique target exon, each target exon can potentially be matched by more query exons. Overlapping query exons (i.e. alternative forms of the same exon) might be present in the pool of filtered matches. In order to univocally derived orthologous relationships for each exon, ExOrthist selects the form with the highest number of matches (among all target genes) as representative of its overlap group.   
 
 ##### Addition of manually curated exon orthology pairs   
-`ExOrthist` also allows the introduction of exon pairs considered bona fide orthology relationshipts into the exon orthology inference. Such exons can be specified with the **--bonafide_pairs** flag [[see Arguments](#arguments)].  
+ExOrthist also allows the introduction of exon pairs considered bona fide orthology relationshipts into the exon orthology inference. Such exons can be specified with the **--bonafide_pairs** flag [[see Arguments](#arguments)].  
 
-To help generating a list with high confidence relationships across short evolutionary distances, the `ExOrthist` includes a script `get_liftovers.pl` that extracts exon matches in a target species using the liftOver tool. This scripts needs annotation files (gtf) of the two considered species, the gene orthogroups file, and a [UCSC over.chain file](http://hgdownload.soe.ucsc.edu/downloads.html#liftover); alternatively, a list of exons from the query species can be provided.
+To help generating a list with high confidence relationships across short evolutionary distances, the ExOrthist includes a script `get_liftovers.pl` that extracts exon matches in a target species using the liftOver tool. This scripts needs annotation files (gtf) of the two considered species, the gene orthogroups file, and a [UCSC over.chain file](http://hgdownload.soe.ucsc.edu/downloads.html#liftover); alternatively, a list of exons from the query species can be provided.
 
-`get_liftovers.pl` parses exons at the CDS level by default (as the `ExOrthist`), but it can work with mRNA exons if the option is `--type exon` is provided. Furthermore, the script can require matches to have at least one cannonical dinucleotide using the `--canonical_ss` flag. Additional information is provided in the help message of `get_liftovers.pl`.
+`get_liftovers.pl` parses exons at the CDS level by default (as the `ExOrthist`), but it can work with mRNA exons if the option is **--type exon** is provided. Furthermore, the script can require matches to have at least one cannonical dinucleotide using the **--canonical_ss** flag. Additional information is provided in the help message of `get_liftovers.pl`.
 
 ##### Output  
  In each species pair folder previously generated [[see Algorithm, section B](#b-pairwise-alignments-and-feature-extraction)], ExOrthist saves the following files:
@@ -470,12 +470,90 @@ Homologous genes are plotted on parallel horizontal axis. Exons are illustrated 
 
 ExOrthist compare_exon_sets module
 ------------
-In preparation
+### Overview
 
-Overview
-------------
-In preparation
+ExOrthist contains a module to perform evolutionary comparisons of sets of exons (e.g. regulated exons) between pairs of species. There are two main types of analyses: providing an exon set for a query species or an exon set for both species. In the first case, it will report a series of conservation statistics at the genomic level in the target species. In the second case, it will report statistics at the genomic level, but it will also assess the overlap between the two sets (i.e. regulatory conservation). 
 
-Running ExOrthist compare_exon_sets.pl
+### Running compare_exon_sets
 ------------
-In preparation
+
+The module relies on a single perl script, `compare_exon_sets.pl` which takes as arguments the two species identifiers (as used in `main.nf`), one or two lists of exons of interest, and the main output folder for `main.nf`. Alternatively to the latter, individual arguments can be used to provide specific gene or exon orthogroup files and CDS exons.
+
+The input query exon list(s) must contain gene ID, exon coordinate and, optionally, a third column with regulatory information. There are three types of regulatory information that can be provided, using the option **--dPSI_info**: (a) **none**, no information provided in the third column (all exons in the list are considered REGULATED); (b) **qual_call**, qualitative information of the regulation (valid values: UP, DOWN, REGULATED, NO_CHANGE, NO_COVERAGE (=NA or missing)); (c) **dPSI**: a numeric value from -100 to 100 corresponding to a change in inclusion levels (PSI) between two conditions. For **dPSI**, a delta PSI cut-off for an exon to be considered as UP or DOWN regulated should be provided using the option **--min_dPSI**. Finally, if **--dPSI_info** is not provided, `compare_exon_sets.pl` will automatically detect the type of regulatory information.
+
+Running only one list of exons for species 1: 
+- it gets only conservation: at the gene and exon levels. define g-conservation [Bioessays]
+- gene and exon level.
+
+```
+- Gene-level stats (mm10 => dm6):		
+Genes with mm10 exons in the exon lists				664	
+Genes with mm10 exons with gene orthologs in dm6		355	53.46%
+		
+- Exon-level stats (mm10 => dm6):		
+Exons from mm10 in exon list					827	
+Exons from mm10 with gene orthologs in dm6			453	54.78%
+Exons from mm10 with exon orthologs in dm6 (G-conserved)	43	5.20%
+    Only genes with orthologs in dm6					9.49%
+
+```
+
+With two exon lists for species 1 and species 2:
+
+- reciprocal. Genomic conservation, but also genomic conservation.
+- R-cons [Bioessays], just on overlap.
+
+Fig 5A
+
+```
+- Gene-level stats:		
+   - mm10 => dm6		
+Genes with mm10 exons in the exon list					664	
+Genes with mm10 exons with gene orthologs in dm6			355	53.46%
+Genes with mm10 exons with gene orthologs in dm6 with regulated exons	50	7.53%
+		
+   - dm6 => mm10		
+Genes with dm6 exon in the exon list					276	
+Genes with dm6 exons with gene orthologs in mm10			196	71.01%
+Genes with dm6 exons with gene orthologs in mm10 with regulated exons	41	14.86%
+		
+		
+- Exon-level stats:		
+   - mm10 => dm6		
+Exons from mm10 in exon list						827	
+Exons from mm10 with gene orthologs in dm6				453	54.78%
+Exons from mm10 with exon orthologs in dm6 (G-conserved)		43	5.20%
+    Out of genes with orthologs							9.49%
+Exons from mm10 with regulated exon orthologs in dm6 (R-conserved)	4	0.48%
+    Out of genes with orthologs							0.88%
+    Percent of R-conserved / G-conserved exons in mm10				9.30%
+Exons from mm10 with gene orthologs with regulated exons in dm6		80	9.67%
+		
+   - dm6 => mm10		
+Exons from dm6 in exon list						407	
+Exons from dm6 with gene orthologs in mm10				312	76.66%
+Exons from dm6 with exon orthologs in mm10 (G-conserved)		73	17.94%
+    Out of genes with orthologs							23.40%
+Exons from dm6 with regulated exon orthologs in mm10 (R-conserved)	4	0.98%
+    Out of genes with orthologs							1.28%
+    Percent of R-conserved / G-conserved exons in dm6				5.48%
+Exons from dm6 with gene orthologs with regulated exons in mm10		77	18.92%
+
+
+```
+
+- pairwise comparisons: 4 types, sup figure.
+
+```
+- Pairwise regulated exon comparisons mm10 <=> dm6 in gene orthologs	183	
+Orthologous exons (R-conserved)		4	2.19%
+Best-hit exons				8	4.37%
+Non-orthologous exons			162	88.52%
+Unclear cases				9	4.92%
+
+```
+
+- if **-print_out**, two files are provided:
+
+
+
