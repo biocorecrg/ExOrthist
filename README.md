@@ -321,7 +321,9 @@ In the end, among these pre-filtered matches, the match with the highest global 
 
 ##### Addition of manually curated exon orthology pairs   
 `ExOrthist` also allows the introduction of exon pairs considered bona fide orthology relationshipts into the exon orthology inference. Such exons can be specified with the **--bonafide_pairs** flag [[see Arguments](#arguments)].  
+
 To help generating a list with high confidence relationships across short evolutionary distances, the `ExOrthist` includes a script `get_liftovers.pl` that extracts exon matches in a target species using the liftOver tool. This scripts needs annotation files (gtf) of the two considered species, the gene orthogroups file, and a [UCSC over.chain file](http://hgdownload.soe.ucsc.edu/downloads.html#liftover); alternatively, a list of exons from the query species can be provided.
+
 `get_liftovers.pl` parses exons at the CDS level by default (as the `ExOrthist`), but it can work with mRNA exons if the option is `--type exon` is provided. Furthermore, the script can require matches to have at least one cannonical dinucleotide using the `--canonical_ss` flag. Additional information is provided in the help message of `get_liftovers.pl`.
 
 ##### Output  
