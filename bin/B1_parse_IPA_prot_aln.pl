@@ -517,9 +517,9 @@ foreach $el (@keys){
 		# ADDS GDE TO MERGE 
 		close MERGE_ALN;
 		system "cat $tg >> $f_merged_aln"; # we could already print a post-processed aln instead
-		system "cat $int_aln >> $f_merged_aln"; # I have no idea where this is used
+		system "cat $int_aln >> $f_merged_aln"; 
 		open (MERGE_ALN, ">>$f_merged_aln");
-#		print "  > $t1[$zj] $t2[$zi]\n";
+
 		## 2) OPENING OUTPUT GDE FILE
 		$n1=""; $n2="";
 		%seq=();
