@@ -474,7 +474,7 @@ my @keys2=keys(%pid2);
 my ($k, $name);
 my (%seq);
 my (@s1,@s2);
-my (%score);
+my (%score, %seqs_already_compared);
 my ($te,$tg, $tp); ##temporal files
 $te=$outf."/tmp_part_".$part.".exint"; ##temporal exint file
 $tg=$outf."/tmp_part_".$part.".gde"; ##temporal gde file
@@ -488,8 +488,8 @@ foreach $el (@keys){
     else { push(@t1,$pid1{$el});  }    
     if ($pid2{$el}=~/\,/){ @t2=split(/\,/,$pid2{$el}); }
     else { push(@t2,$pid2{$el});  }    
-    ##getting pairwise exint file and then make alignment
-#    print "$el\n"; ##printing in standard output the gene cluster ID that is being processed
+    
+    ### Getting pairwise exint file and then make alignment
     my $Gclid=$el;
     for ($zj=0; $zj<scalar(@t1); $zj++){ ##opening FOR 1
 	for ($zi=0; $zi<scalar(@t2); $zi++) {  ##opening FOR 2
@@ -506,95 +506,103 @@ foreach $el (@keys){
 		print MERGE_ALN $pre_ALN_data{$prot_sp2}{$prot_sp1} if $pre_ALN_data{$prot_sp2}{$prot_sp1}; # should not be
 	    }
 	    else { # business as usual
-		## 0) ADDS HEADING TO MERGE FILE
-		print MERGE_ALN ">>> $s1 $s2 $t1[$zj] $t2[$zi]\n\n";
-		## 1) MAKING TEMPORAL EXINT FILE
-		open (TMPALN,">$te");
-		print TMPALN "$seqs{$t1[$zj]}\n$seqs{$t2[$zi]}\n"; 
-		close (TMPALN);
-		# RUNNING ALIGN INTRON POS
-		`B0_generate_IPA_prot_aln.pl $te MAFFT $cpus`; 
-		# ADDS GDE TO MERGE 
-		close MERGE_ALN;
-		system "cat $tg >> $f_merged_aln"; # we could already print a post-processed aln instead
-		system "cat $int_aln >> $f_merged_aln"; 
-		open (MERGE_ALN, ">>$f_merged_aln");
+		### Checks if the exact same protein sequences have already been compared
+		my ($temp_prot_seq1) = $seqs{$t1[$zj]} =~ /\n(.+)/;
+		my ($temp_prot_seq2) = $seqs{$t2[$zi]} =~ /\n(.+)/;
 
-		## 2) OPENING OUTPUT GDE FILE
-		$n1=""; $n2="";
-		%seq=();
-		open (ALN, "$tg");
-		while (<ALN>){		
-		    chomp($_);
-		    if ($_=~/\%/){ 
-			@l=split(/\s+/,$_);
-			$name=$l[0]; 
-			$name=~s/\%//;
-		    }
-		    else {
-			$seq{$name}.=$_;
-		    }
-		}
-		close (ALN);
-		my @nkeys=keys(%seq);
-		my ($seq1,$seq2);
-		$n1=$nkeys[0];
-		$n2=$nkeys[1];
-		$seq1=$seq{$n1};
-		$seq2=$seq{$n2};
-		$sp1=$spid{$n1};
-		$sp2=$spid{$n2};	        
-		
-		## 3) CALLING SUBROUTINE FOR SCORING PROTEINS
-		my ($sim1,$sim2,$idt,$glt)=(0,0,0,0);
-		($sim1,$sim2,$idt,$glt)=score_proteins($n1,$n2,$seq1,$seq2);
-		print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$idt\t$glt\t$sp1\t$sp2\n"; ##printing in the protein scoring file the scores of similarity
-		print PRSC "$Gclid\tProtein\t$n2\t$n1\t$sim2\t$sim1\t$idt\t$glt\t$sp2\t$sp1\n"; ##printing in the protein scoring file the scores of similarity
-		
-		## 4) OPENING OUTPUT INTALN FILE
-		open (INTALN, "$int_aln");
-		my ($ialn, $inn1, $inn2, $iseq1, $iseq2, $is1, $is2);
-		my (@w1);
-		my $c=-1;
-		while (<INTALN>){
-		    chomp($_);
-		    if ($_=~/\|/){ 
-			$c++; 
-			if ($c==0){ $inn1=$_; }
-			if ($c==1){ $inn2=$_; }
-		    }
-		    elsif ($_=~/\>/){ $c=-1; }
-		    elsif ($_=~/\w+/) {  
-			@w1=split(/\t/,$_); 
-			if (scalar(@w1)==3){ 
-			    $c++;
-			    if ($c==0){  $is1.=$w1[1]; }
-			    elsif ($c==1) { $is2.=$w1[1];  }
-			} 
-			elsif (scalar(@w1)!=3 && $w1[1]){
-			    $ialn.=$w1[1];
+		unless ($seqs_already_compared{$temp_prot_seq1}{$temp_prot_seq2}){
+		    $seqs_already_compared{$temp_prot_seq1}{$temp_prot_seq2}=1;
+		    
+		    ## 0) ADDS HEADING TO MERGE FILE
+		    print MERGE_ALN ">>> $s1 $s2 $t1[$zj] $t2[$zi]\n\n";
+		    ## 1) MAKING TEMPORAL EXINT FILE
+		    open (TMPALN,">$te");
+		    print TMPALN "$seqs{$t1[$zj]}\n$seqs{$t2[$zi]}\n"; 
+		    close (TMPALN);
+		    # RUNNING ALIGN INTRON POS
+		    `B0_generate_IPA_prot_aln.pl $te MAFFT $cpus`; 
+		    # ADDS GDE TO MERGE 
+		    close MERGE_ALN;
+		    system "cat $tg >> $f_merged_aln"; # we could already print a post-processed aln instead
+		    system "cat $int_aln >> $f_merged_aln"; 
+		    open (MERGE_ALN, ">>$f_merged_aln");
+		    
+		    ## 2) OPENING OUTPUT GDE FILE
+		    $n1=""; $n2="";
+		    %seq=();
+		    open (ALN, "$tg");
+		    while (<ALN>){		
+			chomp($_);
+			if ($_=~/\%/){ 
+			    @l=split(/\s+/,$_);
+			    $name=$l[0]; 
+			    $name=~s/\%//;
+			}
+			else {
+			    $seq{$name}.=$_;
 			}
 		    }
-		    else { $c=-1; }
-		} ## closing INTALN file
-		
-#	    if (($sim1>=20 && $sim2>=20) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
-		if ((($sim1>=$min_sim_prots*100 && $sim2>=$min_sim_prots*100) || $sim1 >= $min_sim_prots*100*2 || $sim2 >= $min_sim_prots*100*2) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
-		    ##5) CALLING SUBROUTINE FOR SCORING INTRONS
+		    close (ALN);
+		    my @nkeys=keys(%seq);
+		    my ($seq1,$seq2);
+		    $n1=$nkeys[0];
+		    $n2=$nkeys[1];
+		    $seq1=$seq{$n1};
+		    $seq2=$seq{$n2};
+		    $sp1=$spid{$n1};
+		    $sp2=$spid{$n2};	        
+		    
+		    ## 3) CALLING SUBROUTINE FOR SCORING PROTEINS
+		    my ($sim1,$sim2,$idt,$glt)=(0,0,0,0);
+		    ($sim1,$sim2,$idt,$glt)=score_proteins($n1,$n2,$seq1,$seq2);
+		    print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$idt\t$glt\t$sp1\t$sp2\n"; ##printing in the protein scoring file the scores of similarity
+		    print PRSC "$Gclid\tProtein\t$n2\t$n1\t$sim2\t$sim1\t$idt\t$glt\t$sp2\t$sp1\n"; ##printing in the protein scoring file the scores of similarity
+		    
+		    ## 4) OPENING OUTPUT INTALN FILE
+		    open (INTALN, "$int_aln");
+		    my ($ialn, $inn1, $inn2, $iseq1, $iseq2, $is1, $is2);
+		    my (@w1);
+		    my $c=-1;
+		    while (<INTALN>){
+			chomp($_);
+			if ($_=~/\|/){ 
+			    $c++; 
+			    if ($c==0){ $inn1=$_; }
+			    if ($c==1){ $inn2=$_; }
+			}
+			elsif ($_=~/\>/){ $c=-1; }
+			elsif ($_=~/\w+/) {  
+			    @w1=split(/\t/,$_); 
+			    if (scalar(@w1)==3){ 
+				$c++;
+				if ($c==0){  $is1.=$w1[1]; }
+				elsif ($c==1) { $is2.=$w1[1];  }
+			    } 
+			    elsif (scalar(@w1)!=3 && $w1[1]){
+				$ialn.=$w1[1];
+			    }
+			}
+			else { $c=-1; }
+		    } ## closing INTALN file
+		    
+#		    if (($sim1>=20 && $sim2>=20) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
+		    if ((($sim1>=$min_sim_prots*100 && $sim2>=$min_sim_prots*100) || $sim1 >= $min_sim_prots*100*2 || $sim2 >= $min_sim_prots*100*2) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
+			##5) CALLING SUBROUTINE FOR SCORING INTRONS
 #		print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; # redundant
-		    if ($is1 && $is2 && $ialn && $inn1 && $inn2){ # added $inn1 and $inn2
-			my $tsp1=$spid{$inn1}; my $tsp2=$spid{$inn2};
-			my $tmp1=score_introns($is1,$ialn,$is2,$inn1,$inn2,$tsp1,$tsp2,$Gclid);
-		    }
-		    ##  6) SCORING EACH EXON PAIR
-		    ### 6.1) GETTING RESIDUES ALIGNMENT
-		    my $PP1=$pos{$n1}; my $PP2=$pos{$n2};
-		    if ($seq1 && $seq2 && $n1 && $n2 && $PP1 && $PP2){
-			my $tmp2=score_exons($seq1,$seq2,$n1,$n2,$sp1,$sp2,$glt,$sim1,$sim2,$idt,$Gclid,$PP1,$PP2); # idt not really used
-		    }
-		    else {} # print "3)$Gclid\t$n1\t$n2\t$seq1\t$seq2\t$PP1\t$PP2\n"; }
-		    $score{$n1.",".$n2}=1;
-		} 
+			if ($is1 && $is2 && $ialn && $inn1 && $inn2){ # added $inn1 and $inn2
+			    my $tsp1=$spid{$inn1}; my $tsp2=$spid{$inn2};
+			    my $tmp1=score_introns($is1,$ialn,$is2,$inn1,$inn2,$tsp1,$tsp2,$Gclid);
+			}
+			##  6) SCORING EACH EXON PAIR
+			### 6.1) GETTING RESIDUES ALIGNMENT
+			my $PP1=$pos{$n1}; my $PP2=$pos{$n2};
+			if ($seq1 && $seq2 && $n1 && $n2 && $PP1 && $PP2){
+			    my $tmp2=score_exons($seq1,$seq2,$n1,$n2,$sp1,$sp2,$glt,$sim1,$sim2,$idt,$Gclid,$PP1,$PP2); # idt not really used
+			}
+			else {} # print "3)$Gclid\t$n1\t$n2\t$seq1\t$seq2\t$PP1\t$PP2\n"; }
+			$score{$n1.",".$n2}=1;
+		    } 
+		}
 	    } # CLOSING ELSE
 	}##CLOSING FOR 2
     }##CLOSING FOR 1
