@@ -509,7 +509,9 @@ foreach $el (@keys){
 		### Checks if the exact same protein sequences have already been compared
 		my ($temp_prot_seq1) = $seqs{$t1[$zj]} =~ /\n(.+)/;
 		my ($temp_prot_seq2) = $seqs{$t2[$zi]} =~ /\n(.+)/;
-
+		$temp_prot_seq1="$sp1=$temp_prot_seq1";
+		$temp_prot_seq2="$sp2=$temp_prot_seq2";
+		
 		unless ($seqs_already_compared{$temp_prot_seq1}{$temp_prot_seq2}){
 		    $seqs_already_compared{$temp_prot_seq1}{$temp_prot_seq2}=1;
 		    
@@ -585,10 +587,8 @@ foreach $el (@keys){
 			else { $c=-1; }
 		    } ## closing INTALN file
 		    
-#		    if (($sim1>=20 && $sim2>=20) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
 		    if ((($sim1>=$min_sim_prots*100 && $sim2>=$min_sim_prots*100) || $sim1 >= $min_sim_prots*100*2 || $sim2 >= $min_sim_prots*100*2) && ($sp1 ne $sp2) && !$score{$n1.",".$n2}){ 
 			##5) CALLING SUBROUTINE FOR SCORING INTRONS
-#		print PRSC "$Gclid\tProtein\t$n1\t$n2\t$sim1\t$sim2\t$id1\t$glsc1\t$sp1\t$sp2\n"; # redundant
 			if ($is1 && $is2 && $ialn && $inn1 && $inn2){ # added $inn1 and $inn2
 			    my $tsp1=$spid{$inn1}; my $tsp2=$spid{$inn2};
 			    my $tmp1=score_introns($is1,$ialn,$is2,$inn1,$inn2,$tsp1,$tsp2,$Gclid);
@@ -602,7 +602,7 @@ foreach $el (@keys){
 			else {} # print "3)$Gclid\t$n1\t$n2\t$seq1\t$seq2\t$PP1\t$PP2\n"; }
 			$score{$n1.",".$n2}=1;
 		    } 
-		}
+		} # CLOSING UNLESS
 	    } # CLOSING ELSE
 	}##CLOSING FOR 2
     }##CLOSING FOR 1
