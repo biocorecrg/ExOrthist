@@ -1,5 +1,5 @@
 params {
-    cluster      = "$baseDir/test/Ame_Cdi_Dme.tab"
+    cluster      = "$baseDir/test/hg38_mm10_bosTau9.tab"
     genomes      = "$baseDir/test/GENOMES/*_gDNA.fasta.gz"
     annotations  = "$baseDir/test/GTF/*_annot.gtf.gz"
     alignmentnum = 1000
@@ -7,9 +7,9 @@ params {
     liftover     = ""
     orthopairs   = ""
     evodists     = "$baseDir/test/evodists.txt" 
-    long_dist    = "2,0.20,0.45,0.15"
-    medium_dist  = "2,0.50,0.55,0.20"
-    short_dist   = "2,0.70,0.65,0.25"
+    long_dist    = "2,0.10,0.40,0.15"
+    medium_dist  = "2,0.30,0.60,0.20"
+    short_dist   = "2,0.50,0.60,0.25"
     prevaln      = ""
     output       = "$baseDir/output_test"
     email        = "yourmail@yourdomain"
