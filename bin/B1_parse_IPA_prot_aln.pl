@@ -509,8 +509,8 @@ foreach $el (@keys){
 		### Checks if the exact same protein sequences have already been compared
 		my ($temp_prot_seq1) = $seqs{$t1[$zj]} =~ /\n(.+)/;
 		my ($temp_prot_seq2) = $seqs{$t2[$zi]} =~ /\n(.+)/;
-		$temp_prot_seq1="$sp1=$temp_prot_seq1";
-		$temp_prot_seq2="$sp2=$temp_prot_seq2";
+		$temp_prot_seq1="$s1=$temp_prot_seq1";
+		$temp_prot_seq2="$s2=$temp_prot_seq2";
 		
 		unless ($seqs_already_compared{$temp_prot_seq1}{$temp_prot_seq2}){
 		    $seqs_already_compared{$temp_prot_seq1}{$temp_prot_seq2}=1;
