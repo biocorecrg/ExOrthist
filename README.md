@@ -163,7 +163,7 @@ hg38_annot.gtf
 mm10_annot.gtf
 bosTau9_annot.gtf
 ```
-**--cluster**: a tsv file containing gene orthology groups with the following format: ClusterID SpeciesID GeneID. The SpeciesID must match the prefixes of --genomes and --annotations. The file can be compressed (.gz). Example:  
+**--cluster**: a tsv file containing gene orthology groups with the following format: ClusterID SpeciesID GeneID. The SpeciesID must match the prefixes of --genomes and --annotations. All genes present in the clusters should be protein-coding genes present in the provided GTF annotations. Else, it will create warnings at different steps. The file can be compressed (.gz). Example:  
 ```
 GF000001	hg38    ENSG00000151690
 GF000001	mm10    ENSMUSG00000041439
