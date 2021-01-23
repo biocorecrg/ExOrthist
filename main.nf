@@ -92,7 +92,7 @@ if ( !evodisfile.exists() ) exit 1, "Missing evodists file: ${evodisfile}!"
 
 		script:
 		"""
-		A0_check_input.pl -e ${evodisfile} -g \"${params.annotations}\" -f \"${params.genomes}\"
+		A0_check_input.pl -e ${evodisfile} -g \"${params.annotations}\" -f \"${params.genomes}\" -c ${clusterfile}
 		"""
 }
 
