@@ -1,123 +1,119 @@
-#! /usr/bin/env perl
-
-=head1 NAME
-
-=head1 SYNOPSIS
-
-  perl check_input.pl [-e evodists.txt] [-g gtf files] [-f fasta files] [-h help]
-
-=head1 DESCRIPTION
-
-  This script check the correctness of the input for the ExOrthist pipeline
-  It returns ok or exit
-
-  
-Typical usage is as follows:
-
-  % perl check_input.pl -e evodists.txt -g test/GTF/*.gtf.gz -f test/GENOMES/*.fasta.gz
-  
-=head2 Options
-
-The following options are accepted:
-
- --e=<evodists file>   	File path.
-
- --g=<GTF files>	Path to GTF files (glob)
-
- --f=<Fasta files>	Path to Fasta files (glob)
-
- --help                 This documentation.
-
-
-=head1 AUTHOR
-
-Luca Cozzuto <luca.cozzuto@crg.es> 
-
-=cut
+#!/usr/bin/perl
+use Getopt::Long;
 use warnings;
 use strict;
-use Data::Dumper;
-use File::Basename;
-use Pod::Usage;
-use Getopt::Long;
 
-my $USAGE = "perl check_input.pl [-e evodists file] [-g gtf files] [-f fasta files] [-h help]";
+my $evo_file;
+my $gtfs;
+my $fastas;
+my $gene_clusters;
+my $helpFlag;
 
-my ($fastas,$gtf_files,$evodists,$show_help);
+Getopt::Long::Configure("no_auto_abbrev");
+GetOptions(               "e=s" => \$evo_file,
+                          "g=s" => \$gtfs,
+			  "f=s" => \$fastas,
+			  "c=s" => \$gene_clusters,
+			  "h" => \$helpFlag
+    );
 
-&GetOptions(    	
-			'fasta|f=s'	=> \$fastas,
-			'gtf|g=s'   	=> \$gtf_files,
-			'evodists|e=s'	=> \$evodists,
-			'help|h'        => \$show_help
-			)
-  or pod2usage(-verbose=>2);
-pod2usage(-verbose=>2) if $show_help;
 
-if (!$fastas) { die ("Please specify fasta files")}
-if (!$gtf_files) { die ("Please specify gtf files")}
-if (!$evodists) { die ("Please specify evodists file")}
+if (!defined $evo_file || !defined $gtfs || !defined $fastas || !defined $gene_clusters || $helpFlag){
+    die "
+Usage: A0_check_input.pl -e evo_dist_file -g \"folder/*gtf\" -f \"folder/*fasta\" -c gene_clusters_file [-h]
 
-my $fastafiles = getIds($fastas);
-my $gtffiles = getIds($gtf_files);
+OPTIONS
+    -e evo_dist_file         File containing all pairwise exon distances
+    -g folder/*gtf           Pattern matching the location of all gtf files (* being the species IDs)
+    -f folder/*fasta         Pattern matching the location of all fasta files (* being the species IDs)
+    -c gene_cluster_file     File with gene clusters
+    -h                       Prints this help message
 
-open (my $handle, $evodists) or die ("Can't read $evodists");
-my %evo_ids;
-while(<$handle>) {
- 	my $line=$_;
- 	chomp($line);
- 	my @fields = split("\t", $line);
-	$evo_ids{$fields[0]} = $fields[0];
-	$evo_ids{$fields[1]} = $fields[1];
+
+Bugs: Manuel Irimia
+
+";
 }
 
-my %all_ids;
+my %species;
+open (EVO, $evo_file) || die "It cannot open the file with pairwise evo distances\n";
+while (<EVO>){
+    chomp;
+    my @t=split(/\t/);
+    # stores species non-redundantly
+    $species{$t[0]}++;
+    $species{$t[1]}++;
+}
+close EVO;
 
-foreach my $fid (keys(%$fastafiles)) {
-	$all_ids{$fid} = $fid;
+### Checks if all species appear in the same number of pairwise comparisons
+my $first_value;
+foreach my $sp (sort keys %species){
+    $first_value = $species{$sp} if !defined $first_value;
+    if ($first_value ne $species{$sp}){
+	print "*** WARNING: the number of pairwise comparisons in the evodist file is not the same for all species\n";
+    }
 }
-foreach my $gid (keys(%$gtffiles)) {
-	$all_ids{$gid} = $gid;
-}
-foreach my $eid (keys(%evo_ids)) {
-	$all_ids{$eid} = $eid;
-}
-my $status = 0;
 
-foreach my $aid (keys(%all_ids)) {
-	if (!$fastafiles->{$aid}) {
-		print "*** WARNING fasta file corresponding to $aid is missing!!! *** \n";
-		$status = 1;
+my @gtf_files=glob($gtfs);
+my @fasta_files=glob($fastas);
+
+my ($gtf_pre,$gtf_post)=split(/\*/,$gtfs);
+my ($fasta_pre,$fasta_post)=split(/\*/,$fastas);
+my $total_file_warnings=0;
+### Does the basic GTF/FASTA file presence test
+foreach my $sp (sort keys %species){
+    my ($test_gtf,$test_fasta);
+    foreach my $temp_gtf (@gtf_files){
+	$test_gtf=1 if $temp_gtf eq $gtf_pre.$sp.$gtf_post;
+	$test_gtf=0 unless (-e $temp_gtf);
+    }
+    foreach my $temp_fasta (@fasta_files){
+	$test_fasta=1 if $temp_fasta eq $fasta_pre.$sp.$fasta_post;
+	$test_fasta=0 unless (-e $temp_fasta);
+    }
+    print "*** WARNING: GTF file is missing for $sp ($sp$gtf_post)\n" if !$test_gtf;
+    print "*** WARNING: FASTA file is missing for $sp ($sp$fasta_post)\n" if !$test_fasta;
+    $total_file_warnings++ if !$test_gtf;
+    $total_file_warnings++ if !$test_fasta;
+}
+
+### Loads all the geneIDs with CDS for each species
+my %valid_gene; 
+foreach my $sp (sort keys %species){
+    my $temp_gtf = $gtf_pre.$sp.$gtf_post;
+    open (GTF, $temp_gtf);
+    while (<GTF>){
+	chomp;
+	my @t=split(/\t/);
+	if ($t[2] eq "CDS"){
+	    my ($gene_id) = /gene_id \"(.+?)\"/;
+	    $valid_gene{$sp}{$gene_id}=1;
 	}
-
-	if (!$gtffiles->{$aid}) {
-		print "*** WARNING gtf file corresponding to $aid is missing!!! *** \n";
-		$status = 1;
-	}
-	
-	if (!$evo_ids{$aid}) {
-		print "*** WARNING $aid is missing within $evodists file! *** \n";
-		$status = 1;
-	}
+    }
+    close GTF;
 }
+print "\n";
 
-exit ($status);
-
-print Dumper \%evo_ids;
-print Dumper $fastafiles;
-print Dumper $gtffiles;
-
-sub getIds {
-	my ($glob_pattern) = @_;
-	my @files = glob($glob_pattern);
-	my %ids;
-	my @extension = split(/\*/, $glob_pattern); 
-	foreach (@files) {
-        my $id = basename($_,$extension[1]);
-		$ids{$id} = $_;
-	}
-	return(\%ids);
+### Parses the cluster file
+my $total_id_warnings=0;
+if ($gene_clusters=~/\.gz$/){
+    open (CLUSTER, "gunzip -c $gene_clusters |") || die "It cannot open file with gene clusters ($gene_clusters)\n";
+} else {
+    open (CLUSTER, $gene_clusters) || die "It cannot open file with gene clusters ($gene_clusters)\n";
 }
+while (<CLUSTER>){
+    chomp;
+    my @t=split(/\t/);
+    my $sp=$t[1];
+    my $gene_id=$t[2];
 
+    if (!$valid_gene{$sp}{$gene_id}){
+	print "WARNING: gene_id ($gene_id) is not a protein coding gene and/or is not present in GTF ($sp$gtf_post)\n";
+	$total_id_warnings++;
+    }
+}
+close CLUSTER;
 
-
+print "\nTotal file warnings: $total_file_warnings\n";
+print "Total gene_id warnings: $total_id_warnings\n";
