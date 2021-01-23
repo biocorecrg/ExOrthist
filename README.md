@@ -128,7 +128,7 @@ ExOrthist will save all outputs in the **output_test** directory. All inputs and
 
 #### params.config file
 
-For the pipeline to run, a `params.config` file with the following format has to be present in the working directory.  A template of the `params.config` file is provided together with the pipeline.
+For the pipeline to run, a `params.config` file with the following format has to be present in the working directory. A template of the `params.config` file is provided together with the pipeline.
 ```
 params {
     cluster      = "$baseDir/test/hg38_mm10_bosTau9.tab"
