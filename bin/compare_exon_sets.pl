@@ -270,6 +270,7 @@ close ECL;
 
 ### Loads pairwise information
 my %best_exon_hits; # from Sp1  => Sp2 and Sp2 => Sp1
+my %warnings;
 if (defined $f_exon_list_sp2){
     die "[Abort] It needs to provide the folder with the pairwise comparisons for $sp1 and $sp2\n" unless ($pairwise_folder);
     my $best_hits_per_gene = "$pairwise_folder/best_scored_EX_matches_by_targetgene.txt";
@@ -284,6 +285,7 @@ if (defined $f_exon_list_sp2){
 	my ($gene_sp2) = $t[6] =~ /\|(.+)/;
 	my ($i1,$f1) = $t[5] =~ /\:(.+?)\-(.+?)\:/;
 	my $temp_sp1 = $t[15];
+	my $temp_sp2 = $t[16];
 	my $exon_id1_1 = "$gene_sp1=$i1"; # geneID=exon_start
 	my $exon_id1_2 = "$gene_sp1=$f1"; # geneID=exon_end
 	
@@ -292,8 +294,14 @@ if (defined $f_exon_list_sp2){
 	    $best_exon_hits{$temp_sp1}{$exon_id1_1}{$gene_sp2}="$i2-$f2";
 	    $best_exon_hits{$temp_sp1}{$exon_id1_2}{$gene_sp2}="$i2-$f2";
 	} else {
-	    $best_exon_hits{$temp_sp1}{$exon_id1_1}{$gene_sp2}="NO_EXON_ALN";
-	    $best_exon_hits{$temp_sp1}{$exon_id1_2}{$gene_sp2}="NO_EXON_ALN";
+	    if (!$gene_sp2){
+		print "WARNING: $gene_sp1 if not matching any gene in $temp_sp2 (non-coding? non-annotated ortholog?)\n" unless $warnings{$gene_sp1};
+		$warnings{$gene_sp1}=1;
+	    }
+	    else {
+		$best_exon_hits{$temp_sp1}{$exon_id1_1}{$gene_sp2}="NO_EXON_ALN";
+		$best_exon_hits{$temp_sp1}{$exon_id1_2}{$gene_sp2}="NO_EXON_ALN";
+	    }
 	}
     }
     close PAIRWISE;
