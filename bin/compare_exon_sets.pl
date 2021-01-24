@@ -285,7 +285,6 @@ if (defined $f_exon_list_sp2){
 	my ($gene_sp2) = $t[6] =~ /\|(.+)/;
 	my ($i1,$f1) = $t[5] =~ /\:(.+?)\-(.+?)\:/;
 	my $temp_sp1 = $t[15];
-	my $temp_sp2 = $t[16];
 	my $exon_id1_1 = "$gene_sp1=$i1"; # geneID=exon_start
 	my $exon_id1_2 = "$gene_sp1=$f1"; # geneID=exon_end
 	
@@ -295,6 +294,9 @@ if (defined $f_exon_list_sp2){
 	    $best_exon_hits{$temp_sp1}{$exon_id1_2}{$gene_sp2}="$i2-$f2";
 	} else {
 	    if (!$gene_sp2){
+		my $temp_sp2;
+		$temp_sp2 = $sp1;
+		$temp_sp2 = $sp2 if $temp_sp1 eq $sp1;
 		print "WARNING: $gene_sp1 if not matching any gene in $temp_sp2 (non-coding? non-annotated ortholog?)\n" unless $warnings{$gene_sp1};
 		$warnings{$gene_sp1}=1;
 	    }
