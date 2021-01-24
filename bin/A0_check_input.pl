@@ -47,11 +47,13 @@ while (<EVO>){
 close EVO;
 
 ### Checks if all species appear in the same number of pairwise comparisons
+my $total_file_warnings=0;
 my $first_value;
 foreach my $sp (sort keys %species){
     $first_value = $species{$sp} if !defined $first_value;
     if ($first_value ne $species{$sp}){
 	print "*** WARNING: the number of pairwise comparisons in the evodist file is not the same for all species\n";
+	$total_file_warnings=1; # only counted once
     }
 }
 
@@ -60,7 +62,6 @@ my @fasta_files=glob($fastas);
 
 my ($gtf_pre,$gtf_post)=split(/\*/,$gtfs);
 my ($fasta_pre,$fasta_post)=split(/\*/,$fastas);
-my $total_file_warnings=0;
 ### Does the basic GTF/FASTA file presence test
 foreach my $sp (sort keys %species){
     my ($test_gtf,$test_fasta);
@@ -109,7 +110,7 @@ while (<CLUSTER>){
     my $gene_id=$t[2];
 
     if (!$valid_gene{$sp}{$gene_id}){
-	print "WARNING: gene_id ($gene_id) is not a protein coding gene and/or is not present in GTF ($sp$gtf_post)\n";
+	print "*** WARNING: gene_id ($gene_id) is not a protein coding gene and/or is not present in GTF ($sp$gtf_post)\n";
 	$total_id_warnings++;
     }
 }
@@ -117,3 +118,5 @@ close CLUSTER;
 
 print "\nTotal file warnings: $total_file_warnings\n";
 print "Total gene_id warnings: $total_id_warnings\n";
+
+die "\nExOrthist is aborting: file warnings are not allowed\n" if $total_file_warnings>0;
