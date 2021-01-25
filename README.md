@@ -420,7 +420,7 @@ Alternatively, the arguments in the params.config can be specified as independen
 ### Required inputs
 **--geneID**: query gene ID (it has to match a geneID used for the exon orthology inference in **--output_main**).  
 **--output_main**: output directory of an ExOrthist `main.nf` run.  
-**--output**: output folder destination. A subfolder with the geneID will be generated, where intermediate and final files will be saved. [[See Output](#output)]
+**--output**: output folder destination. [[See Output](#output)]  
 
 ### Facultative inputs
 **--ordered_species**: a comma separated list of speciesID, specifying the vertical order (top-bottom) of the species in the plot. The query gene is always printed on top. If not provided, the order of the species will be derived from the gene cluster file in the **--output_main** directory (gene_cluster_file.gz). Example:  
