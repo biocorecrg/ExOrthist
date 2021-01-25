@@ -94,7 +94,7 @@ foreach my $sp (sort keys %species){
     }
     close GTF;
 }
-print "\n";
+#print "\n";
 
 ### Parses the cluster file
 my $total_id_warnings=0;
@@ -116,7 +116,7 @@ while (<CLUSTER>){
 }
 close CLUSTER;
 
-print "\nTotal file warnings: $total_file_warnings\n";
+print "Total file warnings: $total_file_warnings\n";
 print "Total gene_id warnings: $total_id_warnings\n";
 
 die "\nExOrthist is aborting: file warnings are not allowed\n" if $total_file_warnings>0;
