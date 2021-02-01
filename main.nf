@@ -82,20 +82,34 @@ if ( !evodisfile.exists() ) exit 1, "Missing evodists file: ${evodisfile}!"
 
 
 /*
- * Process for validating the input
+ * Validate input and print log file
  */
  
- 	process check_input {
 
-		input:
-		file(evodisfile)
-
-		script:
-		"""
-		A0_check_input.pl -e ${evodisfile} -g \"${params.annotations}\" -f \"${params.genomes}\" -c ${clusterfile}
-		"""
+long_dist = params.long_dist
+medium_dist = params.medium_dist
+short_dist = params.short_dist 
+process check_input {
+	publishDir "${params.output}", mode: 'copy'
+	input:
+	file(evodisfile)
+	long_dist
+	medium_dist
+	short_dist
+	output:
+	file("run_info.log")
+	script:
+	"""
+	echo "Evolutionary distance parameters:" > run_info.log
+	echo "long distance: ${long_dist}" >> run_info.log
+	echo "medium distance: ${medium_dist}" >> run_info.log
+	echo -e "short distance: ${short_dist}\n" >> run_info.log
+	echo "Pairwise evolutionary distances:" >> run_info.log
+	cat ${evodisfile} >> run_info.log
+	echo -e "\nInput files parsing:" >> run_info.log
+	A0_check_input.pl -e ${evodisfile} -g \"${params.annotations}\" -f \"${params.genomes}\" -c ${clusterfile} >> run_info.log
+	"""
 }
-
 
 
 /*
@@ -600,34 +614,6 @@ process recluster_EXs_by_species_pair {
     	"""
 }
 
-/*
- * Log file
- */
-//print run information
-dist_ranges = file(params.evodists)
-long_dist = params.long_dist
-medium_dist = params.medium_dist
-short_dist = params.short_dist 
-process run_info_file {
-	publishDir "${params.output}", mode: 'copy'
-	input:
-	file(dist_ranges)
-	long_dist
-	medium_dist
-	short_dist
-	output:
-	file("run_info.log")
-	script:
-	"""
-	echo -e "Evolutionary distance parameters:" > run_info.log
-	echo "long distance: ${long_dist}" >> run_info.log
-	echo "medium distance: ${medium_dist}" >> run_info.log
-	echo "short distance: ${short_dist}" >> run_info.log
-	echo >> run_info.log
-	echo "Pairwise evolutionary distances:" >> run_info.log
-	cat ${dist_ranges} >> run_info.log 
-	"""
-}
 
 /*
 * functions

@@ -235,7 +235,7 @@ ENSG00000167863 ENSMUSG00000034566
 #### Default outputs
 **output_main/:**  
 
-* **run info file**: 
+* **run info file**: file containing the stringency parameters for each evolutionary distance range used for the `main.nf` run, together with the considered evolutionary distances for each species pair. Eventual warnings about problematic cases (e.g. genes included in the orthology but without annotated exons in the GTF) are also printed out here.  
 * **gene_cluster_file.gz**: the **--cluster** gene cluster file [[see Inputs](#inputs)] is copied and gzipped in the output directory. This is necessary to run the `exint_plotter` and `compare_exon_sets` modules without external dependencies.  
 * **filtered\_best\_scored\_EX\_matches\_by\_targetgene.tab**: it contains the best gene-wise exon matches for ALL species pairs which respect the filtering criteria. The exons involved in these matches are considered orthologs. 
 * **Exon\_Clusters\_Info.tab.gz**: exon clusters with all the graph information used to compute the MS.  
@@ -294,7 +294,7 @@ Finally, the selected exon orthologous matches for all species pairs are joined 
 At the end of a run, ExOrthist returns two files with complete and filtered exon clusters information, together with relevant intermediate files generated in each step.
 
 ### A. Input generation   
-ExOrthist first generates files with annotation information for each considered species, which will be the input of all species pairwise comparisons. [[see Outputs](#outputs)]
+ExOrthist first checks that all the necessary input files (both genome and GTF for each species) and information (e.g. evo distances for all species pairs) are provided. It then generates files with annotation information for each considered species, which will be the input of all species pairwise comparisons. [[see Outputs](#outputs)]
 
 ### B. Pairwise alignments and feature extraction  
 
@@ -420,7 +420,7 @@ Alternatively, the arguments in the params.config can be specified as independen
 ### Required inputs
 **--geneID**: query gene ID (it has to match a geneID used for the exon orthology inference in **--output_main**).  
 **--output_main**: output directory of an ExOrthist `main.nf` run.  
-**--output**: output folder destination. A subfolder with the geneID will be generated, where intermediate and final files will be saved. [[See Output](#output)]
+**--output**: output folder destination. [[See Output](#output)]  
 
 ### Facultative inputs
 **--ordered_species**: a comma separated list of speciesID, specifying the vertical order (top-bottom) of the species in the plot. The query gene is always printed on top. If not provided, the order of the species will be derived from the gene cluster file in the **--output_main** directory (gene_cluster_file.gz). Example:  
