@@ -514,7 +514,7 @@ foreach $el (@keys){
 		
 		unless ($seqs_already_compared{$temp_prot_seq1}{$temp_prot_seq2}){
 		    $seqs_already_compared{$temp_prot_seq1}{$temp_prot_seq2}=1;
-		    
+
 		    ## 0) ADDS HEADING TO MERGE FILE
 		    print MERGE_ALN ">>> $s1 $s2 $t1[$zj] $t2[$zi]\n\n";
 		    ## 1) MAKING TEMPORAL EXINT FILE
