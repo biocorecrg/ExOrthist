@@ -16,6 +16,7 @@ ExOrthist pipeline for Bioinformatics Core @ CRG
 
  @authors
  Luca Cozzuto <lucacozzuto@gmail.com>
+ Federica Mantica <federica.mantica93@gmail.com>
 ===========================================================
 */
 
@@ -46,7 +47,7 @@ short distance parameters        : ${params.short_dist}
 pre-computed alignments		 : ${params.prevaln}
 alignment number		 : ${params.alignmentnum}
 extraexons (e.g. from VastDB)    : ${params.extraexons}
-liftover                         : ${params.liftover}
+bona fide orthologous exon pairs  : ${params.bonafide_pairs}
 orthopairs                       : ${params.orthopairs}
 output (output folder)           : ${params.output}
 email for notification           : ${params.email}
@@ -481,16 +482,16 @@ process collapse_overlapping_matches {
     file("filtered_best_scored_exon_matches_by_gene-NoOverlap.txt") into (score_exon_hits_pairs, exon_pairs_for_reclustering)
 
 	script:
-	liftfile = ""
-	if (params.liftover != "") {
-		liftfile = file(params.liftover)
-		if ( !liftfile.exists() ) exit 1, "Missing liftover file: ${liftfile}!"
+	bonafide = ""
+	if (params.bonafide_pairs != "") {
+		bonafide = file(params.bonafide_pairs)
+		if ( !bonafide.exists() ) exit 1, "Missing file with bonafide pairs: ${bonafide}!"
 
 	}
 	"""
-    C3_count_matches_by_EX.pl ${scores} EX_matches_count_by_species.tab ${liftfile}
+    C3_count_matches_by_EX.pl ${scores} EX_matches_count_by_species.tab ${bonafide}
     C4_get_overlapping_EXs.pl -i EX_matches_count_by_species.tab -o overlapping_EXs_by_species.tab
-    C5_collapse_overlapping_matches.pl overlapping_EXs_by_species.tab ${scores} filtered_best_scored_exon_matches_by_gene-NoOverlap.txt ${liftfile}
+    C5_collapse_overlapping_matches.pl overlapping_EXs_by_species.tab ${scores} filtered_best_scored_exon_matches_by_gene-NoOverlap.txt ${bonafide}
     """
 }
 
