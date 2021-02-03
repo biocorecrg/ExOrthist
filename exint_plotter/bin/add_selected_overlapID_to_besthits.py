@@ -4,7 +4,7 @@ import pandas as pd
 import argparse  
 
 #several inputs to set here
-parser = argparse.ArgumentParser(description="For each exon, add upstream and downstream phase")
+parser = argparse.ArgumentParser(description="Add the overlapID chosen as representative of each group to the entries of its members in the exon best-hits file")
 parser.add_argument("--best_hits", "-b", required=True)
 parser.add_argument("--chosenID_query", "-q", required=True)
 parser.add_argument("--chosenID_target", "-t", required=True)
