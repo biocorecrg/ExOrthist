@@ -265,7 +265,11 @@ if ($do_all_steps){
         $expl_solution{3}="Match C1 donor";
         $expl_solution{4}="Match C2 exon";
 	
-	open (EXONS, $add_exons) || die "*** DIE: Cannot open $add_exons\n";
+        if ($add_exons=~/\.gz$/){
+             open (EXONS, "gunzip -c $add_exons |") || die "*** DIE: Cannot open $add_exons\n";
+        } else {
+	     open (EXONS, $add_exons) || die "*** DIE: Cannot open $add_exons\n";
+        }
 	<EXONS>;
 	while (<EXONS>){
 	    chomp;
