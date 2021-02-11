@@ -27,12 +27,12 @@ resource "aws_instance" "entrypoint" {
 
 }
 
-resource "aws_s3_bucket" "exorthist-nf" {
-  bucket = "exorthist-nf"
+resource "aws_s3_bucket" "data-nf" {
+  bucket = "data-nf"
   acl    = "private"
   force_destroy = true
 
   tags = {
-    name = "S3 for ExOrthist"
+    name = "s3-data-nf"
   }
 }
