@@ -22,7 +22,7 @@ resource "aws_instance" "entrypoint" {
   key_name = "key-nf"
   security_groups = [ "allow_ssh" ]
   tags = {
-	name = "entrypoint"
+	 name = "entrypoint"
   }
 
 }
