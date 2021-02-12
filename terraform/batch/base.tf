@@ -1,3 +1,9 @@
+// base.tf
+
+variable "amientrypoint" {
+  type = string
+}
+
 // Credentials to use. Here in Frankfurt region
 // Different ways to store credentials
 // provider "aws" {
@@ -16,7 +22,7 @@ provider "aws" {
 
 resource "aws_instance" "entrypoint" {
 
-  ami         = "ami-06a3c664bd6bb3fce"
+  ami         = var.amientrypoint
   instance_type = "t2.micro"
   iam_instance_profile = "S3access"
   key_name = "key-nf"
