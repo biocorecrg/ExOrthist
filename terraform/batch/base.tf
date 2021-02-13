@@ -1,5 +1,18 @@
 // base.tf
 
+variable "profile" {
+  type = string
+  default = default
+}
+
+variable "credentials" {
+  type = string
+}
+
+variable "region" {
+  type = string
+}
+
 variable "amientrypoint" {
   type = string
 }
@@ -13,9 +26,9 @@ variable "instance_entry" {
 }
 
 provider "aws" {
-  profile = "default"
-  shared_credentials_file = "/home/myusername/.aws/credentials"
-  region     = "eu-central-1"
+  profile = var.profile
+  shared_credentials_file = var.credentials
+  region     = var.region
 }
 
 // You may define an entry point for convenience

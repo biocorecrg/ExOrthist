@@ -4,6 +4,27 @@ variable "amibatch" {
   type = string
 }
 
+variable "bid_percentage" {
+  type = number
+  default = 50
+}
+
+variable "max_vcpus" {
+  type = number
+  default = 16
+}
+
+variable "min_vcpus" {
+  type = number
+  default = 0
+}
+
+variable "desired_vcpus" {
+  type = number
+  default = 0
+}
+
+
 resource "aws_batch_compute_environment" "nf-spot" {
 
     compute_environment_name = "nf-spot"
@@ -11,13 +32,13 @@ resource "aws_batch_compute_environment" "nf-spot" {
     compute_resources {
       // instance_role = "${aws_iam_instance_profile.S3access.arn}"
       instance_role = "arn:aws:iam::132458770246:instance-profile/S3access"
-      bid_percentage = 50
+      bid_percentage = var.bid_percentage
 
       image_id = var.amibatch
 
-      max_vcpus = 16
-      min_vcpus = 0
-      desired_vcpus = 0
+      max_vcpus = var.max_vcpus
+      min_vcpus = var.min_vcpus
+      desired_vcpus = var.desired_vcpus
 
       instance_type = [ "optimal" ]
 
