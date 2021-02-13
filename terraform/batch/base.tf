@@ -2,7 +2,7 @@
 
 variable "profile" {
   type = string
-  default = default
+  default = "default"
 }
 
 variable "credentials" {
