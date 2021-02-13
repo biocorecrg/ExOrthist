@@ -11,7 +11,6 @@ resource "aws_security_group" "allow_ssh" {
 		to_port = 22
 		protocol = "tcp"
 	}
-	
 	// Terraform removes the default rule
 	egress {
 		from_port = 0
@@ -31,6 +30,3 @@ resource "aws_iam_policy_attachment" "AWSBatchServiceRole-policy-attachment" {
 	roles      = ["S3access", "AWSBatchServiceRole"]
 
 }
-
-
-

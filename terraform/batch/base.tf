@@ -4,13 +4,13 @@ variable "amientrypoint" {
   type = string
 }
 
-// Credentials to use. Here in Frankfurt region
-// Different ways to store credentials
-// provider "aws" {
-//  access_key = "yourkeyhere"
-//  secret_key = "yoursecrethere"
-//  region     = "eu-central-1"
-// }
+variable "key_name" {
+  type = string
+}
+
+variable "instance_entry" {
+  type = string
+}
 
 provider "aws" {
   profile = "default"
@@ -23,9 +23,9 @@ provider "aws" {
 resource "aws_instance" "entrypoint" {
 
   ami         = var.amientrypoint
-  instance_type = "t2.micro"
+  instance_type = var.instance_entry
   iam_instance_profile = "S3access"
-  key_name = "key-nf"
+  key_name = var.key_name
   security_groups = [ "allow_ssh" ]
   tags = {
 	 name = "entrypoint"
