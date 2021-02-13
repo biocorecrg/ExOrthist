@@ -24,6 +24,11 @@ variable "desired_vcpus" {
   default = 0
 }
 
+variable "instance_batch" {
+  type    = list(string)
+  default = ["optimal"]
+}
+
 
 resource "aws_batch_compute_environment" "nf-spot" {
 
@@ -40,7 +45,7 @@ resource "aws_batch_compute_environment" "nf-spot" {
       min_vcpus = var.min_vcpus
       desired_vcpus = var.desired_vcpus
 
-      instance_type = [ "optimal" ]
+      instance_type = var.instance_batch
 
       subnets = ["subnet-8a280df7", "subnet-c54d6588", "subnet-b85ab5d2"]
 
