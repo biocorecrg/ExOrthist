@@ -13,7 +13,7 @@ resource "aws_batch_compute_environment" "nf-spot" {
       instance_role = "arn:aws:iam::132458770246:instance-profile/S3access"
       bid_percentage = 50
 
-      image_id = var.amybatch
+      image_id = var.amibatch
 
       max_vcpus = 16
       min_vcpus = 0
