@@ -48,9 +48,7 @@ resource "aws_batch_compute_environment" "nf-spot" {
 
       type = "SPOT"
 
-      security_group_ids = [
-        "sg-c290cbac"
-      ]
+      security_group_ids = [ aws_security_group.allow_all.id ]
 
     }
 

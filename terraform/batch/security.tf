@@ -2,6 +2,7 @@
 resource "aws_security_group" "allow_ssh" {
 
 	name = "allow_ssh"
+	description = "default ssh access with Terraform"
 	//vpc_id = "${aws_vpc.nf-env.id}"
 	ingress {
 		cidr_blocks = [
@@ -11,7 +12,24 @@ resource "aws_security_group" "allow_ssh" {
 		to_port = 22
 		protocol = "tcp"
 	}
-	// Terraform removes the default rule
+	egress {
+		from_port = 0
+		to_port = 0
+		protocol = "-1"
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+}
+
+resource "aws_security_group" "allow_all" {
+
+	name = "allow_all"
+	description = "default VPC security group with Terraform"
+	ingress {
+		from_port = 0
+		to_port = 0
+		protocol = "-1"
+		cidr_blocks = ["0.0.0.0/0"]
+	}
 	egress {
 		from_port = 0
 		to_port = 0
