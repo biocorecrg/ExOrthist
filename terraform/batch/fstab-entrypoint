@@ -1,0 +1,7 @@
+#
+LABEL=/     /           ext4    defaults,noatime  1   1
+tmpfs       /dev/shm    tmpfs   defaults        0   0
+devpts      /dev/pts    devpts  gid=5,mode=620  0   0
+sysfs       /sys        sysfs   defaults        0   0
+proc        /proc       proc    defaults        0   0
+s3fs#data-nf    /mnt/s3/data    fuse    _netdev,rw,nosuid,nodev,allow_other,nonempty    0       0
