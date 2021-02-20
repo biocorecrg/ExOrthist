@@ -30,9 +30,9 @@ variable "instance_batch" {
 }
 
 
-resource "aws_batch_compute_environment" "nf-spot" {
+resource "aws_batch_compute_environment" "nf-batch-spot" {
 
-    compute_environment_name = "nf-spot"
+    compute_environment_name = "nf-batch-spot"
 
     compute_resources {
       // instance_role = "${aws_iam_instance_profile.S3access.arn}"
@@ -69,6 +69,6 @@ resource "aws_batch_job_queue" "spot" {
   name                 = "spot"
   state                = "ENABLED"
   priority             = 1
-  compute_environments = [ aws_batch_compute_environment.nf-spot.arn ]
+  compute_environments = [ aws_batch_compute_environment.nf-batch-spot.arn ]
 
 }
