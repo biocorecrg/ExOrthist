@@ -1,7 +1,4 @@
-#!/usr/bin/env bash
-
-git clone https://github.com/biocorecrg/ExOrthist
-cd ExOrthist
-git checkout aws
-
-nextflow run main.nf -with-singularity -bg -config params.config.test -profile awsbatch -with-report -with-trace > /mnt/s3/data/log.txt
+aws ssm send-command \
+	--document-name "AWS-RunShellScript" \
+	--targets "Key=InstanceIds,Values=instance-id" \
+	--cli-input-json file://run.json
