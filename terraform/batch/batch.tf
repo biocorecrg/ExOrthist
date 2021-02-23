@@ -35,7 +35,7 @@ resource "aws_batch_compute_environment" "nf-batch-spot" {
     compute_environment_name = "nf-batch-spot"
 
     compute_resources {
-      // instance_role = "${aws_iam_instance_profile.S3access.arn}"
+      // instance_role = aws_iam_instance_profile.S3profile.arn
       instance_role = "arn:aws:iam::132458770246:instance-profile/S3access"
       bid_percentage = var.bid_percentage
 
@@ -49,6 +49,7 @@ resource "aws_batch_compute_environment" "nf-batch-spot" {
 
       subnets = ["subnet-8a280df7", "subnet-c54d6588", "subnet-b85ab5d2"]
 
+      //spot_iam_fleet_role = aws_iam_role.AmazonEC2SpotFleetRole.arn"
       spot_iam_fleet_role = "arn:aws:iam::132458770246:role/AmazonEC2SpotFleetRole"
 
       type = "SPOT"
@@ -57,7 +58,7 @@ resource "aws_batch_compute_environment" "nf-batch-spot" {
 
     }
 
-    // service_role = "${aws_iam_role.AWSBatchServiceRole.arn}"
+    // service_role = aws_iam_role.AWSBatchServiceRole.arn
     service_role = "arn:aws:iam::132458770246:role/service-role/AWSBatchServiceRole"
     type         = "MANAGED"
     depends_on   = [ aws_iam_policy_attachment.AWSBatchServiceRole-policy-attachment ]
