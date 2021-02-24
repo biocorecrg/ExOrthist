@@ -554,10 +554,5 @@ Finally, if the flag **--print_out** is provided, two files are generated with t
 
 References
 ------------
-#### Main ExOrthist reference:
-XXXXXX. ExOrthist bioRxiv.
 
-#### Gene orthology software
-Orthofinder
-
-Broccoli
+Marquez Y, Mantica F, Cozzuto L, Burguera D, Hermoso-Pulido H, Ponomarenko J, Roy SW, Irimia M. (2021). ExOrthist: a tool to infer exon orthologies at any evolutionary distance. bioRxiv. XXXXX.
