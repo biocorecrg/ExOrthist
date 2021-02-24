@@ -5,14 +5,18 @@ use strict;
 
 my $evo_file;
 my $gtfs;
+my $gtfs_suf;
 my $fastas;
+my $fastas_suf;
 my $gene_clusters;
 my $helpFlag;
 
 Getopt::Long::Configure("no_auto_abbrev");
 GetOptions(               "e=s" => \$evo_file,
                           "g=s" => \$gtfs,
+			  "gs=s" => \$gtfs_suf,
 			  "f=s" => \$fastas,
+			  "fs=s" => \$fastas_suf,
 			  "c=s" => \$gene_clusters,
 			  "h" => \$helpFlag
     );
@@ -20,12 +24,14 @@ GetOptions(               "e=s" => \$evo_file,
 
 if (!defined $evo_file || !defined $gtfs || !defined $fastas || !defined $gene_clusters || $helpFlag){
     die "
-Usage: A0_check_input.pl -e evo_dist_file -g \"folder/*gtf\" -f \"folder/*fasta\" -c gene_clusters_file [-h]
+Usage: A0_check_input.pl -e evo_dist_file -g gtf_folder -gs gtf_suffix -f fasta_folder -fs fasta_suffix -c gene_clusters_file [-h]
 
 OPTIONS
     -e evo_dist_file         File containing all pairwise exon distances
-    -g folder/*gtf           Pattern matching the location of all gtf files (* being the species IDs)
-    -f folder/*fasta         Pattern matching the location of all fasta files (* being the species IDs)
+    -g gtf_folder/           Path to folder containing all gtf files
+    -gs gtf_suffix	     Suffix at the end of the GTF filename (following the speciesID)
+    -f fasta_folder/         Path to folder containing all fasta files
+    -fs fasta_suffix	     Suffix at the end of the fasta files (following the speciesID)
     -c gene_cluster_file     File with gene clusters
     -h                       Prints this help message
 
@@ -34,6 +40,10 @@ Bugs: Manuel Irimia
 
 ";
 }
+
+#Generate whole path for gtf and fasta files
+#$gtfs = $gtfs."/*".$gtfs_suf;
+#$fastas = $fastas."/*".$fastas_suf;
 
 my %species;
 open (EVO, $evo_file) || die "It cannot open the file with pairwise evo distances\n";
@@ -83,7 +93,11 @@ foreach my $sp (sort keys %species){
 my %valid_gene; 
 foreach my $sp (sort keys %species){
     my $temp_gtf = $gtf_pre.$sp.$gtf_post;
-    open (GTF, $temp_gtf);
+    if ($temp_gtf=~/\.gz$/){
+    	open (GTF, "gunzip -c $temp_gtf |");
+    } else {
+    	open (GTF, $temp_gtf);
+    }
     while (<GTF>){
 	chomp;
 	my @t=split(/\t/);

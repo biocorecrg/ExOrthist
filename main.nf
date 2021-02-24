@@ -85,15 +85,24 @@ if ( !evodisfile.exists() ) exit 1, "Missing evodists file: ${evodisfile}!"
 /*
  * Validate input and print log file
  */
- 
-
+//Prepare input channels 
+Channel.fromPath(params.annotations).collect().set{gtfs}
+Channel.fromPath(params.genomes).collect().set{fastas}
+Channel.fromFilePairs(params.annotations, size: 1).flatten().collate(2).map{[it[1].toString().split(it[0].toString())[1]]}.unique().flatten().set{gtfs_suffix}
+Channel.fromFilePairs(params.genomes, size: 1).flatten().collate(2).map{[it[1].toString().split(it[0].toString())[1]]}.unique().flatten().set{fastas_suffix}
 long_dist = params.long_dist
 medium_dist = params.medium_dist
 short_dist = params.short_dist 
+
 process check_input {
 	publishDir "${params.output}", mode: 'copy'
 	input:
 	file(evodisfile)
+	file(clusterfile)
+	file("GTF/*") from gtfs
+        file("FASTAS/*") from fastas
+        val(gtfs_suffix)
+        val(fastas_suffix)
 	long_dist
 	medium_dist
 	short_dist
@@ -108,10 +117,12 @@ process check_input {
 	echo "Pairwise evolutionary distances:" >> run_info.log
 	cat ${evodisfile} >> run_info.log
 	echo -e "\nInput files parsing:" >> run_info.log
-	A0_check_input.pl -e ${evodisfile} -g \"${params.annotations}\" -f \"${params.genomes}\" -c ${clusterfile} >> run_info.log
+	A0_check_input.pl -e ${evodisfile} -g GTF -gs ${gtfs_suffix} -f FASTAS -fs ${fastas_suffix} -c ${clusterfile} >> run_info.log
 	"""
 }
 
+//A0_check_input.pl -e ${evodisfile} -g \"GTF/*${gtfs_suffix}\" -f \"FASTAS/*${fastas_suffix}\" -c ${clusterfile} >> run_info.log
+//A0_check_input.pl -e ${evodisfile} -g GTF -gs ${gtfs_suffix} -f FASTAS -fs ${fastas_suffix} -c ${clusterfile} >> run_info.log
 
 /*
  * Create channels for sequences data
