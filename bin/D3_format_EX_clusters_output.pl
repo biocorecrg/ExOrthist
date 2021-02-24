@@ -6,7 +6,7 @@ use strict;
 open (T1, ">EX_clusters_info.tab");
 print T1 "ExonID\tClusterID\tOut_degree\tIn_degree\tSPECIES_exons_in_cluster\tTOT_exons_in_cluster\tN_reciprocals\tMembership_score\n";
 close T1;
-system "cat EXcls_* >> EX_clusters_info.tab";
+system "cat EXs_* >> EX_clusters_info.tab";
 system "cat unclustered_EXs_* >> unclustered_EXs.txt"; #Fede: joining the unclustered exons (exons with hits but ending up in single-exon clusters)
 
 open (TMP, ">tmp_excls.tab");

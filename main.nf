@@ -53,15 +53,16 @@ output (output folder)           : ${params.output}
 email for notification           : ${params.email}
 
 INFORMATION ABOUT OPTIONS:
-The long, medium, short distance parameters are in the format: "incons,exsim,mazsize"
-- intcons (1 or 2): Whether to consider one or two introns 
-     bordering the exon when filtering by conservation.
-- exsim (from 0 to 1): Minimum % of similarity between a
-     pair of orthologous exons and their corresponding upstream and 
+The long, medium, short distance cut-offs are in the format: "int_num;ex_seq;ex_len;prot_sim".
+Only exon matches respecting all cut-offs are considered homologous.
+- int_num (0,1,2): Number of surrounding intron positions required to be conserved.
+- ex_seq (from 0 to 1): Minimum sequence similarity % between a
+     pair of homologous exons and their corresponding upstream and 
      downstream exons.
-- maxsize: Maximum size difference between two orthologous exons 
+- ex_len (from 0 to 1): Maximum size difference between two homologous exons 
      (as a fraction of either exon).
-     
+- prot_sim (from 0 to 1): Minimum sequence similarity over the entire pairwise alignment
+     for a pair of protein isoforms to be considered for comparison.
      
 """
 
@@ -475,7 +476,6 @@ process join_filtered_EX_matches {
 
 	script:
 	"""
-    #cat best_score_* >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab
     echo "GeneID_sp1\tExon_coords_sp1\tGeneID_sp2\tExon_coords_sp2\tSp1\tSp2" > filtered_best_scored_EX_matches_by_targetgene.tab;
     for file in \$(ls filtered_best_scored-*); do cat \$file | tail -n+2 >> filtered_best_scored_EX_matches_by_targetgene.tab; done
     """
@@ -517,7 +517,8 @@ process format_EX_clusters_input {
     file(clusterfile)
 
     output:
-    file("PART_*/*.tab") into cluster_parts
+    file("PART_*-cluster_input.tab") into cluster_parts
+    //file("PART_*/*.tab") into cluster_parts
 
 	script:
 	"""
@@ -541,12 +542,12 @@ process cluster_EXs {
     file(cluster_part) from cluster_parts.flatten()
 
     output:
-    file("EX${cluster_part}") into ex_clusters
+    file("EXs_${cluster_part}") into ex_clusters
     file("unclustered_EXs_${cluster_part}") into unclustered_exs
 
 	script:
 	"""
-    D2_cluster_EXs.R ${cluster_part} EX${cluster_part} unclustered_EXs_${cluster_part}
+    D2_cluster_EXs.R ${cluster_part} EXs_${cluster_part} unclustered_EXs_${cluster_part}
     """
 }
 
