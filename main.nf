@@ -523,10 +523,10 @@ process format_EX_clusters_input {
 	"""
    if [ `echo ${clusterfile} | grep ".gz"` ]; then
        zcat ${clusterfile} > cluster_file
-       D1_format_EX_clusters_input.pl cluster_file ${score_exon_hits_pairs} 500 out.txt
+       D1_format_EX_clusters_input.pl cluster_file ${score_exon_hits_pairs} 500
        rm cluster_file
     else
-       D1_format_EX_clusters_input.pl ${clusterfile} ${score_exon_hits_pairs} 500 out.txt
+       D1_format_EX_clusters_input.pl ${clusterfile} ${score_exon_hits_pairs} 500
     fi
 	"""
 }

@@ -5,7 +5,7 @@ use strict;
 my $infile1=$ARGV[0]; ## Gene cluster file
 my $infile2=$ARGV[1]; ## Exons scores by species pair => Best_score_exon_hits_pairs.txt
 my $nc=$ARGV[2]; ## Number of clusters in each part => default 500
-my $outfile=$ARGV[3]; ## Outfile name per folder
+my $outfile;
 
 my %cid;
 open (INFILE, $infile1) || die "It cannot open the input file ($infile1)\n";
