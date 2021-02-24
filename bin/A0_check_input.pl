@@ -42,8 +42,8 @@ Bugs: Manuel Irimia
 }
 
 #Generate whole path for gtf and fasta files
-#$gtfs = $gtfs."/*".$gtfs_suf;
-#$fastas = $fastas."/*".$fastas_suf;
+$gtfs = $gtfs."/*".$gtfs_suf;
+$fastas = $fastas."/*".$fastas_suf;
 
 my %species;
 open (EVO, $evo_file) || die "It cannot open the file with pairwise evo distances\n";
