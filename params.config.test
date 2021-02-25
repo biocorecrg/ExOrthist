@@ -3,6 +3,7 @@ params {
     genomes        = "$baseDir/test/GENOMES/*_gDNA-subsetted.fasta.gz"
     annotations    = "$baseDir/test/GTF/*_annot-subsetted.gtf.gz"
     alignmentnum   = 1000
+    orthogroupnum  = 500
     extraexons     = ""
     bonafide_pairs = ""
     orthopairs     = ""

@@ -46,6 +46,7 @@ medium distance parameters       : ${params.medium_dist}
 short distance parameters        : ${params.short_dist}
 pre-computed alignments		 : ${params.prevaln}
 alignment number		 : ${params.alignmentnum}
+orthogroup number		 : ${params.orthogroupnum}
 extraexons (e.g. from VastDB)    : ${params.extraexons}
 bona fide orthologous exon pairs  : ${params.bonafide_pairs}
 orthopairs                       : ${params.orthopairs}
@@ -64,6 +65,7 @@ Only exon matches respecting all cut-offs are considered homologous.
 - prot_sim (from 0 to 1): Minimum sequence similarity over the entire pairwise alignment
      for a pair of protein isoforms to be considered for comparison.
      
+See online README at https://github.com/biocorecrg/ExOrthist for further information about the options.
 """
 
 if (params.help) {
@@ -524,10 +526,10 @@ process format_EX_clusters_input {
 	"""
    if [ `echo ${clusterfile} | grep ".gz"` ]; then
        zcat ${clusterfile} > cluster_file
-       D1_format_EX_clusters_input.pl cluster_file ${score_exon_hits_pairs} 500
+       D1_format_EX_clusters_input.pl cluster_file ${score_exon_hits_pairs} ${params.orthogroupnum}
        rm cluster_file
     else
-       D1_format_EX_clusters_input.pl ${clusterfile} ${score_exon_hits_pairs} 500
+       D1_format_EX_clusters_input.pl ${clusterfile} ${score_exon_hits_pairs} ${params.orthogroupnum}
     fi
 	"""
 }
