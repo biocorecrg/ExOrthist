@@ -91,8 +91,8 @@ if ( !evodisfile.exists() ) exit 1, "Missing evodists file: ${evodisfile}!"
 //Prepare input channels 
 Channel.fromPath(params.annotations).collect().set{gtfs}
 Channel.fromPath(params.genomes).collect().set{fastas}
-Channel.fromFilePairs(params.annotations, size: 1).flatten().collate(2).map{[it[1].toString().split(it[0].toString())[1]]}.unique().flatten().set{gtfs_suffix}
-Channel.fromFilePairs(params.genomes, size: 1).flatten().collate(2).map{[it[1].toString().split(it[0].toString())[1]]}.unique().flatten().set{fastas_suffix}
+Channel.fromFilePairs(params.annotations, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten().set{gtfs_suffix}
+Channel.fromFilePairs(params.genomes, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten().set{fastas_suffix}
 long_dist = params.long_dist
 medium_dist = params.medium_dist
 short_dist = params.short_dist 
