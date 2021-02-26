@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+#.libPaths(c("/software/mi/Rlib3.6/", .libPaths()))
 
 args<-commandArgs(TRUE)
 if (length(args)<3) {stop("[USAGE] Rscript --vanilla cluster.R <input_orthopairs> <output_orthogroup> <output_unclustered_exons>")}
@@ -12,7 +13,7 @@ library("hashmap", quietly = TRUE, warn.conflicts = FALSE, verbose = FALSE)
 input_table = read.table(input_orthopairs, col.names=c("clusterID", "ID1", "ID2", "Best_reciprocal"))
 
 #Select all gene orthogroups in the input file
-all_gene_OG = as.vector(input_table$clusterID)
+all_gene_OG = unique(as.vector(input_table$clusterID))
 
 #cycle on each gene orthogroup
 for (my_gene_OG in all_gene_OG) {
@@ -108,7 +109,6 @@ for (my_gene_OG in all_gene_OG) {
 
   #Operate translations from hashes
   my_final_clusters$ExonID = rownames(my_final_clusters)
-  print(head(my_final_clusters))
   my_final_clusters$Out_degree = out_degree_dict$find(my_final_clusters$ExonID)
   my_final_clusters$In_degree = in_degree_dict$find(my_final_clusters$ExonID)
   my_final_clusters$SPECIES_exons_in_cluster = species_counts_dict$find(paste0(gsub(".*\\|", "", my_final_clusters$ExonID), "_", my_final_clusters$ClusterID))
