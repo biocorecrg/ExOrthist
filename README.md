@@ -192,7 +192,7 @@ mm10	bosTau9 short
 ```
 --short_dist "2,0.7,0.6,0.25"
 --medium_dist "2,0.5,0.5,0.25"
---long_dist "1,0.2,0.4,0.25"
+--long_dist "2,0.2,0.4,0.25"
 ```
 **--output:** output folder destination.  
 
@@ -558,4 +558,4 @@ Finally, if the flag **--print_out** is provided, two files are generated with t
 References
 ------------
 
-Marquez Y, Mantica F, Cozzuto L, Burguera D, Hermoso-Pulido H, Ponomarenko J, Roy SW, Irimia M. (2021). ExOrthist: a tool to infer exon orthologies at any evolutionary distance. bioRxiv. XXXXX.
+Marquez Y, Mantica F, Cozzuto L, Burguera D, Hermoso-Pulido H, Ponomarenko J, Roy SW, Irimia M. (2021). ExOrthist: a tool to infer exon orthologies at any evolutionary distance. bioRxiv. https://www.biorxiv.org/content/10.1101/2021.02.22.432358v1.full.pdf
