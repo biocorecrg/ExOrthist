@@ -135,6 +135,7 @@ params {
     genomes      = "$baseDir/test/GENOMES/*_gDNA.fasta.gz"
     annotations  = "$baseDir/test/GTF/*_annot.gtf.gz"
     alignmentnum = 1000
+    orthogroupnum = 500
     extraexons   = ""
     liftover     = ""
     orthopairs   = ""
@@ -176,6 +177,7 @@ GF000003	mm10    ENSMUSG00000031543
 GF000003	bosTau9	ENSBTAG00000003275
 ```
 **--alignmentnum:** number of alignments to submit within each chunk (default: 1000) [[see Algorithm, section B](#b-pairwise-alignments-and-feature-extraction)].  
+**--orthogroupnum:** number of gene orthogroups to process together during the exon clustering step (default: 500) [[see Algorithm, section D](#d-exon-clustering).
 **--evodists:** a tsv file with evolutionary distance ranges (**short**, **medium**, **long**) for all pairs of species. Pairwise species combinations between all species of interest need to be specified. This information is used to adapt the stringency of the pairwise exon orthology call based on the evolutionary distance [[see Algorithm, section C](#c-scoring-and-best-matches-selection)]. Example:  
 ```
 hg38	mm10    short
@@ -362,6 +364,7 @@ with:
 
 <!-- The default value of X can be modified through the **--minmembership** argument [[see Inputs](#inputs)].  <span style="color:red"> This still needs to be implemented. </span> -->
 
+The number of gene orthogroups to be processed within a unique nextflow job can be specified by the **--orthogroupnum argument** [[see Inputs](#inputs)].  
 ExOrthist provides the possibility to subset the exon orthology files based on reclustering information. This step is performed when a file with orthologous pairs from all species pairwise combinations is provided with the **--orthopairs argument** [[see Inputs](#inputs)]. In that case, an extra *reclustering* folder is saved to the output directory [[see Facultative outputs](#facultative-outputs)]  
 
 ##### Exon clusters statistics 
