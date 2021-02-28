@@ -41,12 +41,19 @@ resource "aws_security_group" "allow_all" {
 resource "aws_iam_role" "ClusterRole" {
   name = "ClusterRole"
   assume_role_policy = jsonencode({
-  "Version": "2012-10-17",
+	"Version": "2012-10-17",
   "Statement": [
     {
       "Effect": "Allow",
       "Principal": {
         "Service": "batch.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    },
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
     }
@@ -109,7 +116,7 @@ resource "aws_iam_policy_attachment" "AWSBatchServiceRole-policy-attachment" {
 	policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
 	groups     = []
 	users      = []
-	roles      = [aws_iam_role.Multiaccess.name]
+	roles      = [aws_iam_role.ClusterRole.name, aws_iam_role.Multiaccess.name]
 
 }
 
