@@ -113,16 +113,6 @@ resource "aws_iam_policy_attachment" "AWSBatchServiceRole-policy-attachment" {
 
 }
 
-resource "aws_iam_policy_attachment" "AmazonEC2ContainerRegistryFullAccess-policy-attachment" {
-
-	name       = "AmazonEC2ContainerRegistryFullAccess-policy-attachment"
-	policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
-	groups     = []
-	users      = []
-	roles      = [aws_iam_role.ClusterRole.name]
-
-}
-
 resource "aws_iam_policy_attachment" "AWSTransferLoggingAccess-policy-attachment" {
 
 	name       = "AWSTransferLoggingAccess-policy-attachment"
@@ -172,6 +162,27 @@ resource "aws_iam_policy_attachment" "AmazonEC2ContainerServiceRole-policy-attac
 	roles      = [aws_iam_role.ClusterRole.name]
 
 }
+
+resource "aws_iam_policy_attachment" "AmazonEC2ContainerRegistryFullAccess-policy-attachment" {
+
+	name       = "AmazonEC2ContainerRegistryFullAccess-policy-attachment"
+	policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess"
+	groups     = []
+	users      = []
+	roles      = [aws_iam_role.ClusterRole.name]
+
+}
+
+resource "aws_iam_policy_attachment" "AmazonECS_FullAccess-policy-attachment" {
+
+	name       = "AmazonECS_FullAccess-policy-attachment"
+	policy_arn = "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
+	groups     = []
+	users      = []
+	roles      = [aws_iam_role.ClusterRole.name]
+
+}
+
 
 resource "aws_iam_policy_attachment" "AmazonEC2FullAccess-policy-attachment" {
 
@@ -247,6 +258,16 @@ resource "aws_iam_policy_attachment" "AmazonEC2SpotFleetTaggingRole-policy-attac
 
 	name       = "AmazonEC2SpotFleetTaggingRole-policy-attachment"
 	policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole"
+	groups     = []
+	users      = []
+	roles      = [aws_iam_role.ClusterFleetRole.name]
+
+}
+
+resource "aws_iam_policy_attachment" "AmazonEC2SpotFleetAutoscaleRole-policy-attachment" {
+
+	name       = "AmazonEC2SpotFleetAutoscaleRole-policy-attachment"
+	policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetAutoscaleRole"
 	groups     = []
 	users      = []
 	roles      = [aws_iam_role.ClusterFleetRole.name]

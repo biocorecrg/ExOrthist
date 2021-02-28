@@ -56,6 +56,7 @@ resource "aws_s3_bucket" "data-nf" {
   }
 }
 
+
 resource "aws_iam_role_policy_attachment" "aws_batch_service_role" {
   role       = aws_iam_role.ClusterRole.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
