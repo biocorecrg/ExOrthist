@@ -37,7 +37,7 @@ resource "aws_instance" "entrypoint" {
 
   ami         = var.amientrypoint
   instance_type = var.instance_entry
-  iam_instance_profile = "S3access"
+  iam_instance_profile = "Multiprofile"
   key_name = var.key_name
   security_groups = [ "allow_ssh" ]
   tags = {
@@ -54,4 +54,9 @@ resource "aws_s3_bucket" "data-nf" {
   tags = {
     name = "s3-data-nf"
   }
+}
+
+resource "aws_iam_role_policy_attachment" "aws_batch_service_role" {
+  role       = aws_iam_role.ClusterRole.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
 }
