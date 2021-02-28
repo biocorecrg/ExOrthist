@@ -5,7 +5,7 @@ use strict;
 my $infile1=$ARGV[0]; ## Gene cluster file
 my $infile2=$ARGV[1]; ## Exons scores by species pair => Best_score_exon_hits_pairs.txt
 my $nc=$ARGV[2]; ## Number of clusters in each part => default 500
-my $outfile=$ARGV[3]; ## Outfile name per folder
+my $outfile;
 
 my %cid;
 open (INFILE, $infile1) || die "It cannot open the input file ($infile1)\n";
@@ -31,7 +31,7 @@ while (<INFILE2b>){
 close INFILE2b;
 
 my $tmp="tmp.out";
-open (TMP, ">$tmp") || die "Tt cannot open the temporary tmp.out";
+open (TMP, ">$tmp") || die "It cannot open the temporary tmp.out";
 open (INFILE2, $infile2) || die "It cannot open the Exons scores by species pair ($infile2)\n";
 # Format: BL00000	Sc0000095:751518-751620:-	CD14496	clodip2_s0015:466798-466932:+	Bla	Cdi
 while (<INFILE2>){
@@ -69,19 +69,16 @@ while (<TEMP_INFILE>){
 	$part="PART_01";
 	$p=1;
 	$cls=1;
-	system ("mkdir PART_01");
-	$outfile="$part/cls_$cid.tab";
+	$outfile="$part-cluster_input.tab";
 	open (SC, ">>$outfile");
-	print SC "$l[0]|$l[1]|$l[2]|$l[5]\t$l[0]|$l[3]|$l[4]|$l[6]\t$l[7]\n";
+	print SC "$cid\t$l[0]|$l[1]|$l[2]|$l[5]\t$l[0]|$l[3]|$l[4]|$l[6]\t$l[7]\n";
     }
     elsif (!$cid2{$l[0]}){
 	if ($cls < $nc){
 	    $cls++;
 	    $cid2{$l[0]}=1;
 	    $cid=$l[0];
-	    $outfile="$part/cls_$cid.tab";
-	    open (SC, ">>$outfile");
-	    print SC "$l[0]|$l[1]|$l[2]|$l[5]\t$l[0]|$l[3]|$l[4]|$l[6]\t$l[7]\n";
+	    print SC "$cid\t$l[0]|$l[1]|$l[2]|$l[5]\t$l[0]|$l[3]|$l[4]|$l[6]\t$l[7]\n";
 	}
 	else { # re-starts file
 	    $cls=1;
@@ -91,14 +88,13 @@ while (<TEMP_INFILE>){
 	    if ($p<=9) { $part="PART_0$p";}
 	    else { $part="PART_$p";}	
 	    close SC;
-	    system ("mkdir $part");
-	    $outfile="$part/cls_$cid.tab";
+	    $outfile="$part-cluster_input.tab";
 	    open (SC, ">>$outfile");
-	    print SC "$l[0]|$l[1]|$l[2]|$l[5]\t$l[0]|$l[3]|$l[4]|$l[6]\t$l[7]\n";
+	    print SC "$cid\t$l[0]|$l[1]|$l[2]|$l[5]\t$l[0]|$l[3]|$l[4]|$l[6]\t$l[7]\n";
 	}
     }
     elsif ($cid2{$l[0]}){
-	print SC "$l[0]|$l[1]|$l[2]|$l[5]\t$l[0]|$l[3]|$l[4]|$l[6]\t$l[7]\n";
+	print SC "$cid\t$l[0]|$l[1]|$l[2]|$l[5]\t$l[0]|$l[3]|$l[4]|$l[6]\t$l[7]\n";
     }    
 }
 close TEMP_INFILE;
@@ -106,4 +102,5 @@ close SC;
 $p=0 if !defined $p;
 print STDERR "Number of parts:\t$p\n";
 
+#Remove temporary files
 system "rm tmp.out sorted_scores.out";

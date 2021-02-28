@@ -46,6 +46,7 @@ medium distance parameters       : ${params.medium_dist}
 short distance parameters        : ${params.short_dist}
 pre-computed alignments		 : ${params.prevaln}
 alignment number		 : ${params.alignmentnum}
+orthogroup number		 : ${params.orthogroupnum}
 extraexons (e.g. from VastDB)    : ${params.extraexons}
 bona fide orthologous exon pairs  : ${params.bonafide_pairs}
 orthopairs                       : ${params.orthopairs}
@@ -53,16 +54,18 @@ output (output folder)           : ${params.output}
 email for notification           : ${params.email}
 
 INFORMATION ABOUT OPTIONS:
-The long, medium, short distance parameters are in the format: "incons,exsim,mazsize"
-- intcons (1 or 2): Whether to consider one or two introns 
-     bordering the exon when filtering by conservation.
-- exsim (from 0 to 1): Minimum % of similarity between a
-     pair of orthologous exons and their corresponding upstream and 
+The long, medium, short distance cut-offs are in the format: "int_num;ex_seq;ex_len;prot_sim".
+Only exon matches respecting all cut-offs are considered homologous.
+- int_num (0,1,2): Number of surrounding intron positions required to be conserved.
+- ex_seq (from 0 to 1): Minimum sequence similarity % between a
+     pair of homologous exons and their corresponding upstream and 
      downstream exons.
-- maxsize: Maximum size difference between two orthologous exons 
+- ex_len (from 0 to 1): Maximum size difference between two homologous exons 
      (as a fraction of either exon).
+- prot_sim (from 0 to 1): Minimum sequence similarity over the entire pairwise alignment
+     for a pair of protein isoforms to be considered for comparison.
      
-     
+See online README at https://github.com/biocorecrg/ExOrthist for further information about the options.
 """
 
 if (params.help) {
@@ -85,15 +88,24 @@ if ( !evodisfile.exists() ) exit 1, "Missing evodists file: ${evodisfile}!"
 /*
  * Validate input and print log file
  */
- 
-
+//Prepare input channels 
+Channel.fromPath(params.annotations).collect().set{gtfs}
+Channel.fromPath(params.genomes).collect().set{fastas}
+Channel.fromFilePairs(params.annotations, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten().set{gtfs_suffix}
+Channel.fromFilePairs(params.genomes, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten().set{fastas_suffix}
 long_dist = params.long_dist
 medium_dist = params.medium_dist
 short_dist = params.short_dist 
+
 process check_input {
 	publishDir "${params.output}", mode: 'copy'
 	input:
 	file(evodisfile)
+	file(clusterfile)
+	file("GTF/*") from gtfs
+        file("FASTAS/*") from fastas
+        val(gtfs_suffix)
+        val(fastas_suffix)
 	long_dist
 	medium_dist
 	short_dist
@@ -108,10 +120,12 @@ process check_input {
 	echo "Pairwise evolutionary distances:" >> run_info.log
 	cat ${evodisfile} >> run_info.log
 	echo -e "\nInput files parsing:" >> run_info.log
-	A0_check_input.pl -e ${evodisfile} -g \"${params.annotations}\" -f \"${params.genomes}\" -c ${clusterfile} >> run_info.log
+	A0_check_input.pl -e ${evodisfile} -g GTF -gs ${gtfs_suffix} -f FASTAS -fs ${fastas_suffix} -c ${clusterfile} >> run_info.log
 	"""
 }
 
+//A0_check_input.pl -e ${evodisfile} -g \"GTF/*${gtfs_suffix}\" -f \"FASTAS/*${fastas_suffix}\" -c ${clusterfile} >> run_info.log
+//A0_check_input.pl -e ${evodisfile} -g GTF -gs ${gtfs_suffix} -f FASTAS -fs ${fastas_suffix} -c ${clusterfile} >> run_info.log
 
 /*
  * Create channels for sequences data
@@ -464,7 +478,6 @@ process join_filtered_EX_matches {
 
 	script:
 	"""
-    #cat best_score_* >> Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab
     echo "GeneID_sp1\tExon_coords_sp1\tGeneID_sp2\tExon_coords_sp2\tSp1\tSp2" > filtered_best_scored_EX_matches_by_targetgene.tab;
     for file in \$(ls filtered_best_scored-*); do cat \$file | tail -n+2 >> filtered_best_scored_EX_matches_by_targetgene.tab; done
     """
@@ -506,16 +519,17 @@ process format_EX_clusters_input {
     file(clusterfile)
 
     output:
-    file("PART_*/*.tab") into cluster_parts
+    file("PART_*-cluster_input.tab") into cluster_parts
+    //file("PART_*/*.tab") into cluster_parts
 
 	script:
 	"""
    if [ `echo ${clusterfile} | grep ".gz"` ]; then
        zcat ${clusterfile} > cluster_file
-       D1_format_EX_clusters_input.pl cluster_file ${score_exon_hits_pairs} 500 out.txt
+       D1_format_EX_clusters_input.pl cluster_file ${score_exon_hits_pairs} ${params.orthogroupnum}
        rm cluster_file
     else
-       D1_format_EX_clusters_input.pl ${clusterfile} ${score_exon_hits_pairs} 500 out.txt
+       D1_format_EX_clusters_input.pl ${clusterfile} ${score_exon_hits_pairs} ${params.orthogroupnum}
     fi
 	"""
 }
@@ -530,12 +544,12 @@ process cluster_EXs {
     file(cluster_part) from cluster_parts.flatten()
 
     output:
-    file("EX${cluster_part}") into ex_clusters
+    file("EXs_${cluster_part}") into ex_clusters
     file("unclustered_EXs_${cluster_part}") into unclustered_exs
 
 	script:
 	"""
-    D2_cluster_EXs.R ${cluster_part} EX${cluster_part} unclustered_EXs_${cluster_part}
+    D2_cluster_EXs.R ${cluster_part} EXs_${cluster_part} unclustered_EXs_${cluster_part}
     """
 }
 
