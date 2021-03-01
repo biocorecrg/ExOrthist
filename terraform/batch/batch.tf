@@ -34,7 +34,7 @@ resource "aws_batch_compute_environment" "nf-compute-spot" {
     compute_environment_name = "nf-compute-spot"
 
     compute_resources {
-      instance_role = aws_iam_instance_profile.Multiprofile.arn
+      instance_role = aws_iam_instance_profile.ComputeInstanceProfile.arn
       bid_percentage = var.bid_percentage
 
       image_id = var.amibatch
@@ -57,7 +57,7 @@ resource "aws_batch_compute_environment" "nf-compute-spot" {
 
     service_role = aws_iam_role.ClusterRole.arn
     type         = "MANAGED"
-    depends_on   = [aws_iam_role_policy_attachment.aws_batch_service_role]
+    depends_on   = [aws_iam_policy_attachment.AWSBatchServiceRole-policy-attachment]
 
 
 }

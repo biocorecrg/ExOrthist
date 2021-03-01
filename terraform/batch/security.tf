@@ -3,7 +3,6 @@ resource "aws_security_group" "allow_ssh" {
 
 	name = "allow_ssh"
 	description = "default ssh access with Terraform"
-	//vpc_id = "${aws_vpc.nf-env.id}"
 	ingress {
 		cidr_blocks = [
 			  "0.0.0.0/0"
@@ -38,6 +37,7 @@ resource "aws_security_group" "allow_all" {
 	}
 }
 
+// Role for the cluster
 resource "aws_iam_role" "ClusterRole" {
   name = "ClusterRole"
   assume_role_policy = jsonencode({
@@ -62,6 +62,51 @@ resource "aws_iam_role" "ClusterRole" {
 
 }
 
+// Role for the cluster nodes
+resource "aws_iam_role" "ComputeInstanceRole" {
+  name = "ComputeInstanceRole"
+  assume_role_policy = jsonencode({
+	"Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+  })
+
+}
+
+// Additional role for fleeting cluster nodes
+resource "aws_iam_role" "ClusterFleetRole" {
+  name = "ClusterFleetRole"
+  assume_role_policy = jsonencode({
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "spotfleet.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    },
+		{
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+  })
+
+}
+
+// Role for the entrypoint
 resource "aws_iam_role" "Multiaccess" {
   name = "Multiaccess"
   assume_role_policy = jsonencode({
@@ -86,29 +131,10 @@ resource "aws_iam_role" "Multiaccess" {
 
 }
 
-resource "aws_iam_role" "ClusterFleetRole" {
-  name = "ClusterFleetRole"
-  assume_role_policy = jsonencode({
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "",
-      "Effect": "Allow",
-      "Principal": {
-        "Service": "spotfleet.amazonaws.com"
-      },
-      "Action": "sts:AssumeRole"
-    }
-  ]
-  })
-
+resource "aws_iam_instance_profile" "ComputeInstanceProfile" {
+  name = "ComputeInstanceProfile"
+  role = aws_iam_role.ComputeInstanceRole.name
 }
-
-resource "aws_iam_instance_profile" "Multiprofile" {
-  name = "Multiprofile"
-  role = aws_iam_role.Multiaccess.name
-}
-
 
 resource "aws_iam_policy_attachment" "AWSBatchServiceRole-policy-attachment" {
 
@@ -156,7 +182,7 @@ resource "aws_iam_policy_attachment" "AmazonEC2ContainerServiceforEC2Role-policy
 	policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 	groups     = []
 	users      = []
-	roles      = [aws_iam_role.ClusterRole.name]
+	roles      = [aws_iam_role.ClusterRole.name, aws_iam_role.ComputeInstanceRole.name]
 
 }
 
@@ -217,7 +243,7 @@ resource "aws_iam_policy_attachment" "AmazonS3FullAccess-policy-attachment" {
 	policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 	groups     = []
 	users      = []
-	roles      = [aws_iam_role.ClusterRole.name, aws_iam_role.Multiaccess.name]
+	roles      = [aws_iam_role.ClusterRole.name, aws_iam_role.Multiaccess.name, aws_iam_role.ComputeInstanceRole.name]
 
 }
 
