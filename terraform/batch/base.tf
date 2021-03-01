@@ -25,6 +25,11 @@ variable "instance_entry" {
   type = string
 }
 
+variable "destroy_bucket" {
+  type = bool
+  default = true
+}
+
 provider "aws" {
   profile = var.profile
   shared_credentials_file = var.credentials
@@ -49,7 +54,7 @@ resource "aws_instance" "entrypoint" {
 resource "aws_s3_bucket" "data-nf" {
   bucket = "data-nf"
   acl    = "private"
-  force_destroy = true
+  force_destroy = var.destroy_bucket
 
   tags = {
     name = "s3-data-nf"
