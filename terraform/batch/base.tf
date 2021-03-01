@@ -26,7 +26,7 @@ variable "instance_entry" {
 }
 
 variable "destroy_bucket" {
-  type = boolean
+  type = bool
   default = true
 }
 
