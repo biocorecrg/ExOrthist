@@ -45,6 +45,7 @@ resource "aws_batch_compute_environment" "nf-compute-spot" {
 
       instance_type = var.instance_batch
 
+      // TODO: Eventually migrate subnets as well
       subnets = ["subnet-8a280df7", "subnet-c54d6588", "subnet-b85ab5d2"]
 
       spot_iam_fleet_role = aws_iam_role.ClusterFleetRole.arn
@@ -59,7 +60,9 @@ resource "aws_batch_compute_environment" "nf-compute-spot" {
     type         = "MANAGED"
     depends_on   = [aws_iam_policy_attachment.AWSBatchServiceRole-policy-attachment]
 
-
+    tags = {
+  	 name = "nf-cluster"
+    }
 }
 
 resource "aws_batch_job_queue" "spot" {
@@ -69,4 +72,7 @@ resource "aws_batch_job_queue" "spot" {
   priority             = 1
   compute_environments = [ aws_batch_compute_environment.nf-compute-spot.arn ]
 
+  tags = {
+   name = "nf-queue"
+  }
 }

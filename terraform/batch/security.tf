@@ -136,6 +136,11 @@ resource "aws_iam_instance_profile" "ComputeInstanceProfile" {
   role = aws_iam_role.ComputeInstanceRole.name
 }
 
+resource "aws_iam_instance_profile" "Multiprofile" {
+  name = "Multiprofile"
+  role = aws_iam_role.Multiaccess.name
+}
+
 resource "aws_iam_policy_attachment" "AWSBatchServiceRole-policy-attachment" {
 
 	name       = "AWSBatchServiceRole-policy-attachment"
