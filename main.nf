@@ -124,8 +124,6 @@ process check_input {
 	"""
 }
 
-//A0_check_input.pl -e ${evodisfile} -g \"GTF/*${gtfs_suffix}\" -f \"FASTAS/*${fastas_suffix}\" -c ${clusterfile} >> run_info.log
-//A0_check_input.pl -e ${evodisfile} -g GTF -gs ${gtfs_suffix} -f FASTAS -fs ${fastas_suffix} -c ${clusterfile} >> run_info.log
 
 /*
  * Create channels for sequences data
@@ -197,7 +195,7 @@ if (params.extraexons) {
 /*
  * split cluster file
  */
-//Copy the gene cluster file to output to use for the exint plotter
+//Copy the gene cluster file to output to use for the exint_plotter and compare_exon_sets modules
 process split_clusters_by_species_pairs {
     tag { clusterfile }
     publishDir "${params.output}/", mode: 'copy', pattern: "gene_cluster_file.gz" 
@@ -229,7 +227,7 @@ idfolders
   .toList().map{ [it, it] .combinations().findAll{ a, b -> a[0] < b[0]} }
   .flatMap()
   .map { ["${it[0][0]}-${it[1][0]}".toString(), it[0][1], it[1][1]] }
-  .into{cluster_2_split; anno_2_score_ex_int; species_to_recluster_genes; pairs_4_evodists}
+  .into{cluster_2_split; anno_2_score_ex_int; species_to_recluster_genes; pairs_4_evodists; pairs_4_EXs_to_realign}
 
 
 
@@ -253,8 +251,6 @@ process split_clusters_in_chunks {
 	"""
 }
 
-
-//cls_files_2_align.transpose().set{cls_files_2_align_t}
 cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}.set{cls_files_2_align_t}
 
 //Create a channel for the evo distances
@@ -287,11 +283,11 @@ process parse_IPA_prot_aln {
 
     input:
     file(blosumfile)
-    //set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from cls_files_2_align_t.join(dist_ranges_ch1)
     set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from alignment_input 
 
     output:
-	set val("${sp1}-${sp2}"), file(sp1), file(sp2), file("${sp1}-${sp2}_*"), file("${sp1}-${sp2}_*/EXs_to_split_part_*.txt") into aligned_subclusters_4_splitting
+	set val("${sp1}-${sp2}"), path("${sp1}-${sp2}-*") into aligned_subclusters_4_splitting //05/03/21
+	file("${sp1}-${sp2}_EXs_to_split_part_*.txt") into EXs_to_split //05/03/21
 
 	script:
     def prev_alignments = ""
@@ -310,65 +306,60 @@ process parse_IPA_prot_aln {
 ${sp1}/${sp1}_annot_exons_prot_ids.txt ${sp2}/${sp2}_annot_exons_prot_ids.txt \
 ${sp1}/${sp1}_protein_ids_exons_pos.txt ${sp2}/${sp2}_protein_ids_exons_pos.txt \
 ${sp1}/${sp1}_protein_ids_intron_pos_CDS.txt ${sp2}/${sp2}_protein_ids_intron_pos_CDS.txt \
-${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${sp2}_${cls_parts[1]} ${dist_range_par[3]} ${task.cpus} ${prev_alignments}
+${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${sp2}-${cls_parts[1]} ${dist_range_par[3]} ${task.cpus} ${prev_alignments}
 	"""
 }
+
+//Collapse EXs_to_split in batches of 500 files
+EXs_to_split.buffer(size : 500, remainder: true).set{EXs_to_split_batches}
 
 /*
  * Split exons pairs to realign
  */
 
 process split_EX_pairs_to_realign {
-    tag { "${folders}" }
 
     input:
-    set comp_id, file(sp1), file(sp2), path(folders), file(ex_to_split) from aligned_subclusters_4_splitting
-    //val(ex_aln_per_part)
+    file("*") from EXs_to_split_batches
+    
     output:
-    set comp_id, file(sp1), file(sp2), path(folders), file("${folders}/EXs_to_realign_part_*.txt") into aligned_subclusters_4_realign
+    file("*EXs_to_realign_part_*") into EXs_to_realign_batches
+    
     script:
     """
-	B2_split_EX_pairs_to_realign.py -o ${folders} -i ${folders}/${ex_to_split} -n ${params.alignmentnum}
+	for file in \$(ls *); do B2_split_EX_pairs_to_realign.py -i \${file} -n ${params.alignmentnum}; done
     """
 }
 
-
-
+//Flatten the results from the previous batch run and combine with sp1 and sp2 information, using sp1-sp2 as key.
+EXs_to_realign_batches.flatten().map{[it.getName().toString().split("_")[0],it]}.groupTuple()
+.join(pairs_4_EXs_to_realign).transpose().set{EXs_to_realign}
 
 /*
  * Realign exons pairs (with multiple hits)
  */
 
 process realign_EX_pairs {
-    tag { "${aligned_folder}/${exons_to_realign.simpleName}" }
     label 'incr_time_cpus'
 
     input:
     file(blosumfile)
-    set val(comp_id), file(sp1), file(sp2), path(aligned_folder), val(exons_to_realign) from aligned_subclusters_4_realign.transpose()
+    set val(comp_id), file(EXs_to_realign), file(sp1), file(sp2) from EXs_to_realign //05/03/21
 
     output:
-    set val(comp_id), path(aligned_folder), file("${aligned_folder}/realigned_*") into realigned_exons_4_merge
+    set val(comp_id), file("realigned_*") into realigned_exons_4_merge //05/03/21
 
-	script:
-    def cls_parts = "${aligned_folder.simpleName}".split("_")
-    def infile = exons_to_realign.getFileName()
-    def realigned_file = "realigned_" + exons_to_realign.getBaseName() + "_${cls_parts[1]}.txt"
-	"""
-		B3_realign_EX_pairs.pl ${sp1} ${sp2} ${aligned_folder}/${infile} \
-		${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${aligned_folder}/${realigned_file} \
-		${sp1}_${sp2} ${blosumfile} ${task.cpus}
-	"""
+    script:
+    """
+	B3_realign_EX_pairs.pl ${sp1} ${sp2} ${EXs_to_realign} \
+	${sp1}/${sp1}.exint ${sp2}/${sp2}.exint 1 realigned_${EXs_to_realign} \
+	${sp1}_${sp2} ${blosumfile} ${task.cpus}
+    """
 }
 
-realigned_exons_4_merge.map{
-	[it[1].getFileName(), it[1]]
-}.groupTuple().map{
-    def pieces = "${it[0]}".split("_")
-	[pieces[0], it[1].first()]
-}.groupTuple().set{
-	data_4_merge
-}
+//Combine all the aln_info with the realigned_exon_info for each species pair
+aligned_subclusters_4_splitting.groupTuple().join(realigned_exons_4_merge.groupTuple()).set{data_4_merge}
+
 
 /*
  * Merge alignments information
@@ -382,7 +373,7 @@ process merge_PROT_EX_INT_aln_info {
     publishDir "${params.output}", mode: "copy", pattern: "${comp_id}/EXINT_aln.gz"
 
     input:
-    set comp_id, file("FOLDERS_*") from data_4_merge
+    set comp_id, file("FOLDERS_*"), file("*") from data_4_merge //05/03/21
 
     output:
     set val(comp_id), file("${comp_id}/") into folder_jscores
@@ -391,11 +382,10 @@ process merge_PROT_EX_INT_aln_info {
 	script:
 	"""
 	    mkdir ${comp_id}
-	    rm FOLDERS_*/EXs_to_realign*
-	    mv FOLDERS_*/* ${comp_id}
+	    mv FOLDERS_*/* ${comp_id}/
+	    mv realigned_* ${comp_id}/
 
     	B4_merge_PROT_EX_INT_aln_info.pl ${comp_id}
-	#get_best_score_ex_pair.pl ${comp_id}/all_EX_aln_features.txt ${comp_id}/Best_scores_pair_exons.txt
 	"""
 }
 
@@ -433,7 +423,6 @@ process score_EX_matches {
     """
 }
 
-//${comp_id}/all_PROT_aln_features.txt ${comp_id}/Best_scores_pair_exons.txt ${comp_id}/all_INT_aln_features.txt \
 
 /*
  * Filter the best matches above score cutoffs by target gene.
@@ -474,7 +463,6 @@ process join_filtered_EX_matches {
 
     output:
     file("filtered_best_scored_EX_matches_by_targetgene.tab") into filtered_all_scores
-    //file("Best_score_exon_hits_filtered_${params.maxsize}-${params.intcons}-${params.exsim}.tab") into filtered_all_scores
 
 	script:
 	"""
@@ -515,12 +503,10 @@ clusterfile = file(params.cluster)
 process format_EX_clusters_input {
     input:
     file(score_exon_hits_pairs)
-    //file(cls_tab_file_4_clustering)
     file(clusterfile)
 
     output:
     file("PART_*-cluster_input.tab") into cluster_parts
-    //file("PART_*/*.tab") into cluster_parts
 
 	script:
 	"""
