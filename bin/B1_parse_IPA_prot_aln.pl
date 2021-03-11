@@ -458,7 +458,7 @@ if ($prev_folder){ # option is provided
 	close PRE_ALN;
     }
     else {
-	die "*** Some of the precomputed files for $s1-$s2 are missing in $prev_folder\n";
+	print "*** WARNING: Precomputed files missing for $s1-$s2 in $prev_folder\n";
     }
 }
 
@@ -514,7 +514,7 @@ foreach $el (@keys){
 		
 		unless ($seqs_already_compared{$temp_prot_seq1}{$temp_prot_seq2}){
 		    $seqs_already_compared{$temp_prot_seq1}{$temp_prot_seq2}=1;
-
+		    
 		    ## 0) ADDS HEADING TO MERGE FILE
 		    print MERGE_ALN ">>> $s1 $s2 $t1[$zj] $t2[$zi]\n\n";
 		    ## 1) MAKING TEMPORAL EXINT FILE
