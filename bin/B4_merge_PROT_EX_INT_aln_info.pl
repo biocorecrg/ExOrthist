@@ -17,7 +17,7 @@ system("cat $o1 $tmp > $s1"); ##getting file of aligned proteins
 
 print "2. Exon scores\n";
 my $i2=$folder."/EX_aln_features_";
-my $i3=$folder."/realigned_EXs_";
+my $i3=$folder."/realigned_";
 my $o2=$folder."/h2.txt";
 my $tex=$folder."/tex.txt";
 my $s2=$folder."/all_EX_aln_features.txt";

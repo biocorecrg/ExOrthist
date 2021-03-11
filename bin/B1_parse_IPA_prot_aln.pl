@@ -40,7 +40,8 @@ system "mkdir $outf" unless (-e $outf);
 my $exsc=$outf."/EX_aln_features_".$s1."_".$s2."_part_".$part.".txt";##outputfile for exon scores
 my $insc=$outf."/INT_aln_features_".$s1."_".$s2."_part_".$part.".txt";
 my $prsc=$outf."/PROT_aln_features_".$s1."_".$s2."_part_".$part.".txt";##outputfile for scores of whole protein alignment
-my $msf=$outf."/EXs_to_split_part_".$part.".txt"; ##generating a file for those exons that need to be realigned
+my $msf="./".$s1."-".$s2."_EXs_to_split_part_".$part.".txt"; ##generating a file for those exons that need to be realigned; modified 05/03/21
+
 open (EXSC, ">$exsc") || die "It cannot open output file $exsc\n";
 open (INSC, ">$insc") || die "It cannot open output file $insc\n";
 open (PRSC, ">$prsc") || die "It cannot open output file $prsc\n";
