@@ -78,8 +78,8 @@ while (<CLUSTERS>){
 close CLUSTERS;
 
 # Checks species
-die "It did not identify any gene ortolog for $sp1 (correct file names? $annot_sp1)\n" if (!defined $sp_check{$sp1});
-die "It did not identify any gene ortolog for $sp2 (correct file names? $annot_sp1)\n" if (!defined $sp_check{$sp2});
+die "It did not identify any gene ortholog for $sp1 (correct file names? $annot_sp1)\n" if (!defined $sp_check{$sp1});
+die "It did not identify any gene ortholog for $sp2 (correct file names? $annot_sp1)\n" if (!defined $sp_check{$sp2});
 
 # Extracts exons from Sp1
 print "Extracting exons from $annot_sp1\n";
