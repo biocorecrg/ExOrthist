@@ -46,12 +46,12 @@ COMPULSORY
      -G                Path to gDNA (it should be named Sp1_gDNA.fasta)
      -sp Sp1           Species ID.
 
-OPTIONAL
-     -add_exons        File with additional exons to get their orthology
-                          Format (tsv): ExonID GeneID Coord_A Coord_C1 Coord_C2
-     -EX_DB            Path to where the folder with the species annotation files is created (def = ./).
-     -verbose T/F      Verbose (default TRUE) 
-     -h/--help         This help message.
+#OPTIONAL
+#     -add_exons        File with additional exons to get their orthology
+#                          Format (tsv): ExonID GeneID Coord_A Coord_C1 Coord_C2
+#     -EX_DB            Path to where the folder with the species annotation files is created (def = ./).
+#     -verbose T/F      Verbose (default TRUE) 
+#     -h/--help         This help message.
 
 
 ";    
@@ -260,10 +260,13 @@ if ($do_all_steps){
 	my ($g, $ev,$i,$f,$coA,$coB);
 	my (%Ev_Gene,%C1_ref,%A_ref,%C2_ref,%coA_ev,%co_ev,%coB_ev);
         my %expl_solution;
-        $expl_solution{1}="Match C1+C2 exons";
-        $expl_solution{2}="Match C1 exon";
-        $expl_solution{3}="Match C1 donor";
-        $expl_solution{4}="Match C2 exon";
+        $expl_solution{1}="Match C1+C2 exons (CDS)";
+        $expl_solution{2}="Match C1 exon (CDS)";
+        $expl_solution{3}="Match C1 donor (CDS)";
+        $expl_solution{4}="Match C1+C2 exons";
+        $expl_solution{5}="Match C1 exon";
+        $expl_solution{6}="Match C1 donor";
+        $expl_solution{7}="Match C2 exon";
 	
         if ($add_exons=~/\.gz$/){
              open (EXONS, "gunzip -c $add_exons |") || die "*** DIE: Cannot open $add_exons\n";
@@ -290,8 +293,8 @@ if ($do_all_steps){
 	close EXONS;
 	
 	my ($tr, $co,$exon_number,$g_2,$tr_2,);
-	my (%gene_name,%annotated,%partial,%array_tr_co,%array_tr_coA,%array_tr_coB,%index_coA,%index_coB,%TR,%index_co,%tr_co,%tr_coA,%tr_coB,%str,%done);
-	my (%cds_lines,%cds_ini,%cds_end,%offset,%start_lines,%stop_lines,%tr_lines);
+	my (%gene_name,%annotated,%partial,%array_tr_co,%array_tr_coA,%array_tr_coB,%index_coA,%index_coB,%TR,%index_co,%tr_co,%tr_coA,%tr_coB,%str,%done,%annotated_CDS);
+	my (%cds_lines,%cds_ini,%cds_end,%offset,%start_lines,%stop_lines,%tr_lines,%is_CDS);
 	
 #### Starts checking for annotation
 	if ($gtf_file =~ /.gz$/) {
@@ -306,6 +309,7 @@ if ($do_all_steps){
 		($g)=$t[8]=~/gene_id \"(.+?)\"/;
 		($tr)=$t[8]=~/transcript_id \"(.+?)\"/;
 		($name)=$t[8]=~/gene_name \"(.+?)\"/;
+                my ($temp_number)=$t[8]=~/exon_number \"(.+?)\"/;
 		$gene_name{$g}=$name;
 		$co="$t[0]:$t[3]-$t[4]";
 		$coA="$t[0]:$t[3]";
@@ -330,6 +334,10 @@ if ($do_all_steps){
 		
 		push(@{$tr_lines{$tr}},$_); # all lines of a transcript. Index 0 should be exon 1
 		$exon_number=$#{$tr_lines{$tr}};
+                ### check in case there is exon_number entry
+                if (defined $temp_number){
+                    print "*** WARNING: Exon numbers don't match ($temp_number vs $exon_number) for $tr\n" if $temp_number ne $exon_number+1;
+                }
 		
 		$str{$g}=$t[6];
 		$done{$tr}=1;
@@ -337,6 +345,20 @@ if ($do_all_steps){
 	    elsif ($t[2] eq "CDS"){ # In principle, CDS comes always after exon, and then start or stop
 		($g_2)=$t[8]=~/gene_id \"(.+?)\"/;
 		($tr_2)=$t[8]=~/transcript_id \"(.+?)\"/;
+                my ($temp_number2)=$t[8]=~/exon_number \"(.+?)\"/;
+                ### check in case there is exon_number entry
+                if (defined $temp_number2){
+                    print "*** WARNING: Exon numbers don't match ($temp_number2 vs $exon_number) for $tr\n" if $temp_number2 ne $exon_number+1;
+                }
+
+		my $coA_CDS="$t[0]:$t[3]";
+		my $coB_CDS="$t[0]:$t[4]";
+		my $co_CDS="$t[0]:$t[3]-$t[4]";
+		$is_CDS{$tr_2}{$co_CDS}=1; # co exists as CDS in that tr
+		$is_CDS{$tr_2}{$coA_CDS}=1; # co exists as CDS in that tr
+		$is_CDS{$tr_2}{$coB_CDS}=1; # co exists as CDS in that tr
+		$annotated_CDS{$co_ev{$co_CDS}}=1 if $co_ev{$co_CDS} && $Ev_Gene{$co_ev{$co_CDS}} eq $g; # keeps track of annotated events
+
 		$cds_lines{$tr_2}[$exon_number]=$_;
 		$cds_ini{$tr_2}[$exon_number]=$t[3];
 		$cds_end{$tr_2}[$exon_number]=$t[4];
@@ -377,7 +399,8 @@ if ($do_all_steps){
 	    $g=$Ev_Gene{$ev};
             $g_not_in_GTF++ if !defined $str{$g};
             next if !defined $str{$g};
-	    if ($annotated{$ev}){
+
+	    if ($annotated_CDS{$ev}){ # a check can be added to make sure it is a CDS
 		$tally_annotated++;
 	    }
 	    else {
@@ -386,22 +409,22 @@ if ($do_all_steps){
 		$C1_inc=$C1_ref{$ev};
 		$C2_inc=$C2_ref{$ev};
 		### only the C1do and C2ac
-		($chr,$C1i,$C1f)=$C1_inc=~/(.+?)\:(.+?)\-(.+)/;
+		($chr,$C1i,$C1f)=$C1_inc=~/(.+?)\:(.+?)\-(.+)/; #stores the true donor as A
 		$C1_incA="$chr:$C1f" if $str{$g} eq "+";
 		$C1_incA="$chr:$C1i" if $str{$g} eq "-";
-		($chr,$C2i,$C2f)=$C2_inc=~/(.+?)\:(.+?)\-(.+)/;
+		($chr,$C2i,$C2f)=$C2_inc=~/(.+?)\:(.+?)\-(.+)/; #stores the true acceptor as A
 		$C2_incA="$chr:$C2i" if $str{$g} eq "+";
 		$C2_incA="$chr:$C2f" if $str{$g} eq "-";
-		
+
 		### exon coordinates
 		($Ai,$Af)=$A_ref{$ev}=~/\:(.+?)\-(.+)/;
 		$coA_A="$chr:$Ai";
-		$coB_A="$chr:$Af";
+		$coB_A="$chr:$Af";		
 		
 		foreach $tr (sort keys %{$TR{$g}}){
 		    next if $tr_coA{$tr}{$coA_A} || $tr_coB{$tr}{$coB_A}; # if the transcript contains any junction of the A exon
 		    
-		    if ($tr_co{$tr}{$C1_inc} && $tr_co{$tr}{$C2_inc} && $index_co{$tr}{$C1_inc}==$index_co{$tr}{$C2_inc}-1){
+		    if ($tr_co{$tr}{$C1_inc} && $tr_co{$tr}{$C2_inc} && $index_co{$tr}{$C1_inc}==$index_co{$tr}{$C2_inc}-1 && $is_CDS{$tr}{$C1_incA}){ # extra layer: C1donor is CDS (i.e. so it generates protein)
 			($temp_tr)=$selected_tr=~/1\=(.+)/; # it may be empty
 			if (defined $temp_tr){ 
 			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
@@ -412,7 +435,7 @@ if ($do_all_steps){
 			} else {$selected_tr="1=$tr" unless ($exons_sel>=$exons_tr);}
 			$C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_inc};
 		    }
-		    elsif ($tr_co{$tr}{$C1_inc}){
+		    elsif ($tr_co{$tr}{$C1_inc} && $is_CDS{$tr}{$C1_incA}){
 			($temp_tr)=$selected_tr=~/[12]\=(.+)/; # it may be empty
 			if (defined $temp_tr){
 			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
@@ -432,13 +455,13 @@ if ($do_all_steps){
                             }
 			}
 		    }
-		    elsif (($tr_coA{$tr}{$C1_incA} && $str{$g} eq "-") || ($tr_coB{$tr}{$C1_incA} && $str{$g} eq "+") ){ # C1do exists in transcript
+		    elsif ((($tr_coA{$tr}{$C1_incA} && $str{$g} eq "-") || ($tr_coB{$tr}{$C1_incA} && $str{$g} eq "+")) && $is_CDS{$tr}{$C1_incA}){ # C1do exists in transcript and is CDS
 			($temp_tr)=$selected_tr=~/[123]\=(.+)/; # it may be empty
 			if (defined $temp_tr){
 			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
 			}else {$exons_sel=1;}
 			$exons_tr=$#{$cds_lines{$tr}}+1;
-			if (defined $index_coA{$tr}{$C1_incA}){
+			if (defined $index_coA{$tr}{$C1_incA}){ # negative strand
                             if (defined $array_tr_co{$tr}[$index_coA{$tr}{$C1_incA}+1]){
     			         $t_C2=$array_tr_co{$tr}[$index_coA{$tr}{$C1_incA}+1]; # gets a proper C2, not an acceptor
 			         ($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
@@ -451,9 +474,86 @@ if ($do_all_steps){
 			         $C1_accepted_index{$ev}{$tr}=$index_coA{$tr}{$C1_incA};
                             }
 			}
+			elsif (defined $index_coB{$tr}{$C1_incA}){ # positive strand
+                            if (defined $array_tr_co{$tr}[$index_coB{$tr}{$C1_incA}+1]){
+    			         $t_C2=$array_tr_co{$tr}[$index_coB{$tr}{$C1_incA}+1]; # gets a proper C2, not an acceptor
+			         ($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
+			         $OK="";
+			         $OK=1 if $i>$Af && $str{$g} eq "+";
+			         $OK=1 if $f<$Ai && $str{$g} eq "-";
+			         if (defined $ref_tr){
+				     $selected_tr="3=$tr" unless ($selected_tr eq "3=$ref_tr" || $selected_tr=~/[12]\=/ || !$OK || $exons_sel>=$exons_tr);
+			         } else {$selected_tr="3=$tr" unless ($selected_tr=~/[12]\=/ || !$OK || $exons_sel>=$exons_tr);}
+			         $C1_accepted_index{$ev}{$tr}=$index_coB{$tr}{$C1_incA};
+                            }
+			}
 		    }
-		    elsif ($tr_co{$tr}{$C2_inc}){
+		    elsif ($tr_co{$tr}{$C1_inc} && $tr_co{$tr}{$C2_inc} && $index_co{$tr}{$C1_inc}==$index_co{$tr}{$C2_inc}-1 && !$annotated{$ev}){
 			($temp_tr)=$selected_tr=~/[1234]\=(.+)/; # it may be empty
+			if (defined $temp_tr){ 
+			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+			}else {$exons_sel=1;}
+			$exons_tr=$#{$cds_lines{$tr}}+1;
+			if (defined $ref_tr){
+			    $selected_tr="4=$tr" unless ($selected_tr eq "4=$ref_tr" || $selected_tr=~/[123]\=/ || $exons_sel>=$exons_tr);
+			} else {$selected_tr="4=$tr" unless ($selected_tr=~/[123]\=/ || $exons_sel>=$exons_tr);}
+			$C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_inc};
+		    }
+		    elsif ($tr_co{$tr}{$C1_inc} && !$annotated{$ev}){
+			($temp_tr)=$selected_tr=~/[12345]\=(.+)/; # it may be empty
+			if (defined $temp_tr){
+			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+			}else {$exons_sel=1;}
+			$exons_tr=$#{$cds_lines{$tr}}+1;
+ 			if (defined $index_co{$tr}{$C1_inc}){
+                            if (defined $array_tr_co{$tr}[$index_co{$tr}{$C1_inc}+1]){
+			         $t_C2=$array_tr_co{$tr}[$index_co{$tr}{$C1_inc}+1];                           
+			         ($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
+			         $OK="";
+			         $OK=1 if $i>$Af && $str{$g} eq "+";
+			         $OK=1 if $f<$Ai && $str{$g} eq "-";
+			         if (defined $ref_tr){
+				     $selected_tr="5=$tr" unless ($selected_tr eq "5=$ref_tr" || $selected_tr=~/[1234]\=/ || $exons_sel>=$exons_tr || !$OK);
+			         } else {$selected_tr="5=$tr" unless ($selected_tr=~/[1234]\=/ || $exons_sel>=$exons_tr || !$OK);}
+			         $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C1_inc};
+                            }
+			}
+		    }
+		    elsif ((($tr_coA{$tr}{$C1_incA} && $str{$g} eq "-") || ($tr_coB{$tr}{$C1_incA} && $str{$g} eq "+")) && !$annotated{$ev}){ # C1do exists in transcript
+			($temp_tr)=$selected_tr=~/[123456]\=(.+)/; # it may be empty
+			if (defined $temp_tr){
+			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
+			}else {$exons_sel=1;}
+			$exons_tr=$#{$cds_lines{$tr}}+1;
+			if (defined $index_coA{$tr}{$C1_incA}){ # negative strand
+                            if (defined $array_tr_co{$tr}[$index_coA{$tr}{$C1_incA}+1]){
+    			         $t_C2=$array_tr_co{$tr}[$index_coA{$tr}{$C1_incA}+1]; # gets a proper C2, not an acceptor
+			         ($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
+			         $OK="";
+			         $OK=1 if $i>$Af && $str{$g} eq "+";
+			         $OK=1 if $f<$Ai && $str{$g} eq "-";
+			         if (defined $ref_tr){
+				     $selected_tr="6=$tr" unless ($selected_tr eq "6=$ref_tr" || $selected_tr=~/[12345]\=/ || !$OK || $exons_sel>=$exons_tr);
+			         } else {$selected_tr="6=$tr" unless ($selected_tr=~/[12345]\=/ || !$OK || $exons_sel>=$exons_tr);}
+			         $C1_accepted_index{$ev}{$tr}=$index_coA{$tr}{$C1_incA};
+                            }
+			}
+			elsif (defined $index_coB{$tr}{$C1_incA}){ # positive strand
+                            if (defined $array_tr_co{$tr}[$index_coB{$tr}{$C1_incA}+1]){
+    			         $t_C2=$array_tr_co{$tr}[$index_coB{$tr}{$C1_incA}+1]; # gets a proper C2, not an acceptor
+			         ($i,$f)=$t_C2=~/\:(.+?)\-(.+)/;
+			         $OK="";
+			         $OK=1 if $i>$Af && $str{$g} eq "+";
+			         $OK=1 if $f<$Ai && $str{$g} eq "-";
+			         if (defined $ref_tr){
+				     $selected_tr="6=$tr" unless ($selected_tr eq "6=$ref_tr" || $selected_tr=~/[12345]\=/ || !$OK || $exons_sel>=$exons_tr);
+			         } else {$selected_tr="6=$tr" unless ($selected_tr=~/[12345]\=/ || !$OK || $exons_sel>=$exons_tr);}
+			         $C1_accepted_index{$ev}{$tr}=$index_coB{$tr}{$C1_incA};
+                            }
+			}
+		    }
+		    elsif ($tr_co{$tr}{$C2_inc} && !$annotated{$ev}){
+			($temp_tr)=$selected_tr=~/[1234567]\=(.+)/; # it may be empty
 			if (defined $temp_tr){
 			    $exons_sel=$#{$cds_lines{$temp_tr}}+1; # it may be empty
 			}else {$exons_sel=1;}
@@ -466,8 +566,8 @@ if ($do_all_steps){
 			        $OK=1 if $f<$Ai && $str{$g} eq "+";
 			        $OK=1 if $i>$Af && $str{$g} eq "-";
 			        if (defined $ref_tr){
-				    $selected_tr="4=$tr" unless ($selected_tr eq "4=$ref_tr" || $selected_tr=~/[123]\=/ || !$OK || $exons_sel>=$exons_tr);
-			        } else {$selected_tr="4=$tr" unless ($selected_tr=~/[123]\=/ || !$OK || $exons_sel>=$exons_tr);}
+				    $selected_tr="7=$tr" unless ($selected_tr eq "7=$ref_tr" || $selected_tr=~/[123456]\=/ || !$OK || $exons_sel>=$exons_tr);
+			        } else {$selected_tr="7=$tr" unless ($selected_tr=~/[123456]\=/ || !$OK || $exons_sel>=$exons_tr);}
 			        $C1_accepted_index{$ev}{$tr}=$index_co{$tr}{$C2_inc}-1;
                             }
 			}
@@ -810,7 +910,7 @@ if ($do_all_steps){
 		}
 	    }
 	}
-	verbPrint("   Fully Annotated\t$tally_annotated\n");
+	verbPrint("   Fully Annotated (CDS)\t$tally_annotated\n");
 	verbPrint("   Rescued skipping\t$tally_non_annot_hit\n");
 	verbPrint("   Partially Annotated\t$tally_partial\n");
 	verbPrint("   Not rescued\t$tally_non_annot_no_hit\n");
