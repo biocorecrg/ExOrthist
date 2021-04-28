@@ -131,21 +131,21 @@ ExOrthist will save all outputs in the **output_test** directory. All inputs and
 For the pipeline to run, a `params.config` file with the following format has to be present in the working directory. A template of the `params.config` file is provided together with the pipeline.
 ```
 params {
-    cluster      = "$baseDir/test/hg38_mm10_bosTau9.tab"
-    genomes      = "$baseDir/test/GENOMES/*_gDNA.fasta.gz"
-    annotations  = "$baseDir/test/GTF/*_annot.gtf.gz"
-    alignmentnum = 1000
-    orthogroupnum = 500
-    extraexons   = ""
-    liftover     = ""
-    orthopairs   = ""
-    evodists     = "$baseDir/test/evodists.txt" 
-    long_dist    = "2,0.10,0.40,0.15"
-    medium_dist  = "2,0.30,0.60,0.20"
-    short_dist   = "2,0.50,0.60,0.25"
-    prevaln      = ""
-    output       = "$baseDir/output_test"
-    email        = "yourmail@yourdomain"
+    cluster        = "$baseDir/test/hg38_mm10_bosTau9.tab"
+    genomes        = "$baseDir/test/GENOMES/*_gDNA.fasta.gz"
+    annotations    = "$baseDir/test/GTF/*_annot.gtf.gz"
+    alignmentnum   = 1000
+    orthogroupnum  = 500
+    extraexons     = ""
+    bonafide_pairs = ""
+    orthopairs     = ""
+    evodists       = "$baseDir/test/evodists.txt" 
+    long_dist      = "2,0.10,0.40,0.15"
+    medium_dist    = "2,0.30,0.60,0.20"
+    short_dist     = "2,0.50,0.60,0.25"
+    prevaln        = ""
+    output         = "$baseDir/output_test"
+    email          = "yourmail@yourdomain"
 }
 ```
 Alternatively, the arguments in the `params.config` can be specified as independent command line flags. The command line-provided values overwrite the ones defined in the `params.config` file.  
