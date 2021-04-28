@@ -11,6 +11,7 @@ my $annot_sp2; # GTF named Sp2.gtf
 my $canonical_ss; # requires at last 1 canonical splice site
 my $line_to_parse="CDS"; # or exon
 my $help;
+my $max_size_dif=2; # maximum size difference in the lifted exon
 
 Getopt::Long::Configure("no_auto_abbrev");
 GetOptions(  "annot_sp1=s" => \$annot_sp1,
@@ -19,6 +20,7 @@ GetOptions(  "annot_sp1=s" => \$annot_sp1,
 	     "chain_file=s" => \$chain_file,
 	     "type=s" => \$line_to_parse,
 	     "canonical_ss" => \$canonical_ss,
+	     "max_size_dif=f" => \$max_size_dif,
 	     "help" => \$help
     );
 
@@ -34,6 +36,7 @@ Options:
    -gene_clusters FILE     Gene orthology clusters including Sp1 and Sp2. 
                               Format (tsv): ClusterID   Species    GeneID
    -type CDS/exon          If a GTF is provided for annot_sp1, parses either CDS or exon lines (def = CDS).
+   -max_size_dif N         Maximum size difference (in fold change) between the original and lifted exons (def = 2).
    -canonical_ss           If flag is active, it will require at last one cannonical splice site (def = off).
                               If active, it will need the filter Sp2.fasta in the same directory.
 
@@ -226,12 +229,24 @@ while (<INTERSECTS>){
     #checks both gene IDs for same cluster
     if ($t[7] ne "-1"){
 	my ($gene1,$exon1) = $t[3] =~ /(.+?)\=(.+)/;
-	my $gene2 = $t[9];
-        if (defined ($gene_to_cluster{$gene1}) && defined ($gene_to_cluster{$gene2})){
-     	    if ($gene_to_cluster{$gene1} eq $gene_to_cluster{$gene2}){
-	        $t[1]++;
-	        my $exon2 = "$t[0]:$t[1]-$t[2]:$t[5]";
- 	        print O "$gene1\t$exon1\t$gene2\t$exon2\t$sp1\t$sp2\n";
+
+        # additionally, it checks the length difference
+        my $length2 = $t[2]-$t[1];
+        my ($temp_start1, $temp_stop1) = $exon1 =~ /\:(\d+)\-(\d+)/;
+        my $length1 = ($temp_stop1-$temp_start1)+1;
+        my ($ratio1,$ratio2);
+        if ($length1 > 0 && $length2 > 0){
+            $ratio1 = $length1/$length2;
+            $ratio2 = $length2/$length1;
+        }
+        if ($ratio1 <= $max_size_dif && $ratio2 <= $max_size_dif){
+    	    my $gene2 = $t[9];
+            if (defined ($gene_to_cluster{$gene1}) && defined ($gene_to_cluster{$gene2})){
+     	        if ($gene_to_cluster{$gene1} eq $gene_to_cluster{$gene2}){
+	           $t[1]++;
+	           my $exon2 = "$t[0]:$t[1]-$t[2]:$t[5]";
+ 	           print O "$gene1\t$exon1\t$gene2\t$exon2\t$sp1\t$sp2\n";
+                }
             }
 	}
     }
