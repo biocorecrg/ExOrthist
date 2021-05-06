@@ -480,7 +480,7 @@ process collapse_overlapping_matches {
     file(scores) from filtered_all_scores
 
     output:
-    file("filtered_best_scored_exon_matches_by_gene-NoOverlap.txt") into (score_exon_hits_pairs, exon_pairs_for_reclustering)
+    file("filtered_best_scored_EX_matches_by_targetgene-NoOverlap.tab") into (score_exon_hits_pairs, exon_pairs_for_reclustering)
 
 	script:
 	bonafide = ""
@@ -492,7 +492,7 @@ process collapse_overlapping_matches {
 	"""
     C3_count_matches_by_EX.pl ${scores} EX_matches_count_by_species.tab ${bonafide}
     C4_get_overlapping_EXs.pl -i EX_matches_count_by_species.tab -o overlapping_EXs_by_species.tab
-    C5_collapse_overlapping_matches.pl overlapping_EXs_by_species.tab ${scores} filtered_best_scored_exon_matches_by_gene-NoOverlap.txt ${bonafide}
+    C5_collapse_overlapping_matches.pl overlapping_EXs_by_species.tab ${scores} filtered_best_scored_EX_matches_by_targetgene-NoOverlap.tab ${bonafide}
     """
 }
 
