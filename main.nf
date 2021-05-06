@@ -475,7 +475,7 @@ process join_filtered_EX_matches {
  * Removing matches from overlapping exons
  */
 process collapse_overlapping_matches {
-
+    publishDir "${params.output}/", mode: "copy"
     input:
     file(scores) from filtered_all_scores
 
