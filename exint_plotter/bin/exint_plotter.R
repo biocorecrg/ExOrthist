@@ -255,8 +255,11 @@ if ("first;last" %in% unique(as.vector(plotting_table$ExPosition))) {
 
 #Only plot the exon length for the reference gene.
 plotting_table$ExonLength[plotting_table$GeneID != my_gene] = NA
-
-print(plotting_table)
+#Add and exon position code to get a legend with the different types of exons.
+plotting_table$ExPosition_code = rep("\u2588 Internal ex", nrow(plotting_table))
+plotting_table$ExPosition_code[plotting_table$ExPosition == "first"] = "\u25B6 First ex (at least 1 isoform)" #\u25BA
+plotting_table$ExPosition_code[plotting_table$ExPosition == "last"] = "\u25C0 Last ex (at least 1 isoform)" #\u25C0
+plotting_table$EmptyCol = as.numeric(rep(NA, nrow(plotting_table))) #This is to actually plot the exon position legend.
 
 ######### Get unique table for names
 unique_table_for_names = unique(plotting_table[c("Species", "ExonNumberPlot", "GeneID", "Order")])
@@ -277,6 +280,7 @@ if (ncol(species_orthologs_table) >=4 ) {
 ########### Make the plot ########################
 ##################################################
 
+
 my_plot = ggplot()  +
   geom_rect(data=internal_ex_df, aes(xmin=FakeStart, xmax=FakeStop, ymin=Order, ymax=Order+0.5, alpha=AnnotStatus, fill=Filling_status, linetype=State, size=IsoformExs), color=internal_ex_df$IsoformExs) + #internal exons.
   geom_polygon(data=first_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State, size=IsoformExs), color=first_ex_df$IsoformExs) + #first exons.
@@ -284,6 +288,9 @@ my_plot = ggplot()  +
   geom_polygon(data=first_last_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State, size=IsoformExs), color=first_last_ex_df$IsoformExs) + #exons which are both first and last.
   geom_point(data=plotting_table, aes(x=FakeStart-1.5, y=Order+0.25, color=FinalPhaseUp), shape=8) +
   geom_point(data=plotting_table, aes(x=FakeStop+1.5, y=Order+0.25, color=FinalPhaseDown), shape=8) +
+  geom_point(data=plotting_table, aes(x=EmptyCol, y=EmptyCol, shape=ExPosition_code, size=NA)) + #this is to print the shape legend
+  scale_shape_manual(values = c(1, 2, 3)) +
+  theme_bw() +
   geom_text(data=(unique_table_for_names), aes(x=-50, y=unique(unique_table_for_names$Order)+0.25, 
                                                label=paste0(unique_table_for_names$Species, " ",
                                                             unique_table_for_names$GeneName, ", ",
@@ -292,11 +299,12 @@ my_plot = ggplot()  +
   geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.25, label=plotting_table$Levels), size=7) + #plot number of matching exons
   geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.75, label=plotting_table$ExonLength+1), size=7) + #plot the exon length
   
-  scale_fill_manual(values=group_colors_vector, name = "Exs", labels=c("default", paste0(interesting_exons, " (", my_query_species,")"))) + #the order of the labels should be the same as in group_colors_vector.
+  scale_fill_manual(values=group_colors_vector, name = "Ex color:", labels=c("default", paste0(interesting_exons, " (", my_query_species,")"))) + #the order of the labels should be the same as in group_colors_vector.
   scale_alpha_manual(values=c("annotated"=1, "not_annotated"=0)) + #color depending on the annotation status.
   scale_linetype_manual(values=c("Exon"="solid", "Exon_added"="dashed")) +
   scale_size_manual(values=c("brown2"=2, "black"=0.5)) +
-  scale_color_manual(values=c("0"="coral3","1"="mediumblue","2"="forestgreen", "extra"="extra"), name = "Intron Phases",  labels=c("0", "1", "2"), breaks=c("0", "1", "2")) +
+  #Here I am inverting the label to plot the actual intron phases, not the GTF phases. 1=2 and 2=1
+  scale_color_manual(values=c("0"="coral3","2"="mediumblue","1"="forestgreen", "extra"="extra"), name = "Intron Phases:",  labels=c("0"="0", "1"="2", "2"="1"), breaks=c("0", "2", "1")) +
   
   theme(axis.title = element_blank(),
         axis.text = element_blank(),
@@ -307,20 +315,24 @@ my_plot = ggplot()  +
         axis.ticks=element_blank(),
         axis.line=element_blank() ,
         legend.position = "bottom",
-        legend.title = element_text(color="black", size=18),
+        legend.title = element_text(color="black", size=15, face="bold"),
         legend.text = element_text(color="black", size=15),
         plot.title = element_text(color="black", hjust=0, size=20, face="bold")
   )  +
   xlim(-60,max(plotting_table$FakeStop)+5) + #limit axis +
   ggtitle(paste0("Query gene: ", my_query_species, title_gene_name, ", ", title_geneID,  "\nHighlighted isoform: ", my_isorform_id)) +
-  guides(alpha=FALSE, size=FALSE, linetype=FALSE)
-   
+  guides(alpha=FALSE, size=FALSE, linetype=FALSE, 
+         shape=guide_legend(override.aes = list(shape = NA), title="Ex shape:",
+                            legend.key = element_blank(),
+                            legend.size = unit(0, 'mm'),
+                            legend.spacing.x = unit(2.0, 'mm')))
+  
 #Save pdf to output file
 #This is generate the right proportions in the plot.
 my_width = as.numeric(nrow(subset(plotting_table, GeneID==my_gene)))+10 #number of exons 
 my_height = length(unique(as.vector(plotting_table$GeneID))) #Number of orthologs
 if (length(unique(as.vector(plotting_table$GeneID))) < 5) {my_height = 5} #adjust cases with very few genes 
 if (my_isorform_id == "None") {output_file = paste0(my_gene, "_exint_plot.pdf")} else {output_file = paste0(my_gene, "-", my_isorform_id, "_exint_plot.pdf")}
-pdf(paste0(my_input_folder, output_file), width=my_width, height=my_height)
+cairo_pdf(paste0(my_input_folder, output_file), width=my_width, height=my_height)
 my_plot
 dev.off()
