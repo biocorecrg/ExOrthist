@@ -37,6 +37,8 @@ Options:
    -canonical_ss           If flag is active, it will require at last one cannonical splice site (def = off).
                               If active, it will need the filter Sp2.fasta in the same directory.
 
+Output:
+The output file will be saved in the current working directory as Liftover_exons-sp1-sp2.tab.
 
 *** Questions \& Bug Reports: Manuel Irimia (mirimia\@gmail.com)
 
