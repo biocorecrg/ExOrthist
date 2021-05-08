@@ -315,8 +315,10 @@ my_plot = ggplot()  +
         axis.ticks=element_blank(),
         axis.line=element_blank() ,
         legend.position = "bottom",
+        legend.box="vertical",
         legend.title = element_text(color="black", size=15, face="bold"),
         legend.text = element_text(color="black", size=15),
+        legend.spacing.y = unit(-0.5, "mm"),
         plot.title = element_text(color="black", hjust=0, size=20, face="bold")
   )  +
   xlim(-60,max(plotting_table$FakeStop)+5) + #limit axis +
@@ -325,13 +327,14 @@ my_plot = ggplot()  +
          shape=guide_legend(override.aes = list(shape = NA), title="Ex shape:",
                             legend.key = element_blank(),
                             legend.size = unit(0, 'mm'),
-                            legend.spacing.x = unit(2.0, 'mm')))
-  
+                            legend.spacing.x = unit(-0.5, 'mm')))
+
 #Save pdf to output file
 #This is generate the right proportions in the plot.
 my_width = as.numeric(nrow(subset(plotting_table, GeneID==my_gene)))+10 #number of exons 
 my_height = length(unique(as.vector(plotting_table$GeneID))) #Number of orthologs
-if (length(unique(as.vector(plotting_table$GeneID))) < 5) {my_height = 5} #adjust cases with very few genes 
+if (length(unique(as.vector(plotting_table$GeneID))) < 5) {my_height = 5} #adjust cases with very few genes
+#build final filename
 if (my_isorform_id == "None") {output_file = paste0(my_gene, "_exint_plot.pdf")} else {output_file = paste0(my_gene, "-", my_isorform_id, "_exint_plot.pdf")}
 cairo_pdf(paste0(my_input_folder, output_file), width=my_width, height=my_height)
 my_plot
