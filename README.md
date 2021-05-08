@@ -60,6 +60,7 @@ Table of contents
       * [Exon clusters statistics](#exon-clusters-statistics)
 * [ExOrthist exint_plotter module](#exorthist-exint_plotter-module)  
   + [Running ExOrthist exint_plotter.nf](#running-exorthist-exint_plotternf)  
+    - [Test run](#test-run-1)
   + [Inputs](#inputs-1)
   + [Output](#output)
 * [ExOrthist compare_exon_sets module](#exorthist-compare_exon_sets-module)  
@@ -404,6 +405,16 @@ Running ExOrthist exint_plotter.nf
 ```bash
 nextflow exint_plotter.nf [-with-docker | -with-singularity] -bg > exint_plotter_log.txt
 ```
+#### Test run  
+After running ExOrthist `main.nf` module on the test set provided in this github repository [see [above](#test-run), it will be possible to perform a test run of the `exint_plotter.nf` module.  
+The **exint_plotter** folder provided with this github repository contains a params.config file already configured for such run.
+The `exint_plotter.nf` will take one of the genes for which the `main.nf` test run inferred an exon orthgroup (specifically: ENSG00000159055), and plot its exon-intron structure together with that of all its homologs.    
+To get acquainted with the `exint_plotter.nf` output, simply move to the exint_plotter directory and run the following command:
+```bash
+nextflow run exint_plotter.nf [-with-docker | -with-singularity] > exint_test_log.txt  
+```
+ExOrthist will save a pdf file containing the exint plot in the **output_exint** directory (the expected output is shown in the [Plot structure](#output) section). All inputs and outputs are explained in details in the following sections.  
+NB: if the above command does not work, make sure that the output_main entry in the params.config file actually matches the output folder of your `main.nf` run [[see next section](#inputs-1)].
 
 Inputs: 
 ------------
@@ -412,12 +423,13 @@ For the pipeline to run, a params.config file with the following format has to b
 A template of the params.config file is provided together with the pipeline.
 ```
 params {
-    geneID          = "geneID"
-    output_main     = "/path/to/main_output"
+    geneID          = "ENSG00000159055"
+    output_main     = "$baseDir/../output_test"
     output          = "$baseDir/output_exint"
-    relevant_exs    = ""
+    relevant_exs    = "chr21:32274830-32274896"
+    ordered_species = "hg38,mm10,bosTau9"
+    isoformID       = "ENSP00000290130"
     sub_orthologs   = ""
-    isoformID       = ""
 }
 ```
 Alternatively, the arguments in the params.config can be specified as independent command line flags. The command line-provided values overwrite the ones defined in the params.config file.  
@@ -441,10 +453,11 @@ Alternatively, the arguments in the params.config can be specified as independen
 
 Output 
 ------------
-ExOrthist saves the exint plot in a pdf file containing the query geneID (e.g ENSMUSG00000000881_exint_plot.pdf) in the **--output** folder. If the **--isoformID** argument is provided, this is introduced in the file name (e.g. ENSMUSG00000000881-ENSMUSP00000000901_exint_plot.pdf).  
+ExOrthist saves the exint plot in a pdf file containing the query geneID (e.g ENSG00000159055_exint_plot.pdf) in the **--output** folder. If the **--isoformID** argument is provided, this is introduced in the file name (e.g. ENSG00000159055-ENSP00000290130_exint_plot.pdf).  
 
 ### Plot structure  
 Homologous genes are plotted on parallel horizontal axis. Exons are illustrated as gray rectangles. The query gene is plotted on top of the others, with all its exons represented with the sequential genomic order and relative exon length. Exons in the target genes are vertically aligned to their orthologous exon in the query species (thus, their order in the plot might not always reflect their genomic disposition).  
+The following plot is the one returned by the `exint_plotter.nf` test run:  
 
 <br />
 
