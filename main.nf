@@ -391,8 +391,9 @@ process merge_PROT_EX_INT_aln_info {
 
 folder_jscores.join(anno_2_score_ex_int).map{
    [it[0], it[1..-1] ]
-}.set{data_to_score}
+}.into{data_to_score; ciccio}
 
+ciccio.println()
 
 /*
  * Score EX matches from aln info
@@ -402,7 +403,7 @@ process score_EX_matches {
     tag { "${comp_id}" }
     label('big_mem')
     //I need to modify the name so that it has the species pair in the output.
-    publishDir "${params.output}", mode: "copy"
+    storeDir "${params.output}"
 
     input:
     set val(comp_id), file("*") from data_to_score
@@ -413,7 +414,7 @@ process score_EX_matches {
 
 	script:
     def species = comp_id.split("-")
-	"""
+	""" 
     B5_format_aln_info_by_best_isoform_match.pl ${species[0]} ${species[1]} \
     ${comp_id}/all_PROT_aln_features.txt ${comp_id}/all_EX_aln_features.txt ${comp_id}/all_INT_aln_features.txt \
     ${species[0]}/${species[0]}.exint ${species[1]}/${species[1]}.exint \
