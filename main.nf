@@ -145,10 +145,10 @@ Channel
 if (params.extraexons) {
 	Channel
    	 .fromFilePairs( params.extraexons, size: 1)
-   	 .ifEmpty { print "Not using extra exons" }
+   	 .ifEmpty { print "Extra exons not found!" }
    	 .set {extraexons}
 	genomes.join(annotations).into{data_to_annotation_raw; pipe_data}
-	data_to_annotation_raw.join(extraexons).set{data_to_annotation}
+	data_to_annotation_raw.join(extraexons, remainder: true).set{data_to_annotation}
 } else {
     genomes.join(annotations).into{pipe_data; data_to_annotation}
 }
@@ -170,8 +170,10 @@ if (params.extraexons) {
 		set val(genomeid), file (genomeid) into idfolders
 
 		script:
+		def extrapars = ""
+		if (extraexons.size()>0) { extrapars = " -add_exons ${extraexons}" } 
 		"""
-		A1_generate_annotations.pl -GTF ${annotation} -G ${genome} -sp ${genomeid} -add_exons ${extraexons}
+		A1_generate_annotations.pl -GTF ${annotation} -G ${genome} -sp ${genomeid} ${extrapars}
 		"""
 	}
 } else {
@@ -191,6 +193,9 @@ if (params.extraexons) {
 		"""
 	}
 }
+
+
+
 
 /*
  * split cluster file
@@ -391,9 +396,8 @@ process merge_PROT_EX_INT_aln_info {
 
 folder_jscores.join(anno_2_score_ex_int).map{
    [it[0], it[1..-1] ]
-}.into{data_to_score; ciccio}
+}.set{data_to_score}
 
-ciccio.println()
 
 /*
  * Score EX matches from aln info
