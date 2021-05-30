@@ -40,6 +40,8 @@ Options:
    -canonical_ss           If flag is active, it will require at last one cannonical splice site (def = off).
                               If active, it will need the filter Sp2.fasta in the same directory.
 
+Output:
+The output file will be saved in the current working directory as Liftover_exons-sp1-sp2.tab.
 
 *** Questions \& Bug Reports: Manuel Irimia (mirimia\@gmail.com)
 
@@ -81,8 +83,8 @@ while (<CLUSTERS>){
 close CLUSTERS;
 
 # Checks species
-die "It did not identify any gene ortolog for $sp1 (correct file names? $annot_sp1)\n" if (!defined $sp_check{$sp1});
-die "It did not identify any gene ortolog for $sp2 (correct file names? $annot_sp1)\n" if (!defined $sp_check{$sp2});
+die "It did not identify any gene ortholog for $sp1 (correct file names? $annot_sp1)\n" if (!defined $sp_check{$sp1});
+die "It did not identify any gene ortholog for $sp2 (correct file names? $annot_sp1)\n" if (!defined $sp_check{$sp2});
 
 # Extracts exons from Sp1
 print "Extracting exons from $annot_sp1\n";

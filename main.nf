@@ -145,10 +145,10 @@ Channel
 if (params.extraexons) {
 	Channel
    	 .fromFilePairs( params.extraexons, size: 1)
-   	 .ifEmpty { print "Not using extra exons" }
+   	 .ifEmpty { print "Extra exons not found!" }
    	 .set {extraexons}
 	genomes.join(annotations).into{data_to_annotation_raw; pipe_data}
-	data_to_annotation_raw.join(extraexons).set{data_to_annotation}
+	data_to_annotation_raw.join(extraexons, remainder: true).set{data_to_annotation}
 } else {
     genomes.join(annotations).into{pipe_data; data_to_annotation}
 }
@@ -170,8 +170,10 @@ if (params.extraexons) {
 		set val(genomeid), file (genomeid) into idfolders
 
 		script:
+		def extrapars = ""
+		if (extraexons.size()>0) { extrapars = " -add_exons ${extraexons}" } 
 		"""
-		A1_generate_annotations.pl -GTF ${annotation} -G ${genome} -sp ${genomeid} -add_exons ${extraexons}
+		A1_generate_annotations.pl -GTF ${annotation} -G ${genome} -sp ${genomeid} ${extrapars}
 		"""
 	}
 } else {
@@ -191,6 +193,9 @@ if (params.extraexons) {
 		"""
 	}
 }
+
+
+
 
 /*
  * split cluster file
@@ -402,7 +407,7 @@ process score_EX_matches {
     tag { "${comp_id}" }
     label('big_mem')
     //I need to modify the name so that it has the species pair in the output.
-    publishDir "${params.output}", mode: "copy"
+    storeDir "${params.output}"
 
     input:
     set val(comp_id), file("*") from data_to_score
@@ -413,7 +418,7 @@ process score_EX_matches {
 
 	script:
     def species = comp_id.split("-")
-	"""
+	""" 
     B5_format_aln_info_by_best_isoform_match.pl ${species[0]} ${species[1]} \
     ${comp_id}/all_PROT_aln_features.txt ${comp_id}/all_EX_aln_features.txt ${comp_id}/all_INT_aln_features.txt \
     ${species[0]}/${species[0]}.exint ${species[1]}/${species[1]}.exint \
@@ -475,12 +480,12 @@ process join_filtered_EX_matches {
  * Removing matches from overlapping exons
  */
 process collapse_overlapping_matches {
-
+    publishDir "${params.output}/", mode: "copy"
     input:
     file(scores) from filtered_all_scores
 
     output:
-    file("filtered_best_scored_exon_matches_by_gene-NoOverlap.txt") into (score_exon_hits_pairs, exon_pairs_for_reclustering)
+    file("filtered_best_scored_EX_matches_by_targetgene-NoOverlap.tab") into (score_exon_hits_pairs, exon_pairs_for_reclustering)
 
 	script:
 	bonafide = ""
@@ -492,7 +497,7 @@ process collapse_overlapping_matches {
 	"""
     C3_count_matches_by_EX.pl ${scores} EX_matches_count_by_species.tab ${bonafide}
     C4_get_overlapping_EXs.pl -i EX_matches_count_by_species.tab -o overlapping_EXs_by_species.tab
-    C5_collapse_overlapping_matches.pl overlapping_EXs_by_species.tab ${scores} filtered_best_scored_exon_matches_by_gene-NoOverlap.txt ${bonafide}
+    C5_collapse_overlapping_matches.pl overlapping_EXs_by_species.tab ${scores} filtered_best_scored_EX_matches_by_targetgene-NoOverlap.tab ${bonafide}
     """
 }
 

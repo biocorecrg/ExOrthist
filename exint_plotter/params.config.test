@@ -1,8 +1,9 @@
 params {
-    geneID          = "geneID"
-    output_main     = "/path/to/main_output"
+    geneID          = "ENSG00000159055"
+    output_main     = "$baseDir/../output_test"
     output          = "$baseDir/output_exint"
-    relevant_exs    = ""
+    relevant_exs    = "chr21:32274830-32274896"
+    ordered_species = "hg38,mm10,bosTau9"
+    isoformID       = "ENSP00000290130"
     sub_orthologs   = ""
-    isoformID       = ""
 }
