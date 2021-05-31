@@ -238,6 +238,7 @@ my %array_of_exons_per_gene=(); # an array of coordinates per gene, to derive a 
 my %gene_strand=(); # keeps the strand of each gene (currently, only if it has exon clusters
 my %added_exon_to_array; # keeps the subIDs of all exons added to the gene arrays
 my %g_with_exon_clusters; # keeps memory if the gene has ANY exon cluster
+my (%from_pairwise_sp1, %from_pairwise_sp2); # keeps the calls from the pairwise comparison to get stats by exon
 
 open (ECL, $f_exon_cluster) || die "It cannot open the exon orthology file ($f_exon_cluster)\n";
 while (<ECL>){
@@ -807,7 +808,7 @@ if (defined $f_exon_list_sp2){
 				}
 			    }
 			}
-			if (defined $outFile && defined $f_exon_list_sp2){
+			if (defined $f_exon_list_sp2){
 			    $match1++; $match2++; # they were 0-based
 			    my $exon_sp1 = $exon_id; # clean up naming
 			    my $exon_sp2 = "$t_g2=$t_co2"; 
@@ -822,9 +823,17 @@ if (defined $f_exon_list_sp2){
 			    $info_by_exon{$sp2}{$exon_sp2}="NO_INFO" if (!defined $info_by_exon{$sp2}{$exon_sp2});
 			    my ($orig_co_sp1) = $exon_sp1 =~ /\=(.+)/; 
 			    my ($orig_co_sp2) = $exon_sp2 =~ /\=(.+)/;
-			    
-			    print OUT_GENES "$gene_cluster\t$t_g1\t$orig_co_sp1\t$match1\t$total_ex_sp1\t$le_ex1\t$t_exon_cl1\t$info_by_exon{$sp1}{$exon_sp1}\t".
-				"$t_g2\t$orig_co_sp2\t$match2\t$total_ex_sp2\t$le_ex2\t$t_exon_cl2\t$info_by_exon{$sp2}{$exon_sp2}\t$cons_conv_call\t$sp1\t$sp2\n";
+
+			    ### Stores each pairwise for stats at the end
+			    my $redone_ID_ex1 = "$t_g1=$orig_co_sp1";
+			    my $redone_ID_ex2 = "$t_g2=$orig_co_sp2";
+			    $from_pairwise_sp1{$redone_ID_ex1}{$redone_ID_ex2}=$cons_conv_call;
+			    $from_pairwise_sp2{$redone_ID_ex2}{$redone_ID_ex1}=$cons_conv_call;
+
+			    if (defined $outFile){
+				print OUT_GENES "$gene_cluster\t$t_g1\t$orig_co_sp1\t$match1\t$total_ex_sp1\t$le_ex1\t$t_exon_cl1\t$info_by_exon{$sp1}{$exon_sp1}\t".
+				    "$t_g2\t$orig_co_sp2\t$match2\t$total_ex_sp2\t$le_ex2\t$t_exon_cl2\t$info_by_exon{$sp2}{$exon_sp2}\t$cons_conv_call\t$sp1\t$sp2\n";
+			    }
 			}
 			$tally_sp1_exons_in_Rcons_genes_by_type{CONSERVED}++ if $cons_conv_call =~ /^CONSERVED/;
 			$tally_sp1_exons_in_Rcons_genes_by_type{BEST_HIT}++ if $cons_conv_call =~ /BEST_HIT/;
@@ -931,6 +940,73 @@ if (defined $f_exon_list_sp2){
     $perc_sp1_exons_Rcons_exons_Gcons = sprintf ("%.2f", 0) if !$perc_sp1_exons_Rcons_exons_Gcons;
     $perc_sp2_exons_Rcons_exons_Gcons = sprintf ("%.2f", 0) if !$perc_sp2_exons_Rcons_exons_Gcons;
 
+    ### stats from pairwise ("fp") by Exon in each species
+    # Sp1 => Sp2
+    my $fp_total_sp1 = 0;
+    my %fp_N_by_call_sp1;
+    my %fp_perc_by_call_sp1;
+    foreach my $exon_sp1 (sort keys %from_pairwise_sp1){
+	$fp_total_sp1++;
+	my $call = "";
+	foreach my $exon_sp2 (sort keys %{$from_pairwise_sp1{$exon_sp1}}){
+	    if ($from_pairwise_sp1{$exon_sp1}{$exon_sp2} eq "CONSERVED"){
+		$call = "CONSERVED";
+	    }
+	    elsif ($from_pairwise_sp1{$exon_sp1}{$exon_sp2}=~/BEST_HIT/ && $call ne "CONSERVED"){
+		$call = "BEST_HIT";
+	    }
+	    elsif ($from_pairwise_sp1{$exon_sp1}{$exon_sp2}=~/UNCLEAR/ && $call ne "CONSERVED" && $call ne "BEST_HIT"){
+		$call = "UNCLEAR";
+	    }
+	    elsif ($from_pairwise_sp1{$exon_sp1}{$exon_sp2}=~/NON_CONSERVED/ && $call ne "CONSERVED" && $call ne "BEST_HIT" && $call ne "UNCLEAR"){
+		$call = "NON_CONSERVED";
+	    }
+	}
+	$fp_N_by_call_sp1{$call}++;	
+    }
+    if ($fp_total_sp1 == $tally_sp1_exons_in_Rcons_genes){
+	$fp_perc_by_call_sp1{CONSERVED} = sprintf("%.2f", 100*$fp_N_by_call_sp1{CONSERVED}/$fp_total_sp1);
+	$fp_perc_by_call_sp1{BEST_HIT} = sprintf("%.2f", 100*$fp_N_by_call_sp1{BEST_HIT}/$fp_total_sp1);
+	$fp_perc_by_call_sp1{UNCLEAR} = sprintf("%.2f", 100*$fp_N_by_call_sp1{UNCLEAR}/$fp_total_sp1);
+	$fp_perc_by_call_sp1{NON_CONSERVED} = sprintf("%.2f", 100*$fp_N_by_call_sp1{NON_CONSERVED}/$fp_total_sp1);
+    } 
+    else {
+	print "ISSUE in pairwise comparison from $sp1 ($fp_total_sp1 and $tally_sp1_exons_in_Rcons_genes don't match\n";
+    }
+    # Sp2 => Sp1
+    my $fp_total_sp2 = 0;
+    my %fp_N_by_call_sp2;
+    my %fp_perc_by_call_sp2;
+    foreach my $exon_sp2 (sort keys %from_pairwise_sp2){
+	$fp_total_sp2++;
+	my $call = "";
+	foreach my $exon_sp1 (sort keys %{$from_pairwise_sp2{$exon_sp2}}){
+	    if ($from_pairwise_sp2{$exon_sp2}{$exon_sp1} eq "CONSERVED"){
+		$call = "CONSERVED";
+	    }
+	    elsif ($from_pairwise_sp2{$exon_sp2}{$exon_sp1}=~/BEST_HIT/ && $call ne "CONSERVED"){
+		$call = "BEST_HIT";
+	    }
+	    elsif ($from_pairwise_sp2{$exon_sp2}{$exon_sp1}=~/UNCLEAR/ && $call ne "CONSERVED" && $call ne "BEST_HIT"){
+		$call = "UNCLEAR";
+	    }
+	    elsif ($from_pairwise_sp2{$exon_sp2}{$exon_sp1}=~/NON_CONSERVED/ && $call ne "CONSERVED" && $call ne "BEST_HIT" && $call ne "UNCLEAR"){
+		$call = "NON_CONSERVED";
+	    }
+	}
+	$fp_N_by_call_sp2{$call}++;	
+    }
+    if ($fp_total_sp2 == $tally_sp2_exons_in_Rcons_genes){
+	$fp_perc_by_call_sp2{CONSERVED} = sprintf("%.2f", 100*$fp_N_by_call_sp2{CONSERVED}/$fp_total_sp2);
+	$fp_perc_by_call_sp2{BEST_HIT} = sprintf("%.2f", 100*$fp_N_by_call_sp2{BEST_HIT}/$fp_total_sp2);
+	$fp_perc_by_call_sp2{UNCLEAR} = sprintf("%.2f", 100*$fp_N_by_call_sp2{UNCLEAR}/$fp_total_sp2);
+	$fp_perc_by_call_sp2{NON_CONSERVED} = sprintf("%.2f", 100*$fp_N_by_call_sp2{NON_CONSERVED}/$fp_total_sp2);
+    } 
+    else {
+	print "ISSUE in pairwise comparison from $sp2 ($fp_total_sp2 and $tally_sp2_exons_in_Rcons_genes don't match\n";
+    }
+    
+    ##### PRINT OUT
     print "
 - Gene-level stats:
    - $sp1 => $sp2
@@ -954,6 +1030,10 @@ Exons from $sp1 with regulated exon orthologs in $sp2 (R-conserved)\t$tally_sp1_
     Out of genes with orthologs\t\t$perc_sp1_exons_Rcons_exons_OrthGenes\% 
     Percent of R-conserved / G-conserved exons in $sp1\t\t$perc_sp1_exons_Rcons_exons_Gcons\%
 Exons from $sp1 with gene orthologs with regulated exons in $sp2\t$tally_sp1_exons_in_Rcons_genes\t$perc_sp1_exons_Rcons_genes\%
+    Exon orthologous\t$fp_N_by_call_sp1{CONSERVED}\t$fp_perc_by_call_sp1{CONSERVED}\%
+    Best hit exon\t$fp_N_by_call_sp1{BEST_HIT}\t$fp_perc_by_call_sp1{BEST_HIT}\%
+    Unclear case\t$fp_N_by_call_sp1{UNCLEAR}\t$fp_perc_by_call_sp1{UNCLEAR}\%
+    Not conserved\t$fp_N_by_call_sp1{NON_CONSERVED}\t$fp_perc_by_call_sp1{NON_CONSERVED}\%
 
    - $sp2 => $sp1
 Exons from $sp2 in exon list\t$total_sp2_exons
@@ -964,6 +1044,10 @@ Exons from $sp2 with regulated exon orthologs in $sp1 (R-conserved)\t$tally_sp2_
     Out of genes with orthologs\t\t$perc_sp2_exons_Rcons_exons_OrthGenes\% 
     Percent of R-conserved / G-conserved exons in $sp2\t\t$perc_sp2_exons_Rcons_exons_Gcons\%
 Exons from $sp2 with gene orthologs with regulated exons in $sp1\t$tally_sp2_exons_in_Rcons_genes\t$perc_sp2_exons_Rcons_genes\%
+    Exon orthologous\t$fp_N_by_call_sp2{CONSERVED}\t$fp_perc_by_call_sp2{CONSERVED}\%
+    Best hit exon\t$fp_N_by_call_sp2{BEST_HIT}\t$fp_perc_by_call_sp2{BEST_HIT}\%
+    Unclear case\t$fp_N_by_call_sp2{UNCLEAR}\t$fp_perc_by_call_sp2{UNCLEAR}\%
+    Not conserved\t$fp_N_by_call_sp2{NON_CONSERVED}\t$fp_perc_by_call_sp2{NON_CONSERVED}\%
 
    - Pairwise regulated exon comparisons $sp1 <=> $sp2 in gene orthologs\t$total_exons_in_Rcons_genes
 Orthologous exons (R-conserved)\t$tally_sp1_exons_in_Rcons_genes_by_type{CONSERVED}\t$perc_sp1_exons_Rcons_genes_cons\%
