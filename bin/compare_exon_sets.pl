@@ -239,6 +239,8 @@ my %gene_strand=(); # keeps the strand of each gene (currently, only if it has e
 my %added_exon_to_array; # keeps the subIDs of all exons added to the gene arrays
 my %g_with_exon_clusters; # keeps memory if the gene has ANY exon cluster
 my (%from_pairwise_sp1, %from_pairwise_sp2); # keeps the calls from the pairwise comparison to get stats by exon
+my %from_pairwise_ex_cluster; # stores if the pseudo exon from the pairwise comparison has a cluster ID
+my %valid_genes_in_exon_cluster; # keeps the geneIDs associated with each exon cluster
 
 open (ECL, $f_exon_cluster) || die "It cannot open the exon orthology file ($f_exon_cluster)\n";
 while (<ECL>){
@@ -265,6 +267,7 @@ while (<ECL>){
 	push(@{$array_of_exons_per_gene{$temp_sp}{$gene}},"$i-$f=$exon_cluster"); # all coordinates of the exons per gene
 	$added_exon_to_array{$temp_sp}{$exon_id1}=1;
 	$added_exon_to_array{$temp_sp}{$exon_id2}=1;
+	$valid_genes_in_exon_cluster{$exon_cluster}{$gene}=1;
     }
 }
 close ECL;
@@ -829,6 +832,8 @@ if (defined $f_exon_list_sp2){
 			    my $redone_ID_ex2 = "$t_g2=$orig_co_sp2";
 			    $from_pairwise_sp1{$redone_ID_ex1}{$redone_ID_ex2}=$cons_conv_call;
 			    $from_pairwise_sp2{$redone_ID_ex2}{$redone_ID_ex1}=$cons_conv_call;
+			    $from_pairwise_ex_cluster{$redone_ID_ex1}=$t_exon_cl1;
+			    $from_pairwise_ex_cluster{$redone_ID_ex2}=$t_exon_cl2;
 
 			    if (defined $outFile){
 				print OUT_GENES "$gene_cluster\t$t_g1\t$orig_co_sp1\t$match1\t$total_ex_sp1\t$le_ex1\t$t_exon_cl1\t$info_by_exon{$sp1}{$exon_sp1}\t".
@@ -942,6 +947,7 @@ if (defined $f_exon_list_sp2){
 
     ### stats from pairwise ("fp") by Exon in each species
     # Sp1 => Sp2
+    # $valid_genes_in_exon_cluster{$exon_cluster}{$gene} => if 
     my $fp_total_sp1 = 0;
     my %fp_N_by_call_sp1;
     my %fp_perc_by_call_sp1;
@@ -949,16 +955,23 @@ if (defined $f_exon_list_sp2){
 	$fp_total_sp1++;
 	my $call = "";
 	foreach my $exon_sp2 (sort keys %{$from_pairwise_sp1{$exon_sp1}}){
+	    ### checks if exon_sp1 is in an exon cluster that includes the gene of exon_sp2
+	    my $invalid_retro_best_hit="";
+	    my ($temp_g_sp2) = $exon_sp2 =~ /(.+?)\=/;
+	    $invalid_retro_best_hit=1 if defined ($valid_genes_in_exon_cluster{$from_pairwise_ex_cluster{$exon_sp1}}{$temp_g_sp2}); # i.e. ex_cluster from ex_sp1 contains the gene of ex_sp2
+	    
 	    if ($from_pairwise_sp1{$exon_sp1}{$exon_sp2} eq "CONSERVED"){
 		$call = "CONSERVED";
 	    }
-	    elsif ($from_pairwise_sp1{$exon_sp1}{$exon_sp2}=~/BEST_HIT/ && $call ne "CONSERVED"){
+	    elsif (($from_pairwise_sp1{$exon_sp1}{$exon_sp2}=~/BEST_HIT_SP1/ || $from_pairwise_sp1{$exon_sp1}{$exon_sp2}=~/BEST_HIT_BOTH/ || 
+		    ($from_pairwise_sp1{$exon_sp1}{$exon_sp2}=~/BEST_HIT_SP2/ && !$invalid_retro_best_hit))
+		    && $call ne "CONSERVED"){
 		$call = "BEST_HIT";
 	    }
 	    elsif ($from_pairwise_sp1{$exon_sp1}{$exon_sp2}=~/UNCLEAR/ && $call ne "CONSERVED" && $call ne "BEST_HIT"){
 		$call = "UNCLEAR";
 	    }
-	    elsif ($from_pairwise_sp1{$exon_sp1}{$exon_sp2}=~/NON_CONSERVED/ && $call ne "CONSERVED" && $call ne "BEST_HIT" && $call ne "UNCLEAR"){
+	    elsif (($from_pairwise_sp1{$exon_sp1}{$exon_sp2}=~/NON_CONSERVED/ || $from_pairwise_sp1{$exon_sp1}{$exon_sp2}=~/BEST_HIT_SP2/) && $call ne "CONSERVED" && $call ne "BEST_HIT" && $call ne "UNCLEAR"){
 		$call = "NON_CONSERVED";
 	    }
 	}
@@ -981,16 +994,23 @@ if (defined $f_exon_list_sp2){
 	$fp_total_sp2++;
 	my $call = "";
 	foreach my $exon_sp1 (sort keys %{$from_pairwise_sp2{$exon_sp2}}){
+	    ### checks if exon_sp1 is in an exon cluster that includes the gene of exon_sp2
+	    my $invalid_retro_best_hit="";
+	    my ($temp_g_sp1) = $exon_sp1 =~ /(.+?)\=/;
+	    $invalid_retro_best_hit=1 if defined ($valid_genes_in_exon_cluster{$from_pairwise_ex_cluster{$exon_sp2}}{$temp_g_sp1}); # i.e. ex_cluster from ex_sp2 contains the gene of ex_sp1
+	    
 	    if ($from_pairwise_sp2{$exon_sp2}{$exon_sp1} eq "CONSERVED"){
 		$call = "CONSERVED";
 	    }
-	    elsif ($from_pairwise_sp2{$exon_sp2}{$exon_sp1}=~/BEST_HIT/ && $call ne "CONSERVED"){
+	    elsif (($from_pairwise_sp2{$exon_sp2}{$exon_sp1}=~/BEST_HIT_SP2/ || $from_pairwise_sp2{$exon_sp2}{$exon_sp1}=~/BEST_HIT_BOTH/ ||
+		    ($from_pairwise_sp2{$exon_sp2}{$exon_sp1}=~/BEST_HIT_SP1/ && !$invalid_retro_best_hit))
+		   && $call ne "CONSERVED"){
 		$call = "BEST_HIT";
 	    }
 	    elsif ($from_pairwise_sp2{$exon_sp2}{$exon_sp1}=~/UNCLEAR/ && $call ne "CONSERVED" && $call ne "BEST_HIT"){
 		$call = "UNCLEAR";
 	    }
-	    elsif ($from_pairwise_sp2{$exon_sp2}{$exon_sp1}=~/NON_CONSERVED/ && $call ne "CONSERVED" && $call ne "BEST_HIT" && $call ne "UNCLEAR"){
+	    elsif (($from_pairwise_sp2{$exon_sp2}{$exon_sp1}=~/NON_CONSERVED/ || $from_pairwise_sp2{$exon_sp2}{$exon_sp1}=~/BEST_HIT_SP1/) && $call ne "CONSERVED" && $call ne "BEST_HIT" && $call ne "UNCLEAR"){
 		$call = "NON_CONSERVED";
 	    }
 	}
