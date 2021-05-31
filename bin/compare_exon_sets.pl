@@ -1049,15 +1049,15 @@ Exons from $sp2 with gene orthologs with regulated exons in $sp1\t$tally_sp2_exo
     Unclear case\t$fp_N_by_call_sp2{UNCLEAR}\t$fp_perc_by_call_sp2{UNCLEAR}\%
     Not conserved\t$fp_N_by_call_sp2{NON_CONSERVED}\t$fp_perc_by_call_sp2{NON_CONSERVED}\%
 
-   - Pairwise regulated exon comparisons $sp1 <=> $sp2 in gene orthologs\t$total_exons_in_Rcons_genes
-Orthologous exons (R-conserved)\t$tally_sp1_exons_in_Rcons_genes_by_type{CONSERVED}\t$perc_sp1_exons_Rcons_genes_cons\%
-Best-hit exons\t$tally_sp1_exons_in_Rcons_genes_by_type{BEST_HIT}\t$perc_sp1_exons_Rcons_genes_hit\%
-Non-orthologous exons\t$tally_sp1_exons_in_Rcons_genes_by_type{NON_CONSERVED}\t$perc_sp1_exons_Rcons_genes_not\%
-Unclear cases\t$tally_sp1_exons_in_Rcons_genes_by_type{UNCLEAR}\t$perc_sp1_exons_Rcons_genes_unclear\%
-
 
 ";
-# it could do the "unique cluster" counts for exon and genes
+
+# Deprecated pairwise output:
+#   - Pairwise regulated exon comparisons $sp1 <=> $sp2 in gene orthologs\t$total_exons_in_Rcons_genes
+#Orthologous exons (R-conserved)\t$tally_sp1_exons_in_Rcons_genes_by_type{CONSERVED}\t$perc_sp1_exons_Rcons_genes_cons\%
+#Best-hit exons\t$tally_sp1_exons_in_Rcons_genes_by_type{BEST_HIT}\t$perc_sp1_exons_Rcons_genes_hit\%
+#Non-orthologous exons\t$tally_sp1_exons_in_Rcons_genes_by_type{NON_CONSERVED}\t$perc_sp1_exons_Rcons_genes_not\%
+#Unclear cases\t$tally_sp1_exons_in_Rcons_genes_by_type{UNCLEAR}\t$perc_sp1_exons_Rcons_genes_unclear\%
 }
 else {
     ### gene-level
