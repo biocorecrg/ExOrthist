@@ -144,7 +144,7 @@ if ($do_all_steps){
 		    ## doble correction of phases (30/05/21)
 		    my ($new_aa, $new_phase);
 		    if ($phase == 0){
-			$new_aa = $aa;
+			$new_aa = $aa-1;
 			$new_phase = 0;
 		    }
 		    elsif ($phase == 1){
@@ -992,7 +992,7 @@ if ($do_all_steps){
 		    ## doble correction of phases (30/05/21)
 			my ($new_aa, $new_phase);
 			if ($phase == 0){
-			    $new_aa = $aa;
+			    $new_aa = $aa-1;
 			    $new_phase = 0;
 			}
 			elsif ($phase == 1){
@@ -1302,7 +1302,11 @@ if ($do_all_steps){ # done to re-declare variables
 		    $size=$size+$res;
 		    $res=$size%3;
 		    $aa=int(1+$nuc/3);
-		    print OUT "$prot|$gid\texon_$e\t$new-$aa\t$line[0]\t$line[3]-$line[4]\t$line[6]\n"; 
+                    my $new_new = $new;
+                    $new_new = $new-1 if $phase == 0;
+                    my $new_aa = $aa;
+                    $new_aa = $aa-1 if $phase == 0 && $size%3 == 0;
+		    print OUT "$prot|$gid\texon_$e\t$new_new-$new_aa\t$line[0]\t$line[3]-$line[4]\t$line[6]\n"; 
 		}
 	    }
 	}
@@ -1427,73 +1431,8 @@ if ($do_all_steps){ # done to re-declare variables
 }
 
 ### PART 5: get_ex_size_phase.pl
-if ($do_all_steps){
-# -GTF Hsa_annot.gtf -out Hsa_annot_exon_sizes.txt
-# Declaration of variables (same as loop 1)
-    my ($j,$tmp, $gid, $prot, $phase, $nuc, $aa, $pid, $tfile, $m);
-    my (%pid, %header, %ntseq);
-    my (@l, @l1, @line, @l2, @l3, @s);
-    my %rseq;
-    my ($res, $size, $tmpseq);
-    my %fex; ##saving the phase of the first exon
-    
-    my $outfile = "$exons_db_folder/$species/$species"."_annot_exon_sizes.txt";
-    open (OUT, ">$outfile") || die "Cannot create $outfile (loop 7)\n";
-    
-    verbPrint("Generating $species"."_annot_exon_sizes.txt\n");
-### Parsing GTF file
-    open(GTF, $merged_GTF) || die "It cannot open $merged_GTF\n";
-    while (<GTF>){
-	chomp($_); 
-	@line=split(/\t/,$_);
-	if ($line[2] eq "CDS"){
-	    @l1=split(/\"/,$line[8]);
-	    $gid=$l1[1]; ##change here 
-	    if ($line[8]=~/protein_id/){
-		$tmp="protein_id";
-	    } 
-	    else { $tmp="transcript_id"; }
-	    @l2=split(/$tmp/,$line[8]);
-	    @l3=split(/\"/,$l2[1]);
-	    $prot=$l3[1];
-	    if (!$pid{$prot}){
-		$m=0;
-		if ($line[7] ne "."){  $phase=$line[7]; $fex{$prot}=$phase; $m=$phase; } ##
-		else { 
-		    $phase=0; 
-		    $fex{$prot}=$phase;
-		}
-		$nuc=0;
-		$size=$line[4]-$line[3]+1;
-		$size=$size-$m;
-		$res=$size%3;
-		$nuc=$nuc+$size;
-		$pid{$prot}=1;
-		$header{$prot}="$prot|$gid $size.$phase";
-	    }
-	    else {
-		if ($line[7] ne "."){  $phase=$line[7]; }
-		else {  
-		    if ($res==0){ $phase=0; } elsif ($res==1 ){ $phase=2; } elsif ($res==2) { $phase=1; } 
-		}
-		$size=($line[4]-$line[3])+1;
-		$nuc=$nuc+$size;
-		$header{$prot}.=" $size.$phase";
-	    }
-	}
-    }
-    close (GTF);
-    
-    my @keys=sort(keys(%header));
-    my $p;
-    my ($l, $triplet, $protein, $nseq, $name);
-    my $c=0;
-    foreach my $el (@keys){ 
-	$name=$header{$el};
-	print OUT "$name\n";
-    }
-    close (OUT);
-}
+###  Deprecated (01/06/21)
+
 
 ### PART 6: Removing multi-skipping exon transcripts
 if ($do_all_steps){
@@ -1889,14 +1828,14 @@ system "rm $outexfile";
 
 unless (defined $keep_all_files){
     verbPrint ("Cleaning up intermediate files\n");
-    my $file1 = "$exons_db_folder/$species/$species"."_annot_exon_sizes.txt";
+#    my $file1 = "$exons_db_folder/$species/$species"."_annot_exon_sizes.txt";
     my $file2 = "$exons_db_folder/$species/$species"."_CDS_introns.txt";
     my $file3 = "$exons_db_folder/$species/$species"."_prot_sizes.txt";
     my $file4 = "$exons_db_folder/$species/$species"."_tr_coords.txt";
     my $file5 = "$exons_db_folder/$species/$species"."_tr_coords_CDS.txt";
     my $file6 = "$exons_db_folder/$species/$species"."_trid_protid.txt";    
     my $file7 = "$exons_db_folder/$species/$species"."_protein_ids_intron_pos.txt";
-    system "rm $file1 $file2 $file3 $file4 $file5 $file6 $file7";
+    system "rm $file2 $file3 $file4 $file5 $file6 $file7";
 }
 
 verbPrint ("Annotations for $species finished!"); 
