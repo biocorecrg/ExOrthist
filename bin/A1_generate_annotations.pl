@@ -46,12 +46,12 @@ COMPULSORY
      -G                Path to gDNA (it should be named Sp1_gDNA.fasta)
      -sp Sp1           Species ID.
 
-#OPTIONAL
-#     -add_exons        File with additional exons to get their orthology
-#                          Format (tsv): ExonID GeneID Coord_A Coord_C1 Coord_C2
-#     -EX_DB            Path to where the folder with the species annotation files is created (def = ./).
-#     -verbose T/F      Verbose (default TRUE) 
-#     -h/--help         This help message.
+OPTIONAL
+     -add_exons        File with additional exons to get their orthology
+                          Format (tsv): ExonID GeneID Coord_A Coord_C1 Coord_C2
+     -EX_DB            Path to where the folder with the species annotation files is created (def cwd).
+     -verbose T/F      Verbose (default TRUE) 
+     -h/--help         This help message.
 
 
 ";    
@@ -136,11 +136,27 @@ if ($do_all_steps){
 		    $header{$prot}="$prot|$gid ";
 		}
 		else {
-		    $header{$prot}.=" $aa.";
+#		    $header{$prot}.=" $aa.";
 		    if ($line[7] ne "."){  $phase=$line[7]; }
 		    else {  
 			if ($res==0){ $phase=0; } elsif ($res==1 ){ $phase=2; } elsif ($res==2) { $phase=1; } 
 		    }
+		    ## doble correction of phases (30/05/21)
+		    my ($new_aa, $new_phase);
+		    if ($phase == 0){
+			$new_aa = $aa;
+			$new_phase = 0;
+		    }
+		    elsif ($phase == 1){
+			$new_aa = $aa;
+			$new_phase = 2;
+		    }
+		    elsif ($phase == 2){
+			$new_aa = $aa;
+			$new_phase = 1;
+		    }
+		    $header{$prot}.=" $new_aa.$new_phase";
+		    
 		    $size=($line[4]-$line[3])+1;
 		    $tmpseq=substr($seq{$line[0]},($line[3]-1),($size));
 		    if ($line[6] eq "-"){  $tmpseq=~tr/ATCG/TAGC/; $tmpseq=reverse($tmpseq); }
@@ -150,7 +166,7 @@ if ($do_all_steps){
 		    $size=$size+$res;
 		    $res=$size%3;
 		    $aa=int(1+$nuc/3); ##adding the residues that were left
-		    $header{$prot}.="$phase";
+#		    $header{$prot}.="$phase";
 		}
 	    }
 	}
@@ -968,11 +984,27 @@ if ($do_all_steps){
 			$header{$prot}="$prot|$gid ";
 		    }
 		    else {
-			$header{$prot}.=" $aa.";
+#			$header{$prot}.=" $aa.";
 			if ($line[7] ne "."){  $phase=$line[7]; }
 			else {  
 			    if ($res==0){ $phase=0; } elsif ($res==1 ){ $phase=2; } elsif ($res==2) { $phase=1; } 
 			}
+		    ## doble correction of phases (30/05/21)
+			my ($new_aa, $new_phase);
+			if ($phase == 0){
+			    $new_aa = $aa;
+			    $new_phase = 0;
+			}
+			elsif ($phase == 1){
+			    $new_aa = $aa;
+			    $new_phase = 2;
+			}
+			elsif ($phase == 2){
+			    $new_aa = $aa;
+			    $new_phase = 1;
+			}
+			$header{$prot}.=" $new_aa.$new_phase";
+			
 			$size=($line[4]-$line[3])+1;
 			$tmpseq=substr($seq{$line[0]},($line[3]-1),($size));
 			if ($line[6] eq "-"){  $tmpseq=~tr/ATCG/TAGC/; $tmpseq=reverse($tmpseq); }
@@ -982,7 +1014,7 @@ if ($do_all_steps){
 			$size=$size+$res;
 			$res=$size%3;
 			$aa=int(1+$nuc/3); ##adding the residues that were left
-			$header{$prot}.="$phase";
+#			$header{$prot}.="$phase";
 		    }
 		}
 	    }
