@@ -1255,16 +1255,25 @@ sub score_exons {
 				    @tn1=split(/\|/,$ln[0]);
 				    @tn2=split(/\|/,$n2);
 				    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
-
+				    
+				    # gets lengths
+				    my @lnB = split(/\t/,$nex[0]);
+				    my ($ex_i_1, $ex_f_1) = $ln[4] =~ /(.+?)\-(.+)/;
+				    my ($ex_i_2, $ex_f_2) = $lnB[4] =~ /(.+?)\-(.+)/;
+				    my $ex_le_1 = ($ex_f_1-$ex_i_1)+1;
+				    my $ex_le_2 = ($ex_f_2-$ex_i_2)+1;
+				    my $ex_le_ratio = $ex_le_1/$ex_le_2;
+				    $ex_le_ratio = $ex_le_2/$ex_le_1 if $ex_le_1/$ex_le_2 > 1;
+				    
 				    ### not activated if it's internal and against a first/last exon
 				    $temp_last_exon_1 = "exon_$last_exon_number{$ln[0]}";
 				    $temp_last_exon_2 = "exon_$last_exon_number{$n2}";
 				    my @temp_ex_hit = split(/\t/,$nex[0]); # prot|gene exon_N co_prot chr co_i co_f strand
 				    if ($ln[1] eq "exon_1" || $ln[1] eq $temp_last_exon_1){ # it's the first OR last exon
-					$onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
+					$onehit{$idex}=1 if (100-$png) > 70 && $sim_score > 40 && $ex_le_ratio > 0.6; # added on 03/12 to avoid artifactual "best hits"
 				    }
 				    elsif ($temp_ex_hit[1] ne "exon_1" && $temp_ex_hit[1] ne $temp_last_exon_2){ # it's internal and the hit too
-					$onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
+					$onehit{$idex}=1 if (100-$png) > 70 && $sim_score > 40 && $ex_le_ratio > 0.6; # added on 03/12 to avoid artifactual "best hits"
 				    } 
 				    else {} # internal vs first/last
 				}
@@ -1279,15 +1288,24 @@ sub score_exons {
 				@tn2=split(/\|/,$n2);
 				$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
 				
+				# gets lengths
+				my @lnB = split(/\t/,$tex);
+				my ($ex_i_1, $ex_f_1) = $ln[4] =~ /(.+?)\-(.+)/;
+				my ($ex_i_2, $ex_f_2) = $lnB[4] =~ /(.+?)\-(.+)/;
+				my $ex_le_1 = ($ex_f_1-$ex_i_1)+1;
+				my $ex_le_2 = ($ex_f_2-$ex_i_2)+1;
+				my $ex_le_ratio = $ex_le_1/$ex_le_2;
+				$ex_le_ratio = $ex_le_2/$ex_le_1 if $ex_le_1/$ex_le_2 > 1;
+
 				### not activated if it's internal and against a first/last exon
 				$temp_last_exon_1 = "exon_$last_exon_number{$ln[0]}";
 				$temp_last_exon_2 = "exon_$last_exon_number{$n2}";
 				my @temp_ex_hit = split(/\t/,$tex); # prot|gene exon_N co_prot chr co_i co_f strand
 				if ($ln[1] eq "exon_1" || $ln[1] eq $temp_last_exon_1){ # it's the first OR last exon
-				    $onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
+				    $onehit{$idex}=1 if (100-$png) > 70 && $sim_score > 40 && $ex_le_ratio > 0.6; # added on 03/12 to avoid artifactual "best hits"
 				}
 				elsif ($temp_ex_hit[1] ne "exon_1" && $temp_ex_hit[1] ne $temp_last_exon_2){ # it's internal and the hit too
-				    $onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
+				    $onehit{$idex}=1 if (100-$png) > 70 && $sim_score > 40 && $ex_le_ratio > 0.6; # added on 03/12 to avoid artifactual "best hits"
 				} 
 				else {} # internal vs first/last
 			    }
@@ -1416,15 +1434,24 @@ sub score_exons {
 				    @tn2=split(/\|/,$n1);
 				    $idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
 
+				    # gets lengths
+				    my @lnB = split(/\t/,$nex[0]);
+				    my ($ex_i_1, $ex_f_1) = $ln[4] =~ /(.+?)\-(.+)/;
+				    my ($ex_i_2, $ex_f_2) = $lnB[4] =~ /(.+?)\-(.+)/;
+				    my $ex_le_1 = ($ex_f_1-$ex_i_1)+1;
+				    my $ex_le_2 = ($ex_f_2-$ex_i_2)+1;
+				    my $ex_le_ratio = $ex_le_1/$ex_le_2;
+				    $ex_le_ratio = $ex_le_2/$ex_le_1 if $ex_le_1/$ex_le_2 > 1;
+
 				    ### not activated if it's internal and against a first/last exon
 				    $temp_last_exon_1 = "exon_$last_exon_number{$ln[0]}";
 				    $temp_last_exon_2 = "exon_$last_exon_number{$n1}";
 				    my @temp_ex_hit = split(/\t/,$nex[0]); # prot|gene exon_N co_prot chr co_i co_f strand
 				    if ($ln[1] eq "exon_1" || $ln[1] eq $temp_last_exon_1){ # it's the first OR last exon
-					$onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
+					$onehit{$idex}=1 if (100-$png) > 70 && $sim_score > 40 && $ex_le_ratio > 0.6; # added on 03/12 to avoid artifactual "best hits"
 				    }
 				    elsif ($temp_ex_hit[1] ne "exon_1" && $temp_ex_hit[1] ne $temp_last_exon_2){ # it's internal and the hit too
-					$onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
+					$onehit{$idex}=1 if (100-$png) > 70 && $sim_score > 40 && $ex_le_ratio > 0.6; # added on 03/12 to avoid artifactual "best hits"
 				    } 
 				    else {} # internal vs first/last
 				}
@@ -1438,16 +1465,25 @@ sub score_exons {
 				@tn1=split(/\|/,$ln[0]);
 				@tn2=split(/\|/,$n1);
 				$idex=$el."\t".$tn1[1]."\t".$ln[4]."\t".$tn2[1];
-
+				
+				# gets lengths
+				my @lnB = split(/\t/,$tex);
+				my ($ex_i_1, $ex_f_1) = $ln[4] =~ /(.+?)\-(.+)/;
+				my ($ex_i_2, $ex_f_2) = $lnB[4] =~ /(.+?)\-(.+)/;
+				my $ex_le_1 = ($ex_f_1-$ex_i_1)+1;
+				my $ex_le_2 = ($ex_f_2-$ex_i_2)+1;
+				my $ex_le_ratio = $ex_le_1/$ex_le_2;
+				$ex_le_ratio = $ex_le_2/$ex_le_1 if $ex_le_1/$ex_le_2 > 1;
+				
 				### not activated if it's internal and against a first/last exon
 				$temp_last_exon_1 = "exon_$last_exon_number{$ln[0]}";
 				$temp_last_exon_2 = "exon_$last_exon_number{$n1}";
 				my @temp_ex_hit = split(/\t/,$tex); # prot|gene exon_N co_prot chr co_i co_f strand
 				if ($ln[1] eq "exon_1" || $ln[1] eq $temp_last_exon_1){ # it's the first OR last exon
-				    $onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
+				    $onehit{$idex}=1 if (100-$png) > 70 && $sim_score > 40 && $ex_le_ratio > 0.6; # added on 03/12 to avoid artifactual "best hits"
 				}
 				elsif ($temp_ex_hit[1] ne "exon_1" && $temp_ex_hit[1] ne $temp_last_exon_2){ # it's internal and the hit too
-				    $onehit{$idex}=1 if (100-$png) > 50; # added on 03/12 to avoid artifactual "best hits"
+				    $onehit{$idex}=1 if (100-$png) > 70 && $sim_score > 40 && $ex_le_ratio > 0.6; # added on 03/12 to avoid artifactual "best hits"
 				} 
 				else {} # internal vs first/last
 			    }
@@ -1474,6 +1510,7 @@ foreach my $mex (sort keys %miss){
     my @tn1=split(/\|/,$ln[1]);
     my @tn2=split(/\|/,$ln[8]);
     my $idex=$ln[0]."\t".$tn1[1]."\t".$ln[5]."\t".$tn2[1]; # g_cluster gene_sp1 exon_coord gene_sp2
+
     if (!$onehit{$idex}){
 	print MISS "$mex\n";
     }
