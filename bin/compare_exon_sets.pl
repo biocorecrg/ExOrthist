@@ -2,6 +2,11 @@
 use warnings;
 use strict;
 use Getopt::Long;
+use Cwd qw(abs_path cwd);
+
+my $binPath = abs_path($0);
+$0 =~ s/^.*\///;
+$binPath =~ s/\/$0$//; # path of exorthist's bin folder
 
 # remaining:
 # - check calls, specially based on best hits
@@ -23,6 +28,7 @@ my $outFile;
 my $helpFlag;
 my $max_dif_le_ratio = 1.5; # max (le1-le2)/le1 or (le1-le2)/le2 allowed
 my $allow_overlapping_exons; # option to allow overlapping exons
+my $no_plot; # it does not make the summary plot
 
 Getopt::Long::Configure("no_auto_abbrev");
 GetOptions( "gene_clusters=s" => \$f_gene_cluster,
@@ -38,6 +44,7 @@ GetOptions( "gene_clusters=s" => \$f_gene_cluster,
 	    "dPSI_info=s" => \$dPSI_info,
 	    "min_dPSI=i" => $min_dPSI,
 	    "print_out" => \$outFile,
+	    "no_plot" => \$no_plot,
 	    "allow_overlap" => \$allow_overlapping_exons,
 	    "help" => \$helpFlag
     );
@@ -95,7 +102,7 @@ Discretionary Options:
      -print_out                It creates an output file with the exons in conserved clusters (otherwise, it does NOT create it). 
                                   If an exon_list_sp2 is provided, it generates a file with all pairwise exon comparisons of regulated exons.
      -allow_overlap            It does not filter out multiple entries of the same exon with different donor/acceptors. Not recommended [def = OFF]
-
+     -no_plot                  It does not make the summary plot [def = OFF]
 
   Unless main_folder is provided:
      -pairwise_folder FOLDER   ExOrthist folder for the pairwise species comparison (e.g. Sp1-Sp2/). Needed if exon_list_sp2 is provided. 
@@ -402,6 +409,8 @@ my $tally_sp2_exons_Gcons = 0;
 my $tally_sp2_exons_in_Rcons_genes = 0;
 my $tally_sp2_genes_in_Rcons_genes = 0;
 my $tally_sp2_exons_Rcons = 0; # due to paralogy, it may be non-symmetrict to sp1
+my $tally_sp1_exons_Gcons_gene_reg = 0; # for the plot. G-cons exons with any Reg exon in the Sp2 gene
+my $test=0;
 
 my %done_sp2_EX; # to store already seen PARTIAL exons
 my %done_sp2_G; # count genes
@@ -645,6 +654,12 @@ if (defined $f_exon_list_sp2){
 	    ### Gene level conservation
 	    if (defined $gene_to_cluster{$sp1}{$gene}){ # i.e. gene is in a cluster
 		my $gene_cluster = $gene_to_cluster{$sp1}{$gene};
+		
+		if (defined $exon_cluster_has_sp{$t_exon_cl1}{$sp2}){
+		    $tally_sp1_exons_Gcons_gene_reg++ if (defined $gene_cluster_is_regulated{$gene_cluster}{$sp2}); # G-cons with R-cons and in the gene
+		    $test++; # same as G-cons
+		}
+
 		if (defined $gene_cluster_is_regulated{$gene_cluster}{$sp2}){ # gene orth have regulated exon Sp2 (cons or convergent)
 		    $tally_sp1_exons_in_Rcons_genes++;
 		    
@@ -1071,13 +1086,61 @@ Exons from $sp2 with gene orthologs with regulated exons in $sp1\t$tally_sp2_exo
 
 
 ";
-
 # Deprecated pairwise output:
 #   - Pairwise regulated exon comparisons $sp1 <=> $sp2 in gene orthologs\t$total_exons_in_Rcons_genes
 #Orthologous exons (R-conserved)\t$tally_sp1_exons_in_Rcons_genes_by_type{CONSERVED}\t$perc_sp1_exons_Rcons_genes_cons\%
 #Best-hit exons\t$tally_sp1_exons_in_Rcons_genes_by_type{BEST_HIT}\t$perc_sp1_exons_Rcons_genes_hit\%
 #Non-orthologous exons\t$tally_sp1_exons_in_Rcons_genes_by_type{NON_CONSERVED}\t$perc_sp1_exons_Rcons_genes_not\%
 #Unclear cases\t$tally_sp1_exons_in_Rcons_genes_by_type{UNCLEAR}\t$perc_sp1_exons_Rcons_genes_unclear\%
+
+### Makes plot
+    open (IN_PLOT, ">Compare_exons_summary_input-$sp1-$sp2.txt") || die "It cannot open the input plot file\n";
+    ### Gets the numbers
+    my ($N1,$N2,$N3,$N4,$N5,$N6,$N7,$N8,$N9,$N10,$N11);
+    my ($fr1,$fr2,$fr3,$fr4,$fr5,$fr6,$fr7,$fr8,$fr9,$fr10,$fr11);
+    # gene_status
+    $N1 = $tally_sp1_exons_in_Gcons_genes;
+    $N2 = $total_sp1_exons - $tally_sp1_exons_in_Gcons_genes;
+    $fr1 = sprintf("%.2f",$N1/$total_sp1_exons);
+    $fr2 = sprintf("%.2f",$N2/$total_sp1_exons);
+    # exon status
+    $N3 = $tally_sp1_exons_Gcons;
+    $N4 = $total_sp1_exons - $tally_sp1_exons_Gcons;
+    $fr3 = sprintf("%.2f",$N3/$total_sp1_exons);
+    $fr4 = sprintf("%.2f",$N4/$total_sp1_exons);
+    # reg_status
+    $N5 = $tally_sp1_exons_Rcons;
+    $N6 = $tally_sp1_exons_Gcons_gene_reg - $tally_sp1_exons_Rcons;
+    $N7 = $tally_sp1_exons_Gcons - $tally_sp1_exons_Gcons_gene_reg;
+    $fr5 = sprintf("%.2f",$N5/($N5+$N6+$N7));
+    $fr6 = sprintf("%.2f",$N6/($N5+$N6+$N7));
+    $fr7 = sprintf("%.2f",$N7/($N5+$N6+$N7));
+    # all_regs
+    $N8 = $fp_N_by_call_sp1{CONSERVED};
+    $N9 = $fp_N_by_call_sp1{BEST_HIT};
+    $N10 = $fp_N_by_call_sp1{UNCLEAR};
+    $N11 = $fp_N_by_call_sp1{NON_CONSERVED};
+    $fr8 = sprintf("%.2f",$N8/($N8+$N9+$N10+$N11));
+    $fr9 = sprintf("%.2f",$N9/($N8+$N9+$N10+$N11));
+    $fr10 = sprintf("%.2f",$N10/($N8+$N9+$N10+$N11));
+    $fr11 = sprintf("%.2f",$N11/($N8+$N9+$N10+$N11));
+    
+    print IN_PLOT "my_class\tcategory\tfreq\tpercentage\tconservation\n".
+	"gene_status\tgene_orth\t$N1\t$fr1\tconserved\n".
+	"gene_status\tno_gene_orth\t$N2\t$fr2\tnot_conserved\n".
+	"exon_status\texon_orth\t$N3\t$fr3\tconserved\n".
+	"exon_status\tno_exon_orth\t$N4\t$fr4\tnot_conserved\n".
+	"reg_status\treg_exon_orth\t$N5\t$fr5\tconserved\n".
+	"reg_status\treg_exon_no_orth\t$N6\t$fr6\tconserved\n".
+	"reg_status\tno_reg_exon\t$N7\t$fr7\tnot_conserved\n".
+	"all_regs\torth\t$N8\t$fr8\tconserved\n".
+	"all_regs\tbest_hit\t$N9\t$fr9\tconserved\n".
+	"all_regs\tunclear\t$N10\t$fr10\tnon_conserved\n".
+	"all_regs\tno_orth\t$N11\t$fr11\tnon_conserved\n";
+    close IN_PLOT;
+		   
+    system "Rscript $binPath/plot_compare_exon_sets-v2.R Compare_exons_summary_input-$sp1-$sp2.txt $sp1 $sp2 Compare_exons_summary-$sp1-$sp2.pdf";
+
 }
 else {
     ### gene-level
