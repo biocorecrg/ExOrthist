@@ -1105,9 +1105,9 @@ Exons from $sp2 with gene orthologs with regulated exons in $sp1\t$tally_sp2_exo
     $fr2 = sprintf("%.2f",$N2/$total_sp1_exons);
     # exon status
     $N3 = $tally_sp1_exons_Gcons;
-    $N4 = $total_sp1_exons - $tally_sp1_exons_Gcons;
-    $fr3 = sprintf("%.2f",$N3/$total_sp1_exons);
-    $fr4 = sprintf("%.2f",$N4/$total_sp1_exons);
+    $N4 = $tally_sp1_exons_in_Gcons_genes - $tally_sp1_exons_Gcons;
+    $fr3 = sprintf("%.2f",$N3/$tally_sp1_exons_in_Gcons_genes);
+    $fr4 = sprintf("%.2f",$N4/$tally_sp1_exons_in_Gcons_genes);
     # reg_status
     $N5 = $tally_sp1_exons_Rcons;
     $N6 = $tally_sp1_exons_Gcons_gene_reg - $tally_sp1_exons_Rcons;
