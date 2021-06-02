@@ -1124,6 +1124,8 @@ Exons from $sp2 with gene orthologs with regulated exons in $sp1\t$tally_sp2_exo
     $fr9 = sprintf("%.2f",$N9/($N8+$N9+$N10+$N11));
     $fr10 = sprintf("%.2f",$N10/($N8+$N9+$N10+$N11));
     $fr11 = sprintf("%.2f",$N11/($N8+$N9+$N10+$N11));
+
+    print "Warning in plot: estimated number of G-cons exons by two approaches do not match ($tally_sp1_exons_Gcons vs $test)\n" if $test ne $tally_sp1_exons_Gcons;
     
     print IN_PLOT "my_class\tcategory\tfreq\tpercentage\tconservation\n".
 	"gene_status\tgene_orth\t$N1\t$fr1\tconserved\n".
@@ -1135,8 +1137,8 @@ Exons from $sp2 with gene orthologs with regulated exons in $sp1\t$tally_sp2_exo
 	"reg_status\tno_reg_exon\t$N7\t$fr7\tnot_conserved\n".
 	"all_regs\torth\t$N8\t$fr8\tconserved\n".
 	"all_regs\tbest_hit\t$N9\t$fr9\tconserved\n".
-	"all_regs\tunclear\t$N10\t$fr10\tnon_conserved\n".
-	"all_regs\tno_orth\t$N11\t$fr11\tnon_conserved\n";
+	"all_regs\tunclear\t$N10\t$fr10\tnot_conserved\n".
+	"all_regs\tno_orth\t$N11\t$fr11\tnot_conserved\n";
     close IN_PLOT;
 		   
     system "Rscript $binPath/plot_compare_exon_sets-v2.R Compare_exons_summary_input-$sp1-$sp2.txt $sp1 $sp2 Compare_exons_summary-$sp1-$sp2.pdf";
