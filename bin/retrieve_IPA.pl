@@ -7,6 +7,7 @@ my $main_folder;
 my ($gene1,$gene2,$exon1,$exon2);
 my ($sp1,$sp2);
 my ($prot1,$prot2);
+my ($ex_number1,$ex_number2);
 my $outFile;
 my $helpFlag;
 
@@ -83,12 +84,14 @@ LBL1:while (<BEST>){
     if ($temp_g1 eq $gene1 && $temp_g2 eq $gene2 && $t_ex1 eq $exon1 && $t_ex2 eq $exon2){
 	$prot1=$t[3];
 	$prot2=$t[6];
+	$ex_number1=$t[4];
+	$ex_number2=$t[7];
     }
     last LBL1 if $prot1 && $prot2;
 }
 close BEST;
 
-die "It could not find the match for $gene1:$exon1 and $gene2:$exon2\n" if !$prot1 || !$prot2;
+die "It could not find the match for $gene1:$exon1 and $gene2:$exon2 (try reverting species query/target)\n" if !$prot1 || !$prot2;
 #print "Protein pair identified: $prot1 and $prot2\n" if $prot1 && $prot2;
 
 # inverts protein order if needed
@@ -102,7 +105,7 @@ my $activate;
 LBL2:while (<ALN>){
     if (/\>\>\>/ && !$aln_data){
 	if (/\>\>\> $t_spA $t_spB $t_protA $t_protB/){
-	    $aln_data=$_;
+	    $aln_data=">>> $sp1: $prot1 ($ex_number1) <=> $sp2: $prot2 ($ex_number2)\n";
 	}
     }
     elsif (/\>\>\>/ && $aln_data){
