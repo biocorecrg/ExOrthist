@@ -107,6 +107,7 @@ $ex_number2=~s/exon_//;
 my $aln_data;
 my $activate;
 my ($seq_prot1,$seq_prot2);
+my ($ex_N1,$ex_N2)=(1,1);
 LBL2:while (<ALN>){
     if (/\>\>\>/ && !$aln_data){
 	if ($_ eq "\>\>\> $t_spA $t_spB $t_protA $t_protB\n"){
@@ -118,15 +119,40 @@ LBL2:while (<ALN>){
     }
     elsif ($aln_data){
 	if ($activate){
-	    $aln_data.=$_;
 	    if ($_ =~ /^$root_prot1\t(.+)\t/){
 		my $line1 = $1;
-		$seq_prot1.=$line1;
+		my @t1 = split(//,$line1);
+		for my $i (0..$#t1){
+		    if ($t1[$i]=~/[012]/){
+			$t1[$i-1]="]" if $ex_number1 == $ex_N1;
+			$ex_N1++;
+			$t1[$i+1]="[" if $ex_number1 == $ex_N1;
+		    }
+		}
+		$line1=join("",@t1);
+#		if (!$seq_prot1 && $ex_number1 == 1){} # for first exon, but breaks Aln
+		$aln_data.="$sp1\t$line1\t$sp1\n";
+		$seq_prot1.=$line1;		
 	    }
 	    elsif ($_ =~ /^$root_prot2\t(.+)\t/){
 		my $line2 = $1;
+		my @t2 = split(//,$line2);
+		for my $i (0..$#t2){
+		    if ($t2[$i]=~/[012]/){
+			$t2[$i-1]="]" if $ex_number2 == $ex_N2;
+			$ex_N2++;
+			$t2[$i+1]="[" if $ex_number2 == $ex_N2;
+		    }
+		}
+		$line2=join("",@t2);
+		$aln_data.="$sp2\t$line2\t$sp2\n";
 		$seq_prot2.=$line2;
 	    }
+	    else {
+		$aln_data.=$_;
+	    }
+
+
 	}
 	elsif (/> /){
 	    $activate=1;
