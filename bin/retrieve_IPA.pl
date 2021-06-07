@@ -98,14 +98,19 @@ die "It could not find the match for $gene1:$exon1 and $gene2:$exon2 (try revert
 my ($t_protA, $t_protB) = ($prot1,$prot2);
 $t_protA=$prot2 if $t_spB eq $sp1;
 $t_protB=$prot1 if $t_spA eq $sp2;
+my ($root_prot1) = $prot1 =~ /^(.{6})/; 
+my ($root_prot2) = $prot2 =~ /^(.{6})/;
+$ex_number1=~s/exon_//;
+$ex_number2=~s/exon_//;
 
 # >>> dm6 mm10 FBpp0072009|FBgn0011296 ENSMUSP00000005077|ENSMUSG00000004951
 my $aln_data;
 my $activate;
+my ($seq_prot1,$seq_prot2);
 LBL2:while (<ALN>){
     if (/\>\>\>/ && !$aln_data){
-	if (/\>\>\> $t_spA $t_spB $t_protA $t_protB/){
-	    $aln_data=">>> $sp1: $prot1 ($ex_number1) <=> $sp2: $prot2 ($ex_number2)\n";
+	if ($_ eq "\>\>\> $t_spA $t_spB $t_protA $t_protB\n"){
+	    $aln_data=">>> $sp1: $prot1 (exon $ex_number1) <=> $sp2: $prot2 (exon $ex_number2)\n";
 	}
     }
     elsif (/\>\>\>/ && $aln_data){
@@ -114,6 +119,14 @@ LBL2:while (<ALN>){
     elsif ($aln_data){
 	if ($activate){
 	    $aln_data.=$_;
+	    if ($_ =~ /^$root_prot1\t(.+)\t/){
+		my $line1 = $1;
+		$seq_prot1.=$line1;
+	    }
+	    elsif ($_ =~ /^$root_prot2\t(.+)\t/){
+		my $line2 = $1;
+		$seq_prot2.=$line2;
+	    }
 	}
 	elsif (/> /){
 	    $activate=1;
@@ -122,11 +135,56 @@ LBL2:while (<ALN>){
 }
 close ALN;
 
+my (@intron_pos1,@intron_pos2); # the N in the alignment for each intron pos
+my @aln_prot1 = split (//,$seq_prot1);
+my @aln_prot2 = split (//,$seq_prot2);
+my ($int_N1,$int_N2)=(0,0);
+$intron_pos1[$int_N1++]=0; # first exon => pos = 0
+$intron_pos2[$int_N2++]=0; # first exon => pos = 0
+
+for my $i (0..$#aln_prot1){
+    $intron_pos1[$int_N1++]=$i if $aln_prot1[$i]=~/[012]/; # e.g. int 1 => pos 35
+}
+for my $i (0..$#aln_prot2){
+    $intron_pos2[$int_N2++]=$i if $aln_prot2[$i]=~/[012]/; # e.g. int 1 => pos 35
+}
+$intron_pos1[$int_N1]=$#aln_prot1; # last
+$intron_pos2[$int_N2]=$#aln_prot2; # last
+
+my ($C1AC2_prot1,$C1AC2_prot2);
+my ($min,$max);
+if (($ex_number1 == 1 && $ex_number1 == $int_N1) || ($ex_number2 == 1 && $ex_number2 == $int_N2)){ # one of the two protein is a single exon
+    $C1AC2_prot1 = join("", @aln_prot1[0..$#aln_prot1]); # entire aln
+    $C1AC2_prot2 = join("", @aln_prot2[0..$#aln_prot2]); # entire aln
+}
+elsif ($ex_number1 == 1 || $ex_number2 == 1){ # either of them is a first exon
+    $max = $intron_pos1[$ex_number1+1] if $intron_pos1[$ex_number1+1] >= $intron_pos2[$ex_number2+1];
+    $max = $intron_pos2[$ex_number2+1] if $intron_pos1[$ex_number1+1] < $intron_pos2[$ex_number2+1];
+    $C1AC2_prot1 = join("", @aln_prot1[0..$max]);				       
+    $C1AC2_prot2 = join("", @aln_prot2[0..$max]);
+}
+elsif ($ex_number1 == $int_N1 || $ex_number2 == $int_N2){ # either of them is a last exon
+    $min = $intron_pos1[$ex_number1-2] if  $intron_pos1[$ex_number1-2] <= $intron_pos2[$ex_number2-2];
+    $min = $intron_pos2[$ex_number2-2] if  $intron_pos1[$ex_number1-2] > $intron_pos2[$ex_number2-2];
+    $C1AC2_prot1 = join("", @aln_prot1[$min..$#aln_prot1]);
+    $C1AC2_prot2 = join("", @aln_prot2[$min..$#aln_prot2]);
+}
+else {
+    $min = $intron_pos1[$ex_number1-2] if  $intron_pos1[$ex_number1-2] <= $intron_pos2[$ex_number2-2];
+    $min = $intron_pos2[$ex_number2-2] if  $intron_pos1[$ex_number1-2] > $intron_pos2[$ex_number2-2];
+    $max = $intron_pos1[$ex_number1+1] if $intron_pos1[$ex_number1+1] >= $intron_pos2[$ex_number2+1];
+    $max = $intron_pos2[$ex_number2+1] if $intron_pos1[$ex_number1+1] < $intron_pos2[$ex_number2+1];
+    $C1AC2_prot1 = join("", @aln_prot1[$min..$max]);				       
+    $C1AC2_prot2 = join("", @aln_prot2[$min..$max]);
+}
+
 if ($aln_data){
     print "\n$aln_data\n";
-    
+    print "Isolated C1-A-C2\n$sp1\t$C1AC2_prot1\n$sp2\t$C1AC2_prot2\n\n";
+
     if (defined $outFile){
 	print O "$aln_data\n";
+	print O "Isolated C1-A-C2\n$sp1\t$C1AC2_prot1\n$sp2\t$C1AC2_prot2\n\n";
 	close O;
     }
 } else {
