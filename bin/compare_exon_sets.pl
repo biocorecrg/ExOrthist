@@ -1141,7 +1141,7 @@ Exons from $sp2 with gene orthologs with regulated exons in $sp1\t$tally_sp2_exo
 	"all_regs\tno_orth\t$N11\t$fr11\tnot_conserved\n";
     close IN_PLOT;
 		   
-    system "Rscript $binPath/plot_compare_exon_sets-v2.R Compare_exons_summary_input-$sp1-$sp2.txt $sp1 $sp2 Compare_exons_summary-$sp1-$sp2.pdf";
+    system "Rscript $binPath/plot_compare_exon_sets.R Compare_exons_summary_input-$sp1-$sp2.txt $sp1 $sp2 Compare_exons_summary-$sp1-$sp2.pdf";
 
 }
 else {
