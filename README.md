@@ -583,7 +583,7 @@ Exons from dm6 with gene orthologs with regulated exons in mm10	77	18.92%
 **(2)** Example of graphical output:
 <br />
 
-<img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/Compare_exon_sets_C-01.png" width=650 height=550 />
+<img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/Compare_exon_sets_C-01.png" />
 
 
 References
