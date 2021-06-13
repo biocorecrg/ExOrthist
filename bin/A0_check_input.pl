@@ -2,6 +2,11 @@
 use Getopt::Long;
 use warnings;
 use strict;
+use Cwd qw(abs_path cwd);
+
+my $binPath = abs_path($0);
+$0 =~ s/^.*\///;
+$binPath =~ s/\/$0$//; # path of exorthist's bin folder
 
 my $evo_file;
 my $gtfs;
@@ -133,7 +138,7 @@ close CLUSTER;
 print "Total file warnings: $total_file_warnings\n";
 print "Total gene_id warnings: $total_id_warnings\n";
 
-open (VERSION, "VERSION");
+open (VERSION, "$binPath/../VERSION") || die "It cannot find $binPath/../VERSION";
 my $version = <VERSION>;
 chomp($version);
 my $current_time = &time;
