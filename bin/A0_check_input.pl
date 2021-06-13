@@ -142,11 +142,9 @@ open (VERSION, "$binPath/../VERSION") || die "It cannot find $binPath/../VERSION
 my $version = <VERSION>;
 chomp($version);
 my $current_time = &time;
-print "\nVersion: $version $current_time\n";
+print "\nVersion: $version $current_time\n\n";
 
 die "\nExOrthist is aborting: file warnings are not allowed\n" if $total_file_warnings>0;
-
-
 
 sub time {
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime;
