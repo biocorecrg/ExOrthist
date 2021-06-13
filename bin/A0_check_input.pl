@@ -133,4 +133,20 @@ close CLUSTER;
 print "Total file warnings: $total_file_warnings\n";
 print "Total gene_id warnings: $total_id_warnings\n";
 
+open (VERSION, "VERSION");
+my $version = <VERSION>;
+chomp($version);
+my $current_time = &time;
+print "\nVersion: $version $current_time\n";
+
 die "\nExOrthist is aborting: file warnings are not allowed\n" if $total_file_warnings>0;
+
+
+
+sub time {
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime;
+    $year += 1900;
+    $mon += 1;
+    my $datetime = sprintf "%04d-%02d-%02d (%02d:%02d)", $year, $mday, $mon, $hour, $min;
+    return "[Date: ".$datetime."]";
+}
