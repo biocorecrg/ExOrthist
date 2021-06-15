@@ -241,12 +241,12 @@ ENSG00000167863 ENSMUSG00000034566
 	
 Pre-computed protein alignments for various pairs of species have been generated using ExOrthist v1.0.0 and can be downloaded from the links below. 
 	Species annotations: hg38: Ensembl v88, mm10: Ensembl v88, danRer11: Ensembl v99, dm6: Ensembl Metazoa: v26.
-- [danRer11-dm6 IPA alignments](http://vastdb.crg.eu/IPA_alns/danRer11-dm6.tar.gz) (29M).
-- [danRer11-hg38 IPA alignments](http://vastdb.crg.eu/IPA_alns/danRer11-hg38.tar.gz) (96M).
-- [danRer11-mm10 IPA alignments](http://vastdb.crg.eu/IPA_alns/danRer11-mm10.tar.gz) (74M).
-- [hg38-dm6 IPA alignments](http://vastdb.crg.eu/IPA_alns/dm6-hg38.tar.gz) (50M).
-- [mm10-dm6 IPA alignments](http://vastdb.crg.eu/IPA_alns/dm6-mm10.tar.gz) (38M).
-- [hg38-mm10 IPA alignments](http://vastdb.crg.eu/IPA_alns/hg38-mm10.tar.gz) (112M).		
+- [danRer11-dm6 IPA alignments](https://vastdb.crg.eu/IPA_alns/danRer11-dm6.tar.gz) (29M).
+- [danRer11-hg38 IPA alignments](https://vastdb.crg.eu/IPA_alns/danRer11-hg38.tar.gz) (96M).
+- [danRer11-mm10 IPA alignments](https://vastdb.crg.eu/IPA_alns/danRer11-mm10.tar.gz) (74M).
+- [hg38-dm6 IPA alignments](https://vastdb.crg.eu/IPA_alns/dm6-hg38.tar.gz) (50M).
+- [mm10-dm6 IPA alignments](https://vastdb.crg.eu/IPA_alns/dm6-mm10.tar.gz) (38M).
+- [hg38-mm10 IPA alignments](https://vastdb.crg.eu/IPA_alns/hg38-mm10.tar.gz) (112M).		
 	
 	
 **--email:** email address for notifications (yourmail@yourdomain)  
