@@ -256,9 +256,9 @@ if ("first;last" %in% unique(as.vector(plotting_table$ExPosition))) {
 #Only plot the exon length for the reference gene.
 plotting_table$ExonLength[plotting_table$GeneID != my_gene] = NA
 #Add and exon position code to get a legend with the different types of exons.
-plotting_table$ExPosition_code = rep("\u2588 Internal ex", nrow(plotting_table))
-plotting_table$ExPosition_code[plotting_table$ExPosition == "first"] = "\u25B6 First ex (at least 1 isoform)" #\u25BA
-plotting_table$ExPosition_code[plotting_table$ExPosition == "last"] = "\u25C0 Last ex (at least 1 isoform)" #\u25C0
+plotting_table$ExPosition_code = rep("\u2588 Internal exon", nrow(plotting_table))
+plotting_table$ExPosition_code[plotting_table$ExPosition == "first"] = "\u25B6 First exon (at least 1 isoform)" #\u25BA
+plotting_table$ExPosition_code[plotting_table$ExPosition == "last"] = "\u25C0 Last exon (at least 1 isoform)" #\u25C0
 plotting_table$EmptyCol = as.numeric(rep(NA, nrow(plotting_table))) #This is to actually plot the exon position legend.
 
 ######### Get unique table for names
@@ -287,7 +287,7 @@ my_plot = ggplot()  +
   geom_polygon(data=first_last_ex_df, aes(x=x, y=y, alpha=AnnotStatus, group=ExonID, fill=Filling_status, linetype=State, size=IsoformExs), color=first_last_ex_df$IsoformExs) + #exons which are both first and last.
   geom_point(data=plotting_table, aes(x=FakeStart-1.5, y=Order+0.25, color=FinalPhaseUp), shape=8) +
   geom_point(data=plotting_table, aes(x=FakeStop+1.5, y=Order+0.25, color=FinalPhaseDown), shape=8) +
-  geom_point(data=plotting_table, aes(x=EmptyCol, y=EmptyCol, shape=ExPosition_code, size=NA)) + #this is to print the shape legend
+  geom_point(data=plotting_table, aes(x=EmptyCol, y=EmptyCol, shape=ExPosition_code, size=NA)) + #this is to print the exon shape legend (internal, first, last)
   scale_shape_manual(values = c(1, 2, 3)) +
   theme_bw() +
   geom_text(data=(unique_table_for_names), aes(x=-50, y=unique(unique_table_for_names$Order)+0.25, 
@@ -298,9 +298,9 @@ my_plot = ggplot()  +
   geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.25, label=plotting_table$Levels), size=7) + #plot number of matching exons
   geom_text(aes(x=plotting_table$FakeStart+(plotting_table$FakeStop-plotting_table$FakeStart)/2, y=plotting_table$Order+0.75, label=plotting_table$ExonLength+1), size=7) + #plot the exon length
   
-  scale_fill_manual(values=group_colors_vector, name = "Ex color:", labels=c("Default", paste0(interesting_exons, " (", my_query_species,")"))) + #the order of the labels should be the same as in group_colors_vector.
+  scale_fill_manual(values=group_colors_vector, name = "Exon color:", labels=c("Default", paste0(interesting_exons, " (", my_query_species,")"))) + #the order of the labels should be the same as in group_colors_vector.
   scale_alpha_manual(values=c("annotated"=1, "not_annotated"=0)) + #color depending on the annotation status.
-  scale_linetype_manual(values=c("Exon"="solid", "Exon_added"="dashed"), name="Ex border:", labels=c("Exon"="\u2500 Orthologous ex", "Exon_added"="\u2504 Best-hit ex")) + #add linetype to label.
+  scale_linetype_manual(values=c("Exon"="solid", "Exon_added"="dashed"), name="Exon border:", labels=c("Exon"="\u2500 Orthologous exon", "Exon_added"="\u2504 Best-hit exon")) + #add linetype to label.
   scale_size_manual(values=c("brown2"=2, "black"=0.5)) +
   #Here I am inverting the label to plot the actual intron phases, not the GTF phases. 1=2 and 2=1
   scale_color_manual(values=c("0"="coral3","2"="mediumblue","1"="forestgreen", "extra"="extra"), name = "Intron Phases:",  labels=c("0"="0", "1"="2", "2"="1"), breaks=c("0", "2", "1")) +
@@ -323,7 +323,7 @@ my_plot = ggplot()  +
   xlim(-60,max(plotting_table$FakeStop)+5) + #limit axis
   ggtitle(paste0("Query gene: ", my_query_species, title_gene_name, ", ", title_geneID,  "\nHighlighted isoform: ", my_isorform_id)) +
   guides(alpha=FALSE, size=FALSE,
-         shape=guide_legend(override.aes = list(shape = NA), title="Ex shape:"),
+         shape=guide_legend(override.aes = list(shape = NA), title="Exon shape:"),
          linetype=guide_legend(override.aes = list(shape = NA, fill=NA)))
 
 #Save pdf to output file
