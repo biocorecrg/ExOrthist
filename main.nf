@@ -424,7 +424,6 @@ process score_EX_matches {
 	script:
     def species = comp_id.split("-")
 	"""
-    mkdir score_${comp_id};
     B5_format_aln_info_by_best_isoform_match.pl ${species[0]} ${species[1]} \
     ${comp_id}/all_PROT_aln_features.txt ${comp_id}/all_EX_aln_features.txt ${comp_id}/all_INT_aln_features.txt \
     ${species[0]}/${species[0]}.exint ${species[1]}/${species[1]}.exint \
