@@ -107,9 +107,9 @@ ExOrthist main module infers exon homologous pairs and exon orthogroups within t
 
 The pipeline can be launched in this way:
 ```bash
-nextflow run main.nf [-with-singularity | -with-docker] -bg > log.txt
+nextflow run main.nf [-with-singularity | -with-docker] -bg > log.txt   
 ```
-**NB**: the pipeline will by default run with the -with-singularity option. In order to run it with the -with-docker option, please set "singularity.enabled = false" in the `nextflow.config` file (default: "singularity.enabled = true").  
+ 
 
 If the pipeline crashes at any step, it can be re-launched using the -resume option (- not --):
 ```bash
