@@ -46,13 +46,13 @@ label_levels = c("gene_orth_conserved", "no_gene_orth_not_conserved",
 
 
 
-fill_color_vector = c("gene_orth_conserved"="mediumblue",
-                      "no_gene_orth_not_conserved"="mediumblue",
+fill_color_vector = c("gene_orth_conserved"="springgreen4", 
+                      "no_gene_orth_not_conserved"="springgreen4",
                       "exon_orth_conserved"="goldenrod2",
                       "no_exon_orth_not_conserved"="goldenrod2",
                       "reg_exon_orth_conserved"="firebrick1",
-                      "reg_exon_no_orth_conserved"="springgreen4",
-                      "no_reg_exon_not_conserved"="springgreen4",
+                      "reg_exon_no_orth_conserved"="mediumblue",
+                      "no_reg_exon_not_conserved"="mediumblue",
                       "orth_conserved"="darkorchid4",
                       "best_hit_conserved"="darkorchid4",
                       "unclear_not_conserved"="darkorchid3",
