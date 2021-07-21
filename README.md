@@ -73,7 +73,7 @@ Requirements
 ExOrthist requires the following software:
 
 * [Nextflow](https://www.nextflow.io/)  
-* A linux container engine (either [Docker](https://www.docker.com/) or [Singularity](https://sylabs.io/guides/3.1/user-guide/cli/singularity_apps.html))  
+* A linux container engine (either [Docker](https://www.docker.com/) or [Singularity](https://sylabs.io/guides/3.1/user-guide/cli/singularity_apps.html). NB: singularity version >= 3.2.1 is required)  
 
 Additionally, [liftOver](https://genome-store.ucsc.edu/), [bedtools](https://bedtools.readthedocs.io/en/latest/) as well as specific pairwise [liftOver files](http://hgdownload.soe.ucsc.edu/downloads.html#liftover) are required to run `get_liftovers.pl` [see [below](#addition-of-manually-curated-exon-orthology-pairs)].
 
@@ -93,8 +93,8 @@ git clone https://github.com/biocorecrg/ExOrthist.git
 
 Install Docker:
 
-* Docker: https://docs.docker.com/install/ (version 10.03 or later is required)
-* Singularity: https://sylabs.io/guides/2.6/user-guide/quick_start.html#quick-installation-steps (version 2.6.1 or 3.2.1 is required)
+* Docker: https://docs.docker.com/install/ (version 10.03 or later is required).
+* Singularity: https://sylabs.io/guides/2.6/user-guide/quick_start.html#quick-installation-steps (version 3.2.1 or later is required).
 
 ExOrthist will take care of downloading the required docker image from DockerHub and eventually convert it into a singularity one.  
 
