@@ -491,6 +491,7 @@ process collapse_overlapping_matches {
 
     output:
     file("filtered_best_scored_EX_matches_by_targetgene-NoOverlap.tab") into (score_exon_hits_pairs, exon_pairs_for_reclustering)
+    file("overlapping_EXs_by_species.tab")
 
 	script:
 	bonafide = ""
