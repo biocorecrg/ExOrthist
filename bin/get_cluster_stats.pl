@@ -110,8 +110,12 @@ while (<EX_CLUSTERS>){
 	my $exon_name = $exon_conversion{$id2}; # this is the unique ID (OV_EX_dm6_1)
 	
 	if ($exon_name){ # excludes Lifted exons
-#	if (!defined $done_exon{$exon_name}){ # does not count redundant exons multiple times
 	    $tally_exons_in_clusters{$species}++;
+	}
+	else {
+	    $exon_name = $id2; # for liftover hits
+	}
+	if (!defined $done_exon{$exon_name}){ # does not count redundant exons multiple times
 	    $done_exon{$exon_name}=1;
 	    ### count by cluster
 	    $tally_by_exon_cluster{$exon_cluster}{$species}++;
