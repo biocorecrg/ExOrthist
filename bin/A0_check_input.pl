@@ -138,7 +138,7 @@ close CLUSTER;
 print "Total file warnings: $total_file_warnings\n";
 print "Total gene_id warnings: $total_id_warnings\n";
 
-open (VERSION, "$binPath/../VERSION");# || die "It cannot find $binPath/../VERSION";
+open (VERSION, "$binPath/VERSION");# || die "It cannot find $binPath/VERSION";
 my $version = <VERSION>;
 chomp($version);
 my $current_time = &time;

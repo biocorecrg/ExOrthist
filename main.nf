@@ -413,24 +413,24 @@ process score_EX_matches {
     tag { "${comp_id}" }
     label('big_mem_retry')
     //I need to modify the name so that it has the species pair in the output.
-    storeDir "${params.output}"
+    storeDir "${params.output}/${comp_id}"
 
     input:
     set val(comp_id), file("*") from data_to_score
 
     output:
-    file("${comp_id}/all_PROT_EX_INT_aln_features_*")
-    set val(comp_id), file("${comp_id}/all_scored_EX_matches.txt") into all_scores_to_filt
+    file("all_PROT_EX_INT_aln_features_*")
+    set val(comp_id), file("all_scored_EX_matches.txt") into all_scores_to_filt
 
 	script:
     def species = comp_id.split("-")
-	""" 
+	"""
     B5_format_aln_info_by_best_isoform_match.pl ${species[0]} ${species[1]} \
     ${comp_id}/all_PROT_aln_features.txt ${comp_id}/all_EX_aln_features.txt ${comp_id}/all_INT_aln_features.txt \
     ${species[0]}/${species[0]}.exint ${species[1]}/${species[1]}.exint \
     ${species[0]}/${species[0]}_protein_ids_intron_pos_CDS.txt ${species[1]}/${species[1]}_protein_ids_intron_pos_CDS.txt \
-    ${comp_id}/all_PROT_EX_INT_aln_features_${comp_id}.txt;
-    C1_score_EX_matches.pl ${comp_id}/all_PROT_EX_INT_aln_features_${comp_id}.txt ${comp_id}
+    all_PROT_EX_INT_aln_features_${comp_id}.txt;
+    C1_score_EX_matches.pl all_PROT_EX_INT_aln_features_${comp_id}.txt .
     """
 }
 
@@ -492,6 +492,7 @@ process collapse_overlapping_matches {
 
     output:
     file("filtered_best_scored_EX_matches_by_targetgene-NoOverlap.tab") into (score_exon_hits_pairs, exon_pairs_for_reclustering)
+    file("overlapping_EXs_by_species.tab")
 
 	script:
 	bonafide = ""
