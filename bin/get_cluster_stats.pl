@@ -31,7 +31,7 @@ OPTIONS
 ";
 }
 
-my @exon_files=glob("$exonsDB_folder/*/*_overlap_CDS_exons.txt");
+my @exon_files=glob("$exonsDB_folder/*/*_overlap_CDS_exons.txt"); # contains the ANNOTATED exons only (not lifted)
 die "[Aborted] It cannot find any files with exon info\n" if $#exon_files < 0;
 
 ### defines the files:
@@ -109,6 +109,7 @@ while (<EX_CLUSTERS>){
 	my $id2 = "$gene=$temp[1]";
 	my $exon_name = $exon_conversion{$id2}; # this is the unique ID (OV_EX_dm6_1)
 	
+	if ($exon_name){ # excludes Lifted exons
 #	if (!defined $done_exon{$exon_name}){ # does not count redundant exons multiple times
 	    $tally_exons_in_clusters{$species}++;
 	    $done_exon{$exon_name}=1;
@@ -116,7 +117,7 @@ while (<EX_CLUSTERS>){
 	    $tally_by_exon_cluster{$exon_cluster}{$species}++;
 	    $total_exon_clusters++ if !defined $done_cluster{$exon_cluster};
 	    $done_cluster{$exon_cluster}=1;
-#	}
+	}
     }
 }
 
