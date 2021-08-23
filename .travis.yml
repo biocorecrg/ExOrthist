@@ -12,7 +12,7 @@ install:
   - sudo ln -s $PWD/nextflow /usr/local/bin/nextflow
 
 # Install ExOrthist
-  - git clone git@github.com:biocorecrg/ExOrthist.git
+  - git clone https://github.com/biocorecrg/ExOrthist.git
   - cd ExOrthist
  
 # Run the pipeline
