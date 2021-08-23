@@ -4,7 +4,7 @@ params {
     annotations    = "$baseDir/test/GTF/*_annot-subsetted.gtf.gz"
     alignmentnum   = 1000
     orthogroupnum  = 500
-    extraexons     = ""
+    extraexons     = "$baseDir/test/EXTRA_EXONS/*_extraexons.tab"
     bonafide_pairs = ""
     orthopairs     = ""
     evodists       = "$baseDir/test/evodists.txt" 

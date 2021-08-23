@@ -321,7 +321,8 @@ ${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${s
 }
 
 //Collapse EXs_to_split in batches of 500 files
-EXs_to_split.buffer(size : 500, remainder: true).set{EXs_to_split_batches}
+EXs_to_split.toSortedList().flatten().buffer(size : 500, remainder: true).set{EXs_to_split_batches}
+
 
 /*
  * Split exons pairs to realign
@@ -410,7 +411,7 @@ folder_jscores.join(anno_2_score_ex_int).map{
  
 process score_EX_matches {
     tag { "${comp_id}" }
-    label('big_mem')
+    label('big_mem_retry')
     //I need to modify the name so that it has the species pair in the output.
     storeDir "${params.output}"
 
