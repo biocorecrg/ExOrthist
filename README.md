@@ -613,4 +613,4 @@ Exons from dm6 with gene orthologs with regulated exons in mm10	77	18.92%
 References
 ------------
 
-Marquez Y, Mantica F, Cozzuto L, Burguera D, Hermoso-Pulido H, Ponomarenko J, Roy SW, Irimia M. (2021). ExOrthist: a tool to infer exon orthologies at any evolutionary distance. bioRxiv. https://www.biorxiv.org/content/10.1101/2021.02.22.432358v1.full.pdf
+Marquez Y, Mantica F, Cozzuto L, Burguera D, Hermoso-Pulido H, Ponomarenko J, Roy SW, Irimia M. (2021). [ExOrthist: a tool to infer exon orthologies at any evolutionary distance](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02441-9). *Genome Biol*, 22:239. 
