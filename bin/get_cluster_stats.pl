@@ -34,6 +34,8 @@ OPTIONS
 my @exon_files=glob("$exonsDB_folder/*/*_overlap_CDS_exons.txt"); # contains the ANNOTATED exons only (not lifted)
 die "[Aborted] It cannot find any files with exon info\n" if $#exon_files < 0;
 
+my $f_overlapping_EXs_by_species="$exonsDB_folder/overlapping_EXs_by_species.tab";
+
 ### defines the files:
 if (!defined $f_gene_cluster){
     $f_gene_cluster = "$exonsDB_folder/gene_cluster_file.gz";
@@ -88,6 +90,33 @@ foreach my $exon_file (@exon_files){
     }
     close EXONS;
 }
+# EX overlap of hits
+my %exon_catalog_hits=(); # catalog of exons by overlap
+my %tally_exons_all_hits=(); # n of all exons per species
+my %tally_exons_hits=(); # n of exons per species in genes in clusters
+my %exon_conversion_hits=(); # from gene=coordinate to OV_EX_Mm2_186054.
+unless (-e $f_overlapping_EXs_by_species){
+    print "It cannot open the exon file $f_overlapping_EXs_by_species. Issues expected if --bonafide is used\n";
+} else {
+    open (EXON_HITS, $f_overlapping_EXs_by_species);
+}
+while (<EXON_HITS>){ ##checking list of hits
+    chomp($_);
+    my @l=split(/\t/,$_);
+    my $gene=$l[1];
+    my ($species)=$l[0]=~/OV\_EX\_(.+)\_/;
+    
+    if (!defined $exon_catalog_hits{$l[0]}){
+	$tally_exons_all_hits{$species}++;
+	if ($gene_to_cluster{$gene}){
+	    $tally_exons_hits{$species}++;
+	}
+	$exon_catalog_hits{$l[0]} = 1;
+    } 
+    my $exon_ID="$gene=$l[2]";
+    $exon_conversion_hits{$exon_ID}=$l[0];
+    close EXON_HITS;
+}
 
 #GF00002.003 ENSMUSG00000031250 chrX:133859723-133859863:+ Mm2
 my %tally_exons_in_clusters=(); # n of exons per species in clusters
@@ -113,7 +142,7 @@ while (<EX_CLUSTERS>){
 	    $tally_exons_in_clusters{$species}++;
 	}
 	else {
-	    $exon_name = $id2; # for liftover hits
+	    $exon_name = "$exon_conversion_hits{$id2}-HITS"; # for liftover hits
 	}
 	if (!defined $done_exon{$exon_name}){ # does not count redundant exons multiple times
 	    $done_exon{$exon_name}=1;
