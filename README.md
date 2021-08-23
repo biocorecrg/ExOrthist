@@ -6,6 +6,12 @@ output:
   pdf_document: default
 ---
 -->
+[![Build Status](https://app.travis-ci.com/biocorecrg/ExOrthist.svg?branch=master)](https://app.travis-ci.com/biocorecrg/ExOrthist)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Nextflow version](https://img.shields.io/badge/Nextflow-21.04.1-brightgreen)](https://www.nextflow.io/)
+[![Singularity version](https://img.shields.io/badge/Singularity-v3.2.1-green.svg)](https://www.sylabs.io/)
+[![Docker version](https://img.shields.io/badge/Docker-v19.03-blue)](https://www.docker.com/)
+
 <!--
 <img align="middle" href="https://github.com/biocorecrg/exon_intron_orthology_pipeline" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/logo_s.png?raw=true" />
 -->
