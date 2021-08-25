@@ -133,6 +133,7 @@ my %tally_exons_in_clusters=(); # n of exons per species in clusters
 my %done_exon=(); my %done_cluster=();
 my %tally_by_exon_cluster=(); # to get 1:1:1 strings
 my $total_exon_clusters=0;
+my %tally_bonafide=();
 
 open (EX_CLUSTERS, $f_exon_cluster) || die "It cannot open the file with exon clusters ($f_exon_cluster)\n";
 while (<EX_CLUSTERS>){ 
@@ -166,6 +167,7 @@ while (<EX_CLUSTERS>){
 	    }
 	    else {
 		$exon_name = "$exon_conversion_hits{$id2}-HITS"; # for liftover hits
+		$tally_bonafide{$species}++;
 	    }
 	}
 	if (!defined $done_exon{$exon_name}){ # does not count redundant exons multiple times
@@ -177,6 +179,7 @@ while (<EX_CLUSTERS>){
 	}
     }
 }
+
 
 ### Gets the default cluster string:
 my $default_string1;
@@ -205,10 +208,16 @@ foreach my $exon_cluster (sort keys %tally_by_exon_cluster){
 }
 
 print "Summary statistics of exon orthogroups (OGs)\n"; 
-print "Species\tTotal CDS exons\tExons in gene OGs\tExons in OGs\t% recovered\n";
+print "Species\tTotal annotated CDS exons\tExons in gene OGs\tExons in OGs\t% recovered\n";
 foreach my $species (sort keys %tally_exons){
     my $perc_covered = sprintf ("%.2f",100*($tally_exons_in_clusters{$species}/$tally_exons{$species}));
     print "$species\t$tally_exons_all{$species}\t$tally_exons{$species}\t$tally_exons_in_clusters{$species}\t$perc_covered\%\n";
+}
+
+
+print "\nNon-annotated bonafide exons in OGs:\n";
+foreach my $species (sort keys %tally_bonafide){
+    print "$species\t$tally_bonafide{$species}\n";
 }
 
 $tally_strings{$default_string1}=0 if !defined $tally_strings{$default_string1};
