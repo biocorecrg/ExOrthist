@@ -104,7 +104,7 @@ while (<EXON_HITS>){ ##checking list of hits
     chomp($_);
     my @l=split(/\t/,$_);
     my $gene=$l[1];
-    my ($species)=$l[0]=~/OV\_EX\_(.+)\_/;
+    my ($species)=$l[0]=~/OV\_EX\_(.+?)\_/;
     
     if (!defined $exon_catalog_hits{$l[0]}){
 	$tally_exons_all_hits{$species}++;
@@ -113,10 +113,11 @@ while (<EXON_HITS>){ ##checking list of hits
 	}
 	$exon_catalog_hits{$l[0]} = 1;
     } 
-    my $exon_ID="$gene=$l[2]";
+    my ($co)=$l[2]=~/\:(.+)\:/;
+    my $exon_ID="$gene=$co";
     $exon_conversion_hits{$exon_ID}=$l[0];
-    close EXON_HITS;
 }
+close EXON_HITS;
 
 #GF00002.003 ENSMUSG00000031250 chrX:133859723-133859863:+ Mm2
 my %tally_exons_in_clusters=(); # n of exons per species in clusters
