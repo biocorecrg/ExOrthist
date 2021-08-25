@@ -69,6 +69,7 @@ my %exon_catalog=(); # catalog of exons by overlap
 my %tally_exons_all=(); # n of all exons per species
 my %tally_exons=(); # n of exons per species in genes in clusters
 my %exon_conversion=(); # from gene=coordinate to OV_EX_Mm2_186054.
+my %exon_conversion_partial=(); # from gene=coordinate1 and gene=coordinate2 to OV_EX_Mm2_186054.
 
 foreach my $exon_file (@exon_files){
     open (EXONS, $exon_file) || die "It cannot open the exon file $exon_file\n";
@@ -87,6 +88,13 @@ foreach my $exon_file (@exon_files){
 	} 
 	my $exon_ID="$gene=$l[2]";
 	$exon_conversion{$exon_ID}=$l[0];
+
+	# also keeps the match to the partial exon coordinates
+	my ($co_start,$co_end)=$l[2]=~/(.+?)\-(.+)/;
+	my $exon_ID_A="$gene=$co_start";
+	my $exon_ID_B="$gene=$co_end";
+	$exon_conversion_partial{$exon_ID_A}=$l[0];
+	$exon_conversion_partial{$exon_ID_B}=$l[0];
     }
     close EXONS;
 }
@@ -104,6 +112,7 @@ while (<EXON_HITS>){ ##checking list of hits
     chomp($_);
     my @l=split(/\t/,$_);
     my $gene=$l[1];
+    next if $gene =~ /GeneID/; # lost header
     my ($species)=$l[0]=~/OV\_EX\_(.+?)\_/;
     
     if (!defined $exon_catalog_hits{$l[0]}){
@@ -143,7 +152,21 @@ while (<EX_CLUSTERS>){
 	    $tally_exons_in_clusters{$species}++;
 	}
 	else {
-	    $exon_name = "$exon_conversion_hits{$id2}-HITS"; # for liftover hits
+	    my ($co_start,$co_end)=$coord=~/\:(.+?)\-(.+)\:/;
+	    my $exon_ID_A="$gene=$co_start";
+	    my $exon_ID_B="$gene=$co_end";
+
+	    if (defined $exon_conversion_partial{$exon_ID_A}){
+		$exon_name = $exon_conversion_partial{$exon_ID_A};
+		$tally_exons_in_clusters{$species}++;
+	    }
+	    elsif (defined $exon_conversion_partial{$exon_ID_B}){
+		$exon_name = $exon_conversion_partial{$exon_ID_B};
+		$tally_exons_in_clusters{$species}++;
+	    }
+	    else {
+		$exon_name = "$exon_conversion_hits{$id2}-HITS"; # for liftover hits
+	    }
 	}
 	if (!defined $done_exon{$exon_name}){ # does not count redundant exons multiple times
 	    $done_exon{$exon_name}=1;
