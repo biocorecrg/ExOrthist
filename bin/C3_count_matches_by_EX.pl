@@ -29,11 +29,10 @@ close INONE;
 # Format: ENSG00000171055  chr2:36552056-36552268:-   ENSMUSG00000056121   chr17:78377717-78377890:-  Sp1  Sp2
 if (defined $input_file2){
     open (INTWO, $input_file2) || die "It cannot open the Liftover file\n";
-    <INTWO>;
     while (<INTWO>){
 	chomp($_); 
 	my @l=split(/\t/,$_);
-	if ($l[0]!~/GeneID_sp/){ # ignores header
+	if ($l[0]!~/GeneID_sp/i){ # ignores header
 	    my $e1=$l[0]."\t".$l[1]."\t".$l[4];
 	    my $e2=$l[2]."\t".$l[3]."\t".$l[5];	
 	    $ex{$e1}++;
