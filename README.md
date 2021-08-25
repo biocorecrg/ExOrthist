@@ -6,6 +6,12 @@ output:
   pdf_document: default
 ---
 -->
+[![Build Status](https://app.travis-ci.com/biocorecrg/ExOrthist.svg?branch=master)](https://app.travis-ci.com/biocorecrg/ExOrthist)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Nextflow version](https://img.shields.io/badge/Nextflow-21.04.1-brightgreen)](https://www.nextflow.io/)
+[![Singularity version](https://img.shields.io/badge/Singularity-v3.2.1-green.svg)](https://www.sylabs.io/)
+[![Docker version](https://img.shields.io/badge/Docker-v19.03-blue)](https://www.docker.com/)
+
 <!--
 <img align="middle" href="https://github.com/biocorecrg/exon_intron_orthology_pipeline" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/logo_s.png?raw=true" />
 -->
@@ -73,7 +79,7 @@ Requirements
 ExOrthist requires the following software:
 
 * [Nextflow](https://www.nextflow.io/)  
-* A linux container engine (either [Docker](https://www.docker.com/) or [Singularity](https://sylabs.io/guides/3.1/user-guide/cli/singularity_apps.html))  
+* A linux container engine (either [Docker](https://www.docker.com/) or [Singularity](https://sylabs.io/guides/3.1/user-guide/cli/singularity_apps.html). NB: singularity version >= 3.2.1 is required)  
 
 Additionally, [liftOver](https://genome-store.ucsc.edu/), [bedtools](https://bedtools.readthedocs.io/en/latest/) as well as specific pairwise [liftOver files](http://hgdownload.soe.ucsc.edu/downloads.html#liftover) are required to run `get_liftovers.pl` [see [below](#addition-of-manually-curated-exon-orthology-pairs)].
 
@@ -93,8 +99,8 @@ git clone https://github.com/biocorecrg/ExOrthist.git
 
 Install Docker:
 
-* Docker: https://docs.docker.com/install/ (version 10.03 or later is required)
-* Singularity: https://sylabs.io/guides/2.6/user-guide/quick_start.html#quick-installation-steps (version 2.6.1 or 3.2.1 is required)
+* Docker: https://docs.docker.com/install/ (version 10.03 or later is required).
+* Singularity: https://sylabs.io/guides/2.6/user-guide/quick_start.html#quick-installation-steps (version 3.2.1 or later is required).
 
 ExOrthist will take care of downloading the required docker image from DockerHub and eventually convert it into a singularity one.  
 
@@ -107,9 +113,9 @@ ExOrthist main module infers exon homologous pairs and exon orthogroups within t
 
 The pipeline can be launched in this way:
 ```bash
-nextflow run main.nf [-with-singularity | -with-docker] -bg > log.txt
+nextflow run main.nf [-with-singularity | -with-docker] -bg > log.txt   
 ```
-**NB**: the pipeline will by default run with the -with-singularity option. In order to run it with the -with-docker option, please set "singularity.enabled = false" in the `nextflow.config` file (default: "singularity.enabled = true").  
+ 
 
 If the pipeline crashes at any step, it can be re-launched using the -resume option (- not --):
 ```bash
@@ -260,7 +266,8 @@ Pre-computed protein alignments for various pairs of species have been generated
 * **run info file**: file containing the stringency parameters for each evolutionary distance range used for the `main.nf` run, together with the considered evolutionary distances for each species pair. Eventual warnings about problematic cases (e.g. genes included in the orthology but without annotated exons in the GTF) are also printed out here.  
 * **gene_cluster_file.gz**: the **--cluster** gene cluster file [[see Inputs](#inputs)] is copied and gzipped in the output directory. This is necessary to run the `exint_plotter` and `compare_exon_sets` modules without external dependencies.  
 * **filtered\_best\_scored\_EX\_matches\_by\_targetgene.tab**: it contains the best gene-wise exon matches for ALL species pairs which respect the filtering criteria. The exons involved in these matches are considered orthologs. 
-* **filtered\_best\_scored\_EX\_matches\_by\_targetgene-NoOverlap.tab**: it contains the same information as filtered_best_scored_EX_matches_by_targetgene.tab, but exclusively for a representative exon in each group of overlapping exons (i.e. different versions of the same exon). The representative exon is the one with the higher number of matches across species.    
+* **filtered\_best\_scored\_EX\_matches\_by\_targetgene-NoOverlap.tab**: it contains the same information as filtered_best_scored_EX_matches_by_targetgene.tab, but exclusively for a representative exon in each group of overlapping exons (i.e. different versions of the same exon). The representative exon is the one with the higher number of matches across species.  
+* **overlapping_EXs_by_species.tab**: it contains the correspondence between each exon and the relative group of overlapping exons for all species. The last column reports the total number of matches for that exon in all the other species.  
 * **EX\_clusters\_Info.tab.gz**: exon orthogroups with all the graph information used to compute the Membership Score.  
 * **EX\_clusters.tab**: exon orthogroups reporting only the most essential information.  
 * **unclustered\_EXs.txt**: exons excluded from the final orthogroups by the clustering algorithm.  
@@ -606,4 +613,4 @@ Exons from dm6 with gene orthologs with regulated exons in mm10	77	18.92%
 References
 ------------
 
-Marquez Y, Mantica F, Cozzuto L, Burguera D, Hermoso-Pulido H, Ponomarenko J, Roy SW, Irimia M. (2021). ExOrthist: a tool to infer exon orthologies at any evolutionary distance. bioRxiv. https://www.biorxiv.org/content/10.1101/2021.02.22.432358v1.full.pdf
+Marquez Y, Mantica F, Cozzuto L, Burguera D, Hermoso-Pulido H, Ponomarenko J, Roy SW, Irimia M. (2021). [ExOrthist: a tool to infer exon orthologies at any evolutionary distance](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02441-9). *Genome Biol*, 22:239. 
