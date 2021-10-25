@@ -32,7 +32,7 @@ if (defined $input_file2){
     while (<INTWO>){
 	chomp($_); 
 	my @l=split(/\t/,$_);
-	if ($l[0]!~/GeneID_sp/){ # ignores header
+	if ($l[0]!~/GeneID_sp/i){ # ignores header
 	    my $e1=$l[0]."\t".$l[1]."\t".$l[4];
 	    my $e2=$l[2]."\t".$l[3]."\t".$l[5];	
 	    $ex{$e1}++;
