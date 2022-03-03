@@ -378,7 +378,9 @@ aligned_subclusters_4_splitting.groupTuple().join(realigned_exons_4_merge.groupT
 
 process merge_PROT_EX_INT_aln_info {
     tag { "${comp_id}" }
-	stageInMode = 'copy'
+    label 'incr_time_cpus'
+    
+    stageInMode = 'copy'
     //this matches all_PROT_aln_features.txt, all_EX_aln_features.txt, all_INT_aln_features.txt, Exint_Alignments.aln.gz
     publishDir "${params.output}", mode: "copy", pattern: "${comp_id}/all_*_aln_features.txt" 
     publishDir "${params.output}", mode: "copy", pattern: "${comp_id}/EXINT_aln.gz"
