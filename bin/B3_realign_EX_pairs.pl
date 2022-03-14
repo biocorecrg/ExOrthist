@@ -14,12 +14,13 @@ my $cpus=$ARGV[9]; #cpus
 $cpus=1 if !$cpus;
 
 my  %sim; ##AA similarity
-mkdir $odir; 
-$odir.="/";
-my $texf=$odir."tex_part_".$part.".exint";
-my $tmpgde=$odir."tex_part_".$part.".gde";
-print "$texf\n$tmpgde\n";
+mkdir $odir; #Create output directory 
+$odir.="/"; #Make sure output directory ends with a slash
+my $texf=$odir."tex_part_".$part.".exint"; #define temporary output exint file (for exon sequences)
+my $tmpgde=$odir."tex_part_".$part.".gde"; #define temporary alignment files
+print "$texf\n$tmpgde\n"; #print the filenames in the log
 
+#set similarity scores
 $sim{"FY"}=1;
 $sim{"YF"}=1;
 $sim{"FW"}=1;
@@ -45,7 +46,7 @@ $sim{"TS"}=1;
 $sim{"NQ"}=1;
 $sim{"QN"}=1;
 
-#reading Blosum62 matrix
+#Reading Blosum62 matrix
 #   A  R  N  D  C  Q  E  G  H  I  L  K  M  F  P  S  T  W  Y  V  B  Z  X  *
 #A  4 -1 -2 -2  0 -1 -1  0 -2 -1 -1 -1 -1 -2 -1  1  0 -3 -2  0 -2 -1  0 -4 
 my ($pair, $j);
@@ -66,7 +67,7 @@ while (<BL>){
 	@line=split(/\s+/,$_);
 	for ($j=1; $j<scalar(@line)-1; $j++){
 	    $pair=$A1[$c].$A2[$j];
-	    $sc{$pair}=$line[$j];
+	    $sc{$pair}=$line[$j]; #score for each pair of AA
 	}
     }
 }
@@ -74,29 +75,29 @@ close (BL);
 
 ##PROCESSING EXINT FILES
 my (@t1, @t2);
-my $sid;
+my $sid; 
 my $m=0; 
-my (%seqs);
+my (%seqs); #create an hash for the sequences
 my $z;
-my %intron;
+my %intron; #create an hash for the introns
 my $ic; 
 my $dev;
-open (EXONE, "$e1") || die "Missing exint file species 1";
+open (EXONE, "$e1") || die "Missing exint file species 1"; #Open exint file for species1
 while (<EXONE>){
-    chomp($_);
-    if ($_=~/\>/){
-	@l=split(/\s+/,$_);
-	$l[0]=~s/\>//;
-	$sid=$_;
+    chomp($_); #remove the newline character at the end of the line
+    if ($_=~/\>/){ #if the line contains the fasta header
+	@l=split(/\s+/,$_); #split the header on the white spaces: first element = protein/geneID; other elements = exon positions (if present) 
+	$l[0]=~s/\>//; #remove the > from the protein/geneID
+	$sid=$_; #set the current ID to the whole first line
     }
-    else {	
-	$seqs{$l[0]}.=$_;	
+    else { #if the line is not header, but sequence
+	$seqs{$l[0]}.=$_; #associate the sequence to the header in the hash
     }    
 }
-close (EXONE); 
+close (EXONE); #cloes the first exint
 
-open (EXTWO, "$e2");#|| die "Missing exint file species 2";
-while (<EXTWO>){
+open (EXTWO, "$e2");#|| die "Missing exint file species 2"; #Open exint file for species2
+while (<EXTWO>){ 
     chomp($_);
     if ($_=~/\>/){
 	@l=split(/\s+/,$_);
@@ -116,62 +117,62 @@ my (@cr1,@cr2);
 my (%score,%ex, %seq, %rex);
 my ($name);
 my %pair_already_aln=();
-open (IN, "$i1")|| die "Missing exons to realign file";
+open (IN, "$i1")|| die "Missing exons to realign file"; #opens the exons to realign file
 <IN>; # removes header
-while (<IN>){
-    chomp($_);
-    @l=split(/\t/,$_);
-    @cr1=split(/\-/,$l[3]); 
-    $size1=$cr1[1]-$cr1[0]+1;
-    $sq1=substr($seqs{$l[1]},($cr1[0]-1),$size1); # seq of exon 1
-    $m=16;
-    $sp1=$l[20]; $sp2=$l[21];
-    @cr2=split(/\-/,$l[16]);
-    $size2=$cr2[1]-$cr2[0]+1;
-    $sq2=substr($seqs{$l[8]},($cr2[0]-1),$size2); # seq of exon 2
-    $st=substr($l[19],0,1);
-    $idex=$l[8]."\t".$l[$m-1]."\t".$l[$m]."\t".$l[$m+1]."\t".$l[$m+2]."\t".$st;
+while (<IN>){ 
+    chomp($_); #remove newline character at the end of the line
+    @l=split(/\t/,$_); #split line into array using tab as separator
+    @cr1=split(/\-/,$l[3]); #split the fourth element (i.e. the AA positions of the query exon)
+    $size1=$cr1[1]-$cr1[0]+1; #compute the size of the exon in AA
+    $sq1=substr($seqs{$l[1]},($cr1[0]-1),$size1); #get the seq of the query exon from the hash previously created using the protein/geneID as key
+    $m=16; #set m to 16 to generate indexes in a few lines
+    $sp1=$l[20]; $sp2=$l[21]; #select the query and target species from the header
+    @cr2=split(/\-/,$l[16]); #split the AA positions of the target exon
+    $size2=$cr2[1]-$cr2[0]+1; #compute the lenght of the target exon
+    $sq2=substr($seqs{$l[8]},($cr2[0]-1),$size2); ## get the seq of the target exon from the hash previously created using the protein/geneID as key
+    $st=substr($l[19],0,1); #get the strand
+    $idex=$l[8]."\t".$l[$m-1]."\t".$l[$m]."\t".$l[$m+1]."\t".$l[$m+2]."\t".$st; #print a tab separated list of: target_protein, target_exon_number, target_exon_position, chr_target, target_exon_coords 
 
     ### Adds a check to save realn the same exons multiple times
     my $pair_of_seqs = "$sq1=$sq2";
 
-    if (!$pair_already_aln{$pair_of_seqs}){
+    if (!$pair_already_aln{$pair_of_seqs}){ #if the two exons have not been realigned already:
 	##aligning exons locally and getting their sim scores
-	open (TMPALN,">$texf");
-	print TMPALN ">$l[1]\n$sq1\n>$l[8]\n$sq2\n"; 
-	close (TMPALN);
-	`B0_generate_IPA_prot_aln.pl $texf MAFFT $cpus`;
+	open (TMPALN,">$texf"); #open the temporary exint file
+	print TMPALN ">$l[1]\n$sq1\n>$l[8]\n$sq2\n"; #print the two exon sequences to compare, each with its fasta header
+	close (TMPALN); #close the temporary exint file
+	`B0_generate_IPA_prot_aln.pl $texf MAFFT $cpus`; #align the two exons; the output filename is built from the input filename
 	## 2) OPENING OUTPUT GDE FILE
 	$name="";
 	%seq=();
 	my (@ls);
-	open (ALN, "$tmpgde");
+	open (ALN, "$tmpgde"); #open the temporary alignment file
 	while (<ALN>){
-	    chomp($_);
-	    if ($_=~/\%/){ 
-		@ls=split(/\s+/,$_);
-		$name=$ls[0]; 
-		$name=~s/\%//;
+	    chomp($_); #remove newline character at the end of the line
+	    if ($_=~/\%/){ #if header (the header of the alignment output starts with %)
+		@ls=split(/\s+/,$_); #split the header on the whitespaces
+		$name=$ls[0]; #get the first element of the array (proteinID)
+		$name=~s/\%//; #remove the %from the proteinID
 	    }
-	    else {
-		$seq{$name}.=uc($_);
+	    else { #if sequence
+		$seq{$name}.=uc($_); #add the sequence to the hash with the corresponding ID, after converting it to uppercase
 	    }
 	}
-	close (ALN);
-	my @nkeys=keys(%seq);
-	my ($seq1,$seq2)="";	
-	($n1,$n2)="";
-	$n1=$nkeys[0];
-	$n2=$nkeys[1];
-	$seq1=$seq{$n1};
-	$seq2=$seq{$n2};
+	close (ALN); #close the alignment file
+	my @nkeys=keys(%seq); #get an array with all the keys in the seq hash (meaning the two protein/geneIDs)
+	my ($seq1,$seq2)=""; #initiliaze the sequences	
+	($n1,$n2)=""; 
+	$n1=$nkeys[0]; #query protein/geneID
+	$n2=$nkeys[1]; #target protein/geneID
+	$seq1=$seq{$n1}; #query exon aligned sequence (with gaps and everything)
+	$seq2=$seq{$n2}; #target exon aligned sequence (with gaps and everything)
 	
 	## 3) CALLING SUBROUTINE FOR SCORING PROTEINS	
-	if (($n1 && $n2) && ($seq1 && $seq2)){
-	    my ($sim,$id,$gp,$glsc)=score_proteins($n1,$n2,$seq1,$seq2);
-	    @{$pair_already_aln{$pair_of_seqs}}=($sim,$id,$gp,$glsc); # info store for the future
-	    $png=sprintf("%.2f",(($gp/$size1)*100));
-	    if (!$score{$l[1]."_".$l[2]."_".$l[8]}){ # if there is no score for that exon yet
+	if (($n1 && $n2) && ($seq1 && $seq2)){ #if we have proteinID and sequences for both the exons
+	    my ($sim,$id,$gp,$glsc)=score_proteins($n1,$n2,$seq1,$seq2); #use the score proteins subroutine to get the sequence similarity, the identity, number of gaps, global score.
+	    @{$pair_already_aln{$pair_of_seqs}}=($sim,$id,$gp,$glsc); ## info store for the future
+	    $png=sprintf("%.2f",(($gp/$size1)*100)); #compute the percentage of gaps
+	    if (!$score{$l[1]."_".$l[2]."_".$l[8]}){ ## if there is no score for that exon yet 
 		$score{$l[1]."_".$l[2]."_".$l[8]}=$sim;
 		$ex{$l[1]."_".$l[2]."_".$l[8]}=$l[8]."\t".$l[$m]."\t".$sim."\t".$id."\t".$gp."\t".$png."\t".$idex;
 	    }
@@ -218,10 +219,10 @@ close (OUT);
 ###SUB-ROUTINES###
 ##I) SCORING EXON REGIONS
 sub score_proteins {
-    my ($n1,$n2,$seq1,$seq2)=@_;
+    my ($n1,$n2,$seq1,$seq2)=@_; #as input we have the proteinIDs of the two sequences and the sequences of the two exons to be aligned.
     my (@s1,@s2);
-    @s1=split //,$seq1;
-    @s2=split //,$seq2;    
+    @s1=split //,$seq1; #get each character of exon1 sequence
+    @s2=split //,$seq2; #get each character of exon2 sequence
     my $ng=-1;
     my $id_score=0;
     my $f_score=0;
@@ -247,32 +248,40 @@ sub score_proteins {
     my $e=0;
     my $i;
     ##scoring proteins
-    for ($i=0; $i<scalar(@s1); $i++){
-	if ($sc{$s1[$i].$s2[$i]}){
-	    $e_score+=$sc{$s1[$i].$s2[$i]};	    
+    for ($i=0; $i<scalar(@s1); $i++){ #cycle on each position
+	if ($sc{$s1[$i].$s2[$i]}){ #if there is a BLOSUM score for the pair
+	    $e_score+=$sc{$s1[$i].$s2[$i]}; #add that to the e_score
 	}
-	if ($s1[$i] eq $s2[$i]){
-	    $id_score++;
-	    $sim_score++;
-	    $ng=0;
+	if ($s1[$i] eq $s2[$i]){ #if the two positions are identical
+	    $id_score++; #add 1 to the identity score
+	    $sim_score++; #add 1 to the similarity score
+	    $ng=0; #set number of gaps=0
 	}
-	elsif ($sim{$s1[$i].$s2[$i]}){
-	    $sim_score++;	    
-	    $ng=0;
+	elsif ($sim{$s1[$i].$s2[$i]}){ #if the two positions are not identical, but they are among the ones considered similar
+	    $sim_score++; #add one to the similarity score
+	    $ng=0; #set the number of gaps to zero
 	}
 	elsif ($s2[$i] eq "-" || $s1[$i] eq "-") { if ($ng==0) { $g++; $ng=1; } else { $e++; $ng=1;} } 
-	if ($sc{$s1[$i].$s1[$i]}) { $m1+=$sc{$s1[$i].$s1[$i]}; }
-	if ($sc{$s2[$i].$s2[$i]}) { $m2+=$sc{$s2[$i].$s2[$i]}; }	
+	if ($sc{$s1[$i].$s1[$i]}) { $m1+=$sc{$s1[$i].$s1[$i]}; } #Add the blosum score to m1 
+	if ($sc{$s2[$i].$s2[$i]}) { $m2+=$sc{$s2[$i].$s2[$i]}; } #Add the blosum score to m2
     }
     if ($l1>0 && $l2>0){
    	$sim1=sprintf("%.2f",(($sim_score/$l1)*100));
     	$sim2=sprintf("%.2f",(($sim_score/$l2)*100));
 
     	$id1=sprintf("%.2f",(($id_score/$l1)*100));
-    	$id2=sprintf("%.2f",(($id_score/$l2)*100));
-
-    	$global_score1=($e_score+($g*-4)+($e*-1))/$m1;
-    	$global_score2=($e_score+($g*-4)+($e*-1))/$m2;
+        $id2=sprintf("%.2f",(($id_score/$l2)*100));
+	#correct for weird cases when computing the global score
+        if ($m1 == 0) {
+		$global_score1 = 0;
+	} else {
+		$global_score1=($e_score+($g*-4)+($e*-1))/$m1;
+	}
+	if ($m2 == 0) {
+                $global_score2 = 0;
+        } else {
+		$global_score2=($e_score+($g*-4)+($e*-1))/$m2;
+    	}
 
     	$global_score1=sprintf("%.2f",$global_score1);
     	$global_score2=sprintf("%.2f",$global_score2);
@@ -286,9 +295,3 @@ sub score_proteins {
     return ($simt,$idt,$g,$glt);
 }
 ##END OF SUBROUTINE I)
-
-
-
-
-
-
