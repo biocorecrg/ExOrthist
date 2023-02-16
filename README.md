@@ -8,7 +8,7 @@ output:
 -->
 [![Build Status](https://app.travis-ci.com/biocorecrg/ExOrthist.svg?branch=master)](https://app.travis-ci.com/biocorecrg/ExOrthist)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Nextflow version](https://img.shields.io/badge/Nextflow-21.04.1-brightgreen)](https://www.nextflow.io/)
+[![Nextflow version](https://img.shields.io/badge/Nextflow-20.04.1-brightgreen)](https://www.nextflow.io/)
 [![Singularity version](https://img.shields.io/badge/Singularity-v3.2.1-green.svg)](https://www.sylabs.io/)
 [![Docker version](https://img.shields.io/badge/Docker-v19.03-blue)](https://www.docker.com/)
 
@@ -78,7 +78,7 @@ Requirements
 
 ExOrthist requires the following software:
 
-* [Nextflow](https://www.nextflow.io/)  
+* [Nextflow](https://www.nextflow.io/) version 20.04.1
 * A linux container engine (either [Docker](https://www.docker.com/) or [Singularity](https://sylabs.io/guides/3.1/user-guide/cli/singularity_apps.html). NB: singularity version >= 3.2.1 is required)  
 
 Additionally, [liftOver](https://genome-store.ucsc.edu/), [bedtools](https://bedtools.readthedocs.io/en/latest/) as well as specific pairwise [liftOver files](http://hgdownload.soe.ucsc.edu/downloads.html#liftover) are required to run `get_liftovers.pl` [see [below](#addition-of-manually-curated-exon-orthology-pairs)].
@@ -113,13 +113,13 @@ ExOrthist main module infers exon homologous pairs and exon orthogroups within t
 
 The pipeline can be launched in this way:
 ```bash
-nextflow run main.nf [-with-singularity | -with-docker] -bg > log.txt   
+NXF_VER=20.04.1 nextflow run main.nf [-with-singularity | -with-docker] -bg > log.txt   
 ```
  
 
 If the pipeline crashes at any step, it can be re-launched using the -resume option (- not --):
 ```bash
-nextflow run main.nf -bg -resume > log.txt
+NXF_VER=20.04.1 nextflow run main.nf -bg -resume > log.txt
 ```
 
 #### Test run   
@@ -127,9 +127,11 @@ nextflow run main.nf -bg -resume > log.txt
 The ExOrthist repository includes a folder named **test** containing all the input files necessary for a test run. The relative configuration files (`nextflow.config` and `params.config`) are also provided, and can be used as templates for customized runs.  
 
 The test run will extract the exon orthology for 37 gene orthogroups shared between hg38 (*human*), mm10 (*mouse*) and bosTau9 (*cow*) selected from a [Broccoli](https://github.com/rderelle/Broccoli) run. In order to familiarize yourself with ExOrthist main output, simply run the following code from the ExOrthist-master directory:  
+
 ```bash
-nextflow run main.nf [-with-docker | -with-singularity] > test_log.txt  
+NXF_VER=20.04.1 nextflow run main.nf [-with-docker | -with-singularity] > test_log.txt  
 ```
+
 ExOrthist will save all outputs in the **output_test** directory. All inputs and outputs are explained in details in the following sections.  
 
 
