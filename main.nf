@@ -443,7 +443,7 @@ process score_EX_matches {
 
 process filter_and_select_best_EX_matches_by_targetgene {
     tag { "${comp_id}" }
-    publishDir "${params.output}/${comp_id}", mode: "copy", pattern: "best_scored_EX_matches_by_targetgene.txt" 
+    publishDir "${params.output}", mode: "copy", pattern: "best_scored_EX_matches_by_targetgene.txt", saveAs: { filename -> "${comp_id}/foo_$filename" }
 
     input:
     set val(comp_id), file(all_scores), val(dist_range) from all_scores_to_filt.join(dist_ranges_ch)
