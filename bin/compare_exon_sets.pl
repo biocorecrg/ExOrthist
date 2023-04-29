@@ -691,8 +691,14 @@ if (defined $f_exon_list_sp2){
 			foreach my $t_ex (0..$#temp_sp2){
 			    $match2 = $t_ex if ($temp_sp2[$t_ex]=~/$i2/ || $temp_sp2[$t_ex]=~/$f2/);
 			}
-			my $segment_sp1 = int(5*$match1/($#temp_sp1+1))+1; # in 5 segments
-			my $segment_sp2 = int(5*$match2/($#temp_sp2+1))+1; # in 5 segments
+			### modified due to a reported error of by-0 division
+			my ($segment_sp1,$segment_sp2);
+			if (($#temp_sp1+1) > 0){
+			    $segment_sp1 = int(5*$match1/($#temp_sp1+1))+1; # in 5 segments
+			} else {$segment_sp1 = 1;} # recheck
+			if (($#temp_sp2+1) > 0){
+			    $segment_sp2 = int(5*$match2/($#temp_sp2+1))+1; # in 5 segments
+			} else {$segment_sp2 = 1;} # recheck   
 			my $total_ex_sp1 = $#temp_sp1+1; # total number of exons in gene sp1
 			my $total_ex_sp2 = $#temp_sp2+1; # total number of exons in gene sp2
 			
@@ -937,10 +943,22 @@ if (defined $f_exon_list_sp2){
     $tally_sp1_exons_in_Rcons_genes_by_type{NON_CONSERVED}=0 if !defined $tally_sp1_exons_in_Rcons_genes_by_type{NON_CONSERVED};
     $tally_sp1_exons_in_Rcons_genes_by_type{UNCLEAR}=0 if !defined $tally_sp1_exons_in_Rcons_genes_by_type{UNCLEAR};
     my $total_exons_in_Rcons_genes = $tally_sp1_exons_in_Rcons_genes_by_type{CONSERVED}+$tally_sp1_exons_in_Rcons_genes_by_type{NON_CONSERVED}+$tally_sp1_exons_in_Rcons_genes_by_type{UNCLEAR}+$tally_sp1_exons_in_Rcons_genes_by_type{BEST_HIT};
-    my $perc_sp1_exons_Rcons_genes_cons = sprintf ("%.2f", 100*$tally_sp1_exons_in_Rcons_genes_by_type{CONSERVED}/$total_exons_in_Rcons_genes);
-    my $perc_sp1_exons_Rcons_genes_hit = sprintf ("%.2f", 100*$tally_sp1_exons_in_Rcons_genes_by_type{BEST_HIT}/$total_exons_in_Rcons_genes);
-    my $perc_sp1_exons_Rcons_genes_not = sprintf ("%.2f", 100*$tally_sp1_exons_in_Rcons_genes_by_type{NON_CONSERVED}/$total_exons_in_Rcons_genes);
-    my $perc_sp1_exons_Rcons_genes_unclear = sprintf ("%.2f", 100*$tally_sp1_exons_in_Rcons_genes_by_type{UNCLEAR}/$total_exons_in_Rcons_genes);
+    my $perc_sp1_exons_Rcons_genes_cons;
+    my $perc_sp1_exons_Rcons_genes_hit;
+    my $perc_sp1_exons_Rcons_genes_not;
+    my $perc_sp1_exons_Rcons_genes_unclear;
+    if ($total_exons_in_Rcons_genes > 0){
+	$perc_sp1_exons_Rcons_genes_cons = sprintf ("%.2f", 100*$tally_sp1_exons_in_Rcons_genes_by_type{CONSERVED}/$total_exons_in_Rcons_genes);
+	$perc_sp1_exons_Rcons_genes_hit = sprintf ("%.2f", 100*$tally_sp1_exons_in_Rcons_genes_by_type{BEST_HIT}/$total_exons_in_Rcons_genes);
+	$perc_sp1_exons_Rcons_genes_not = sprintf ("%.2f", 100*$tally_sp1_exons_in_Rcons_genes_by_type{NON_CONSERVED}/$total_exons_in_Rcons_genes);
+	$perc_sp1_exons_Rcons_genes_unclear = sprintf ("%.2f", 100*$tally_sp1_exons_in_Rcons_genes_by_type{UNCLEAR}/$total_exons_in_Rcons_genes);
+    }
+    else {
+	$perc_sp1_exons_Rcons_genes_cons = "NA";
+	$perc_sp1_exons_Rcons_genes_hit = "NA";
+	$perc_sp1_exons_Rcons_genes_not = "NA";
+	$perc_sp1_exons_Rcons_genes_unclear = "NA";
+    }
     
     # perc of exons with exon ortholog (Gcons)
     my $perc_sp1_exons_Gcons_exons = sprintf ("%.2f", 100*$tally_sp1_exons_Gcons/$total_sp1_exons);    
