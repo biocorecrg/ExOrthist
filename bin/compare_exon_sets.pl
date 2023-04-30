@@ -1011,10 +1011,18 @@ if (defined $f_exon_list_sp2){
 	$fp_N_by_call_sp1{$call}++;	
     }
     if ($fp_total_sp1 == $tally_sp1_exons_in_Rcons_genes){
-	$fp_perc_by_call_sp1{CONSERVED} = sprintf("%.2f", 100*$fp_N_by_call_sp1{CONSERVED}/$fp_total_sp1);
-	$fp_perc_by_call_sp1{BEST_HIT} = sprintf("%.2f", 100*$fp_N_by_call_sp1{BEST_HIT}/$fp_total_sp1);
-	$fp_perc_by_call_sp1{UNCLEAR} = sprintf("%.2f", 100*$fp_N_by_call_sp1{UNCLEAR}/$fp_total_sp1);
-	$fp_perc_by_call_sp1{NON_CONSERVED} = sprintf("%.2f", 100*$fp_N_by_call_sp1{NON_CONSERVED}/$fp_total_sp1);
+	if ($fp_total_sp1 > 0){
+	    $fp_perc_by_call_sp1{CONSERVED} = sprintf("%.2f", 100*$fp_N_by_call_sp1{CONSERVED}/$fp_total_sp1);
+	    $fp_perc_by_call_sp1{BEST_HIT} = sprintf("%.2f", 100*$fp_N_by_call_sp1{BEST_HIT}/$fp_total_sp1);
+	    $fp_perc_by_call_sp1{UNCLEAR} = sprintf("%.2f", 100*$fp_N_by_call_sp1{UNCLEAR}/$fp_total_sp1);
+	    $fp_perc_by_call_sp1{NON_CONSERVED} = sprintf("%.2f", 100*$fp_N_by_call_sp1{NON_CONSERVED}/$fp_total_sp1);
+	}
+	else {
+	    $fp_perc_by_call_sp1{CONSERVED} = "NA";
+	    $fp_perc_by_call_sp1{BEST_HIT} = "NA";
+	    $fp_perc_by_call_sp1{UNCLEAR} = "NA";
+	    $fp_perc_by_call_sp1{NON_CONSERVED} = "NA";
+	}
     } 
     else {
 	print "ISSUE in pairwise comparison from $sp1 ($fp_total_sp1 and $tally_sp1_exons_in_Rcons_genes don't match\n";
