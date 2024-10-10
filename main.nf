@@ -33,8 +33,8 @@ params.resume          = false
 log.info """
 
 ╔╦╗┬ ┬┌─┐  ╔═╗─┐ ┬╔═╗┬─┐┌┬┐┬ ┬┬┌─┐┌┬┐
- ║ ├─┤├┤   ║╣ ┌┴┬┘║ ║├┬┘ │ ├─┤│└─┐ │ 
- ╩ ┴ ┴└─┘  ╚═╝┴ └─╚═╝┴└─ ┴ ┴ ┴┴└─┘ ┴ 
+ ║ ├─┤├┤   ║╣ ┌┴┬┘║ ║├┬┘ │ ├─┤│└─┐ │
+ ╩ ┴ ┴└─┘  ╚═╝┴ └─╚═╝┴└─ ┴ ┴ ┴┴└─┘ ┴
 
 ==============================================================================
 annotations (GTF files)          : ${params.annotations}
@@ -58,18 +58,18 @@ The long, medium, short distance cut-offs are in the format: "int_num;ex_seq;ex_
 Only exon matches respecting all cut-offs are considered homologous.
 - int_num (0,1,2): Number of surrounding intron positions required to be conserved.
 - ex_seq (from 0 to 1): Minimum sequence similarity % between a
-     pair of homologous exons and their corresponding upstream and 
+     pair of homologous exons and their corresponding upstream and
      downstream exons.
-- ex_len (from 0 to 1): Maximum size difference between two homologous exons 
+- ex_len (from 0 to 1): Maximum size difference between two homologous exons
      (as a fraction of either exon).
 - prot_sim (from 0 to 1): Minimum sequence similarity over the entire pairwise alignment
      for a pair of protein isoforms to be considered for comparison.
-     
+
 See online README at https://github.com/biocorecrg/ExOrthist for further information about the options.
 """
 
 if (params.help) {
-    log.info """ExOrthist v0.0.1.beta"""
+    log.info """ExOrthist v2.0.0"""
     log.info """ExOrthist is a Nextflow-based pipeline to obtain groups of exon orthologous at all evolutionary timescales.\n"""
     exit 1
 }
@@ -77,7 +77,7 @@ if (params.resume) exit 1, "Are you making the classical --resume typo? Be caref
 
 if( !workflow.resume ) {
     println "Removing the output folder"
-	new File("${params.output}").delete() 
+	new File("${params.output}").delete()
 }
 
 clusterfile       = file(params.cluster)
@@ -93,14 +93,14 @@ if ( !evodisfile.exists() ) exit 1, "Missing evodists file: ${evodisfile}!"
 /*
  * Validate input and print log file
  */
-//Prepare input channels 
+//Prepare input channels
 Channel.fromPath(params.annotations).collect().set{gtfs}
 Channel.fromPath(params.genomes).collect().set{fastas}
 Channel.fromFilePairs(params.annotations, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten().set{gtfs_suffix}
 Channel.fromFilePairs(params.genomes, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten().set{fastas_suffix}
 long_dist = params.long_dist
 medium_dist = params.medium_dist
-short_dist = params.short_dist 
+short_dist = params.short_dist
 
 process check_input {
 	publishDir "${params.output}", mode: 'copy'
@@ -176,7 +176,7 @@ if (params.extraexons) {
 
 		script:
 		def extrapars = ""
-		if (extraexons.size()>0) { extrapars = " -add_exons ${extraexons}" } 
+		if (extraexons.size()>0) { extrapars = " -add_exons ${extraexons}" }
 		"""
 		A1_generate_annotations.pl -GTF ${annotation} -G ${genome} -sp ${genomeid} ${extrapars}
 		"""
@@ -208,7 +208,7 @@ if (params.extraexons) {
 //Copy the gene cluster file to output to use for the exint_plotter and compare_exon_sets modules
 process split_clusters_by_species_pairs {
     tag { clusterfile }
-    publishDir "${params.output}/", mode: 'copy', pattern: "gene_cluster_file.gz" 
+    publishDir "${params.output}/", mode: 'copy', pattern: "gene_cluster_file.gz"
 
     input:
     file(clusterfile)
@@ -293,7 +293,7 @@ process parse_IPA_prot_aln {
 
     input:
     file(blosumfile)
-    set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from alignment_input 
+    set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from alignment_input
 
     output:
 	set val("${sp1}-${sp2}"), path("${sp1}-${sp2}-*") into aligned_subclusters_4_splitting //05/03/21
@@ -302,12 +302,12 @@ process parse_IPA_prot_aln {
 	script:
     def prev_alignments = ""
     if (params.prevaln) {prev_alignments = "${params.prevaln}"}
- 
+
     def cls_parts = "${cls_part_file}".split("_")
     if (dist_range == "long")
 	dist_range_par = "${params.long_dist}".split(",")
     if (dist_range == "medium")
-	dist_range_par = "${params.medium_dist}".split(",") 
+	dist_range_par = "${params.medium_dist}".split(",")
     if (dist_range == "short")
 	dist_range_par = "${params.short_dist}".split(",")
 
@@ -332,10 +332,10 @@ process split_EX_pairs_to_realign {
 
     input:
     file("*") from EXs_to_split_batches
-    
+
     output:
     file("*EXs_to_realign_part_*") into EXs_to_realign_batches
-    
+
     script:
     """
 	for file in \$(ls *); do B2_split_EX_pairs_to_realign.py -i \${file} -n ${params.alignmentnum}; done
@@ -379,10 +379,10 @@ aligned_subclusters_4_splitting.groupTuple().join(realigned_exons_4_merge.groupT
 process merge_PROT_EX_INT_aln_info {
     tag { "${comp_id}" }
     label 'incr_time_cpus'
-    
+
     stageInMode = 'copy'
     //this matches all_PROT_aln_features.txt, all_EX_aln_features.txt, all_INT_aln_features.txt, Exint_Alignments.aln.gz
-    publishDir "${params.output}", mode: "copy", pattern: "${comp_id}/all_*_aln_features.txt" 
+    publishDir "${params.output}", mode: "copy", pattern: "${comp_id}/all_*_aln_features.txt"
     publishDir "${params.output}", mode: "copy", pattern: "${comp_id}/EXINT_aln.gz"
 
     input:
@@ -410,7 +410,7 @@ folder_jscores.join(anno_2_score_ex_int).map{
 /*
  * Score EX matches from aln info
  */
- 
+
 process score_EX_matches {
     tag { "${comp_id}" }
     label('big_mem_retry')
@@ -457,7 +457,7 @@ process filter_and_select_best_EX_matches_by_targetgene {
     if (dist_range == "long")
 	dist_range_par = "${params.long_dist}".split(",")
     if (dist_range == "medium")
-	dist_range_par = "${params.medium_dist}".split(",") 
+	dist_range_par = "${params.medium_dist}".split(",")
     if (dist_range == "short")
 	dist_range_par = "${params.short_dist}".split(",")
     """
@@ -595,7 +595,7 @@ process recluster_genes_by_species_pair {
 
 	script:
 	def species = "${combid}".split("-")
-	def orthopairs = file("${params.orthopairs}") 
+	def orthopairs = file("${params.orthopairs}")
 	"""
  	D3.1_recluster_genes_by_species_pair.py -og ${clusterfile} -op ${orthopairs} --species1 ${species[0]} --species2 ${species[1]} -out reclustered_genes_${combid}.tab
     	"""
@@ -628,26 +628,6 @@ process recluster_EXs_by_species_pair {
 	D3.2_recluster_EXs_by_species_pair.py -ep ${exon_pairs} -rg ${recl_genes} -ec ${exon_clusters} -sp1 ${species[0]} -sp2 ${species[1]} -out reclustered_EXs_${combid1}.tab
     	"""
 }
-
-
-/*
-* functions
-*/
-
-def getFolderName(sample) {
-   folder_info = sample.toString().tokenize("/")
-   return folder_info[-2]
-}
-
-// make named pipe
-def unzipBash(filename) {
-    def cmd = filename.toString()
-    if (cmd[-3..-1] == ".gz") {
-    	cmd = "<(zcat ${filename})"
-    }
-    return cmd
-}
-
 
 /*
  * Mail notification

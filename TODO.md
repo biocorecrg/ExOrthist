@@ -1,0 +1,3 @@
+- Moving modules into modules folder
+- Adding nextflow_schema.json
+- Review container
