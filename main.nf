@@ -96,6 +96,7 @@ if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
 LOCAL_MODULES='./modules/local/exorthist'
 
 include { CHECK_INPUT } from "${LOCAL_MODULES}/check_input.nf"
+include { GENERATE_ANNOTATIONS } from "${LOCAL_MODULES}/generate_annotations.nf"
 
 /*
  * Validate input and print log file
@@ -109,11 +110,37 @@ workflow {
     gtfs_suffix = Channel.fromFilePairs(params.annotations, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()
     fastas_suffix = Channel.fromFilePairs(params.genomes, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()
 
-   // Print contents of each channel
+    // Channels for sequences of data
+    genomes = Channel
+        .fromFilePairs(params.genomes, size: 1)
+        .ifEmpty { error "Cannot find any genome matching: ${params.genomes}" }
+
+    annotations = Channel
+        .fromFilePairs(params.annotations, size: 1)
+        .ifEmpty { error "Cannot find any annotation matching: ${params.annotations}" }
+
+    extraexons = params.extraexons ?
+        Channel.fromFilePairs(params.extraexons, checkIfExists: true, size: 1)
+        .ifEmpty { error "Extra exons not found" } :
+        Channel.empty()
+
+    // We join channels. If no extraexons, then it's empty, so no problem
+    data_to_annotation_raw = genomes.join(annotations)
+    pipe_data = data_to_annotation_raw
+    data_to_annotation = data_to_annotation_raw.join(extraexons, remainder: true)
+
+    // Print contents of each channel
     gtfs.view { "GTF file: $it" }
     fastas.view { "FASTA file: $it" }
     gtfs_suffix.view { "GTF suffix: $it" }
     fastas_suffix.view { "FASTA suffix: $it" }
+
+    genomes.view { "Genome file: $it" }
+    annotations.view { "Genome file: $it" }
+    extraexons.view { "Extra: $it" }
+    data_to_annotation_raw.view { "DAR: $it"}
+    data_to_annotation.view { "DA: $it"}
+    pipe_data.view { "PD: $it"}
 
     evodists_ch = Channel.fromPath(params.evodists)
     clusterfile_ch = Channel.fromPath(params.cluster)
@@ -130,42 +157,20 @@ workflow {
         params.short_dist
     )
 
-    // You can now use the output in subsequent processes
+    // Sic: https://nextflow-io.github.io/patterns/optional-input/
+    if ( params.extraexons ) {
+         GENERATE_ANNOTATIONS(data_to_annotation, extraexons)
+    } else {
+         GENERATE_ANNOTATIONS(data_to_annotation, file("/path/to/NO_FILE"))
+    }
+
+    // Review outputs below
+
     CHECK_INPUT.out.run_info.view()
+    GENERATE_ANNOTATIONS.out.idfolders.view()
+
 }
 
-// /*
-//  * Create channels for sequences data
-//  */
-// Channel
-//     .fromFilePairs( params.genomes, size: 1)
-//     .ifEmpty { error "Cannot find any genome matching: ${params.genomes}" }
-//     .set {genomes}
-//
-// Channel
-//     .fromFilePairs( params.annotations, size: 1)
-//     .ifEmpty { error "Cannot find any annotation matching: ${params.annotations}" }
-//     .set {annotations}
-//
-//
-// /*
-//  * Create channels for optional extra exons
-//  */
-// if (params.extraexons) {
-// 	Channel
-//    	 .fromFilePairs( params.extraexons, size: 1)
-//    	 .ifEmpty { print "Extra exons not found!" }
-//    	 .set {extraexons}
-// 	genomes.join(annotations).into{data_to_annotation_raw; pipe_data}
-// 	data_to_annotation_raw.join(extraexons, remainder: true).set{data_to_annotation}
-// } else {
-//     genomes.join(annotations).into{pipe_data; data_to_annotation}
-// }
-//
-//
-// /*
-//  * Generate annotations
-//  */
 // if (params.extraexons) {
 // 	process generate_annotations_with_extra_exons {
 // 		tag { genomeid }
@@ -202,8 +207,8 @@ workflow {
 // 		"""
 // 	}
 // }
-//
-//
+
+
 //
 //
 // /*
