@@ -171,44 +171,6 @@ workflow {
 
 }
 
-// if (params.extraexons) {
-// 	process generate_annotations_with_extra_exons {
-// 		tag { genomeid }
-// 		label 'big_cpus'
-// 		publishDir "${params.output}/", mode: 'copy'
-//
-// 		input:
-// 		set genomeid, file(genome), file(annotation), file(extraexons) from data_to_annotation
-//
-// 		output:
-// 		set val(genomeid), file (genomeid) into idfolders
-//
-// 		script:
-// 		def extrapars = ""
-// 		if (extraexons.size()>0) { extrapars = " -add_exons ${extraexons}" }
-// 		"""
-// 		A1_generate_annotations.pl -GTF ${annotation} -G ${genome} -sp ${genomeid} ${extrapars}
-// 		"""
-// 	}
-// } else {
-// 	process generate_annotations {
-// 		tag { genomeid }
-// 		publishDir "${params.output}/", mode: 'copy'
-//
-// 		input:
-// 		set genomeid, file(genome), file(annotation) from data_to_annotation
-//
-// 		output:
-// 		set val(genomeid), file (genomeid) into idfolders
-//
-// 		script:
-// 		"""
-// 		A1_generate_annotations.pl -GTF ${annotation} -G ${genome} -sp ${genomeid}
-// 		"""
-// 	}
-// }
-
-
 //
 //
 // /*
