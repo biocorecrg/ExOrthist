@@ -2,7 +2,7 @@
 
 
 /*
- * Copyright (c) 2019-2020, Centre for Genomic Regulation (CRG)
+ * Copyright (c) 2019-2024, Centre for Genomic Regulation (CRG)
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -17,10 +17,13 @@ ExOrthist pipeline for Bioinformatics Core @ CRG
  @authors
  Luca Cozzuto <lucacozzuto@gmail.com>
  Federica Mantica <federica.mantica93@gmail.com>
+ Toni Hermoso Pulido <toni.hermoso@crg.eu>
 ===========================================================
 */
 
-version = '0.1'
+nextflow.enable.dsl=2
+
+version = '2.0.0'
 
 /*
  * Input parameters:
@@ -30,50 +33,61 @@ params.help            = false
 params.resume          = false
 
 
-log.info """
+// log.info """
+//
+// ╔╦╗┬ ┬┌─┐  ╔═╗─┐ ┬╔═╗┬─┐┌┬┐┬ ┬┬┌─┐┌┬┐
+//  ║ ├─┤├┤   ║╣ ┌┴┬┘║ ║├┬┘ │ ├─┤│└─┐ │
+//  ╩ ┴ ┴└─┘  ╚═╝┴ └─╚═╝┴└─ ┴ ┴ ┴┴└─┘ ┴
+//
+// ==============================================================================
+// annotations (GTF files)          : ${params.annotations}
+// genomes (fasta files)            : ${params.genomes}
+// cluster file (txt files)         : ${params.cluster}
+// pairwise evo distances           : ${params.evodists}
+// long distance parameters         : ${params.long_dist}
+// medium distance parameters       : ${params.medium_dist}
+// short distance parameters        : ${params.short_dist}
+// pre-computed alignments		 : ${params.prevaln}
+// alignment number		 : ${params.alignmentnum}
+// orthogroup number		 : ${params.orthogroupnum}
+// extraexons (e.g. from VastDB)    : ${params.extraexons}
+// bona fide orthologous exon pairs  : ${params.bonafide_pairs}
+// orthopairs                       : ${params.orthopairs}
+// output (output folder)           : ${params.output}
+// email for notification           : ${params.email}
+//
+// INFORMATION ABOUT OPTIONS:
+// The long, medium, short distance cut-offs are in the format: "int_num;ex_seq;ex_len;prot_sim".
+// Only exon matches respecting all cut-offs are considered homologous.
+// - int_num (0,1,2): Number of surrounding intron positions required to be conserved.
+// - ex_seq (from 0 to 1): Minimum sequence similarity % between a
+//      pair of homologous exons and their corresponding upstream and
+//      downstream exons.
+// - ex_len (from 0 to 1): Maximum size difference between two homologous exons
+//      (as a fraction of either exon).
+// - prot_sim (from 0 to 1): Minimum sequence similarity over the entire pairwise alignment
+//      for a pair of protein isoforms to be considered for comparison.
+//
+// See online README at https://github.com/biocorecrg/ExOrthist for further information about the options.
+// """
+//
+// if (params.help) {
+//     log.info """ExOrthist v2.0.0"""
+//     log.info """ExOrthist is a Nextflow-based pipeline to obtain groups of exon orthologous at all evolutionary timescales.\n"""
+//     exit 1
+// }
 
-╔╦╗┬ ┬┌─┐  ╔═╗─┐ ┬╔═╗┬─┐┌┬┐┬ ┬┬┌─┐┌┬┐
- ║ ├─┤├┤   ║╣ ┌┴┬┘║ ║├┬┘ │ ├─┤│└─┐ │
- ╩ ┴ ┴└─┘  ╚═╝┴ └─╚═╝┴└─ ┴ ┴ ┴┴└─┘ ┴
-
-==============================================================================
-annotations (GTF files)          : ${params.annotations}
-genomes (fasta files)            : ${params.genomes}
-cluster file (txt files)         : ${params.cluster}
-pairwise evo distances           : ${params.evodists}
-long distance parameters         : ${params.long_dist}
-medium distance parameters       : ${params.medium_dist}
-short distance parameters        : ${params.short_dist}
-pre-computed alignments		 : ${params.prevaln}
-alignment number		 : ${params.alignmentnum}
-orthogroup number		 : ${params.orthogroupnum}
-extraexons (e.g. from VastDB)    : ${params.extraexons}
-bona fide orthologous exon pairs  : ${params.bonafide_pairs}
-orthopairs                       : ${params.orthopairs}
-output (output folder)           : ${params.output}
-email for notification           : ${params.email}
-
-INFORMATION ABOUT OPTIONS:
-The long, medium, short distance cut-offs are in the format: "int_num;ex_seq;ex_len;prot_sim".
-Only exon matches respecting all cut-offs are considered homologous.
-- int_num (0,1,2): Number of surrounding intron positions required to be conserved.
-- ex_seq (from 0 to 1): Minimum sequence similarity % between a
-     pair of homologous exons and their corresponding upstream and
-     downstream exons.
-- ex_len (from 0 to 1): Maximum size difference between two homologous exons
-     (as a fraction of either exon).
-- prot_sim (from 0 to 1): Minimum sequence similarity over the entire pairwise alignment
-     for a pair of protein isoforms to be considered for comparison.
-
-See online README at https://github.com/biocorecrg/ExOrthist for further information about the options.
-"""
-
-if (params.help) {
-    log.info """ExOrthist v2.0.0"""
-    log.info """ExOrthist is a Nextflow-based pipeline to obtain groups of exon orthologous at all evolutionary timescales.\n"""
-    exit 1
+// Load the schema
+params = new nextflow.script.ScriptBinding().getParams()
+def schema = new File("$projectDir/nextflow_schema.json")
+if (schema.exists()) {
+    params = new groovy.json.JsonSlurper().parse(schema).properties.params
 }
+
+
 if (params.resume) exit 1, "Are you making the classical --resume typo? Be careful!!!! ;)"
+
+
 
 if( !workflow.resume ) {
     println "Removing the output folder"

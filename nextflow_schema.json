@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "https://raw.githubusercontent.com/biocorecrg/exorthist/master/nextflow_schema.json",
+  "title": "ExOrthist pipeline parameters",
+  "description": "Schema for the parameters of your ExOrthist pipeline",
+  "type": "object",
+  "definitions": {
+    "input_output_options": {
+      "title": "Input/Output Options",
+      "type": "object",
+      "required": [
+        "annotations",
+        "genomes",
+        "cluster",
+        "output"
+      ],
+      "properties": {
+        "annotations": {
+          "type": "string",
+          "description": "Path to GTF annotation files",
+          "format": "file-path"
+        },
+        "genomes": {
+          "type": "string",
+          "description": "Path to fasta genome files",
+          "format": "file-path"
+        },
+        "cluster": {
+          "type": "string",
+          "description": "Path to cluster file (txt files)",
+          "format": "file-path"
+        },
+        "output": {
+          "type": "string",
+          "description": "Output folder path",
+          "format": "directory-path"
+        }
+      }
+    },
+    "analysis_parameters": {
+      "title": "Analysis Parameters",
+      "type": "object",
+      "required": [
+        "evodists",
+        "long_dist",
+        "medium_dist",
+        "short_dist"
+      ],
+      "properties": {
+        "evodists": {
+          "type": "string",
+          "description": "Path to a file with pairwise evolutionary distances",
+          "format": "file-path"
+        },
+        "long_dist": {
+          "type": "string",
+          "description": "Long distance parameters"
+        },
+        "medium_dist": {
+          "type": "string",
+          "description": "Medium distance parameters"
+        },
+        "short_dist": {
+          "type": "string",
+          "description": "Short distance parameters"
+        },
+        "prevaln": {
+          "type": "string",
+          "description": "Pre-computed alignments"
+        },
+        "alignmentnum": {
+          "type": "integer",
+          "description": "Alignment number"
+        },
+        "orthogroupnum": {
+          "type": "integer",
+          "description": "Orthogroup number"
+        }
+      }
+    },
+    "additional_data": {
+      "title": "Additional Data",
+      "type": "object",
+      "properties": {
+        "extraexons": {
+          "type": "string",
+          "description": "Extra exons (e.g. from VastDB)",
+          "format": "file-path"
+        },
+        "bonafide_pairs": {
+          "type": "string",
+          "description": "Bona fide orthologous exon pairs",
+          "format": "file-path"
+        },
+        "orthopairs": {
+          "type": "string",
+          "description": "Orthopairs",
+          "format": "file-path"
+        }
+      }
+    },
+    "notification_options": {
+      "title": "Notification Options",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Email for notification",
+          "format": "email"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/definitions/input_output_options"
+    },
+    {
+      "$ref": "#/definitions/analysis_parameters"
+    },
+    {
+      "$ref": "#/definitions/additional_data"
+    },
+    {
+      "$ref": "#/definitions/notification_options"
+    }
+  ]
+}
