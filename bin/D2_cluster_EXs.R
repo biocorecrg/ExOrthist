@@ -1,5 +1,4 @@
 #!/usr/bin/env Rscript
-#.libPaths(c("/software/mi/Rlib3.6/", .libPaths()))
 
 args<-commandArgs(TRUE)
 if (length(args)<3) {stop("[USAGE] Rscript --vanilla cluster.R <input_orthopairs> <output_orthogroup> <output_unclustered_exons>")}
@@ -41,7 +40,7 @@ for (my_gene_OG in all_gene_OG) {
         my_final_clusters$names = rownames(my_final_clusters)
         single_exon_clusters_tosave = rbind(single_exon_clusters_tosave, my_final_clusters[rownames(my_final_clusters) == exon_id,])
         my_final_clusters = my_final_clusters[!(rownames(my_final_clusters) == exon_id),] #remove the single-exon cluster from the final graph.
-        rownames(my_final_clusters) =  my_final_clusters$names;  my_final_clusters$names = NULL; 
+        rownames(my_final_clusters) =  my_final_clusters$names;  my_final_clusters$names = NULL;
     }
   }
   #save unclustered exons to file
@@ -69,7 +68,7 @@ for (my_gene_OG in all_gene_OG) {
     #build species count matrix
     all_exons_in_species = all_exons_in_cluster[sub("\\|", ";", all_exons_in_cluster) == my_species] #select only the exons_in_cluster belonging to species
     gene_species_vector = unique(sub("\\|.*\\|", ";", sub(".*;", "", sub("\\|", ";", all_exons_in_species)))) #"ENSG00000103266;Hs2" #select all the genes containing the exons_in_cluster belonging to species
-    cluster_gene_species_count_df = as.data.frame(table(sub(".*;", "", gene_species_vector))); colnames(cluster_gene_species_count_df) = c("Species", "Freq") 
+    cluster_gene_species_count_df = as.data.frame(table(sub(".*;", "", gene_species_vector))); colnames(cluster_gene_species_count_df) = c("Species", "Freq")
     cluster_gene_species_count_df$ExonID = rep(my_exon, nrow(cluster_gene_species_count_df))
     gene_species_count_matrix = rbind(gene_species_count_matrix, cluster_gene_species_count_df[,c("ExonID", "Freq")])
   }
@@ -96,7 +95,7 @@ for (my_gene_OG in all_gene_OG) {
 
   #Compute the number of exons for each species in each community
   all_ids = paste0(gsub(".*\\|", "", rownames(my_final_clusters)), "_", my_final_clusters$ClusterID)
-  all_species_counts_df = as.data.frame(table(gsub(".*\\|", "", all_ids))); colnames(all_species_counts_df) = c("Species_ClusterID", "Freq"); 
+  all_species_counts_df = as.data.frame(table(gsub(".*\\|", "", all_ids))); colnames(all_species_counts_df) = c("Species_ClusterID", "Freq");
   all_species_counts_df$Species_ClusterID = as.vector(all_species_counts_df$Species_ClusterID) #transform factor to vector for hashmap to work
 
   #Create hashes for translation
@@ -117,7 +116,7 @@ for (my_gene_OG in all_gene_OG) {
   my_final_clusters$SPECIES_genes_in_cluster = gene_species_count_dict$find(my_final_clusters$ExonID)
 
   ######## Compute membership score #############
-  my_final_clusters$membership_score = (my_final_clusters$In_degree + my_final_clusters$Out_degree + my_final_clusters$N_reciprocals)/(2*(my_final_clusters$TOT_exons_in_cluster - my_final_clusters$SPECIES_exons_in_cluster) + 
+  my_final_clusters$membership_score = (my_final_clusters$In_degree + my_final_clusters$Out_degree + my_final_clusters$N_reciprocals)/(2*(my_final_clusters$TOT_exons_in_cluster - my_final_clusters$SPECIES_exons_in_cluster) +
                                                                                                                                        (TOT_genes_in_cluster - my_final_clusters$SPECIES_genes_in_cluster))
 
   my_final_clusters$membership_score = round(my_final_clusters$membership_score, 2)

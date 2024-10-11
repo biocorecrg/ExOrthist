@@ -96,7 +96,10 @@ if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
 LOCAL_MODULES='./modules/local/exorthist'
 
 include { CHECK_INPUT } from "${LOCAL_MODULES}/check_input.nf"
+include { CLUSTER_EXS } from "${LOCAL_MODULES}/cluster_exons.nf"
+include { COLLAPSE_OVERLAPPING_MATCHES } from "${LOCAL_MODULES}/collapse_matches.nf"
 include { FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE } from "${LOCAL_MODULES}/filter_matches.nf"
+include { FORMAT_EX_CLUSTERS_INPUT } from "${LOCAL_MODULES}/format_clusters.nf"
 include { GENERATE_ANNOTATIONS } from "${LOCAL_MODULES}/generate_annotations.nf"
 include { JOIN_FILTERED_EX_MATCHES } from "${LOCAL_MODULES}/join_matches.nf"
 include { MERGE_PROT_EX_INT_ALN_INFO } from "${LOCAL_MODULES}/merge_aligns.nf"
@@ -230,9 +233,24 @@ workflow {
     // Filter the best matches above score cutoffs by target gene.
     all_scores_to_filt_ch = SCORE_EX_MATCHES.out.all_scores_to_filt
     FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE(all_scores_to_filt_ch.join(dist_ranges_ch))
-    //  join filtered scored EX matches
+    //  Join filtered scored EX matches
     filterscore_per_joining_ch = FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.filterscore_per_joining
     JOIN_FILTERED_EX_MATCHES(filterscore_per_joining_ch)
+    //  Removing matches from overlapping exons
+
+    filtered_all_scores = JOIN_FILTERED_EX_MATCHES.out.filtered_all_scores
+    // Sic: https://nextflow-io.github.io/patterns/optional-input/
+    if ( params.bonafide_pairs ) {
+        COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, params.bonafide_pairs)
+    } else {
+        COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, file("/path/to/NO_FILE"))
+    }
+    score_exon_hits_pairs = COLLAPSE_OVERLAPPING_MATCHES.out.score_exon_hits_pairs
+    FORMAT_EX_CLUSTERS_INPUT(score_exon_hits_pairs, file(params.cluster))
+    // Split the file of exon pairs
+    // Unclustered are the exons ending up in single-exon clusters
+    cluster_parts = FORMAT_EX_CLUSTERS_INPUT.out.cluster_parts
+    CLUSTER_EXS(cluster_parts)
 
     // Review outputs below
     CHECK_INPUT.out.run_info.view()
@@ -254,77 +272,13 @@ workflow {
     FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.filterscore_per_joining.view()
     FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.best_scored_matches.view()
     JOIN_FILTERED_EX_MATCHES.out.filtered_all_scores.view()
+    COLLAPSE_OVERLAPPING_MATCHES.out.score_exon_hits_pairs.view()
+    COLLAPSE_OVERLAPPING_MATCHES.out.overlapping_exs.view()
+    FORMAT_EX_CLUSTERS_INPUT.out.cluster_parts.view()
+    CLUSTER_EXS.out.unclustered_exs.view()
+    CLUSTER_EXS.out.ex_clusters.view()
 }
 
-//
-// /*
-//  * Removing matches from overlapping exons
-//  */
-// process collapse_overlapping_matches {
-//     publishDir "${params.output}/", mode: "copy"
-//     input:
-//     file(scores) from filtered_all_scores
-//
-//     output:
-//     file("filtered_best_scored_EX_matches_by_targetgene-NoOverlap.tab") into (score_exon_hits_pairs, exon_pairs_for_reclustering)
-//     file("overlapping_EXs_by_species.tab")
-//
-// 	script:
-// 	bonafide = ""
-// 	if (params.bonafide_pairs != "") {
-// 		bonafide = file(params.bonafide_pairs)
-// 		if ( !bonafide.exists() ) exit 1, "Missing file with bonafide pairs: ${bonafide}!"
-//
-// 	}
-// 	"""
-//     C3_count_matches_by_EX.pl ${scores} EX_matches_count_by_species.tab ${bonafide}
-//     C4_get_overlapping_EXs.pl -i EX_matches_count_by_species.tab -o overlapping_EXs_by_species.tab
-//     C5_collapse_overlapping_matches.pl overlapping_EXs_by_species.tab ${scores} filtered_best_scored_EX_matches_by_targetgene-NoOverlap.tab ${bonafide}
-//     """
-// }
-//
-// /*
-// * Split the file of exon pairs
-// */
-// clusterfile = file(params.cluster)
-// process format_EX_clusters_input {
-//     input:
-//     file(score_exon_hits_pairs)
-//     file(clusterfile)
-//
-//     output:
-//     file("PART_*-cluster_input.tab") into cluster_parts
-//
-// 	script:
-// 	"""
-//    if [ `echo ${clusterfile} | grep ".gz"` ]; then
-//        zcat ${clusterfile} > cluster_file
-//        D1_format_EX_clusters_input.pl cluster_file ${score_exon_hits_pairs} ${params.orthogroupnum}
-//        rm cluster_file
-//     else
-//        D1_format_EX_clusters_input.pl ${clusterfile} ${score_exon_hits_pairs} ${params.orthogroupnum}
-//     fi
-// 	"""
-// }
-//
-// /*
-// * Split the file of exon pairs
-// */
-// //Unclustered are the exons ending up in single-exon clusters
-// process cluster_EXs {
-//
-//     input:
-//     file(cluster_part) from cluster_parts.flatten()
-//
-//     output:
-//     file("EXs_${cluster_part}") into ex_clusters
-//     file("unclustered_EXs_${cluster_part}") into unclustered_exs
-//
-// 	script:
-// 	"""
-//     D2_cluster_EXs.R ${cluster_part} EXs_${cluster_part} unclustered_EXs_${cluster_part}
-//     """
-// }
 //
 // /*
 // * Final exon clusters
