@@ -96,7 +96,9 @@ if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
 LOCAL_MODULES='./modules/local/exorthist'
 
 include { CHECK_INPUT } from "${LOCAL_MODULES}/check_input.nf"
+include { FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE } from "${LOCAL_MODULES}/filter_matches.nf"
 include { GENERATE_ANNOTATIONS } from "${LOCAL_MODULES}/generate_annotations.nf"
+include { JOIN_FILTERED_EX_MATCHES } from "${LOCAL_MODULES}/join_matches.nf"
 include { MERGE_PROT_EX_INT_ALN_INFO } from "${LOCAL_MODULES}/merge_aligns.nf"
 include { PARSE_IPA_PROT_ALN } from "${LOCAL_MODULES}/align_pairs.nf"
 include { REALIGN_EX_PAIRS } from "${LOCAL_MODULES}/realign_pairs.nf"
@@ -225,6 +227,12 @@ workflow {
     data_to_score = folder_jscores.join(clusters_split_ch).map{ [it[0], it[1..-1] ]}
     // Score EX matches from aln info
     SCORE_EX_MATCHES(data_to_score)
+    // Filter the best matches above score cutoffs by target gene.
+    all_scores_to_filt_ch = SCORE_EX_MATCHES.out.all_scores_to_filt
+    FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE(all_scores_to_filt_ch.join(dist_ranges_ch))
+    //  join filtered scored EX matches
+    filterscore_per_joining_ch = FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.filterscore_per_joining
+    JOIN_FILTERED_EX_MATCHES(filterscore_per_joining_ch)
 
     // Review outputs below
     CHECK_INPUT.out.run_info.view()
@@ -243,54 +251,11 @@ workflow {
     MERGE_PROT_EX_INT_ALN_INFO.out.exint_aln.view()
     SCORE_EX_MATCHES.out.all_features.view()
     SCORE_EX_MATCHES.out.all_scores_to_filt.view()
+    FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.filterscore_per_joining.view()
+    FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.best_scored_matches.view()
+    JOIN_FILTERED_EX_MATCHES.out.filtered_all_scores.view()
 }
 
-// /*
-//  * Filter the best matches above score cutoffs by target gene.
-//  */
-//
-// process filter_and_select_best_EX_matches_by_targetgene {
-//     tag { "${comp_id}" }
-//     publishDir "${params.output}", mode: "copy", pattern: "best_scored_EX_matches_by_targetgene.txt", saveAs: { filename -> "${comp_id}/foo_$filename" }
-//
-//     input:
-//     set val(comp_id), file(all_scores), val(dist_range) from all_scores_to_filt.join(dist_ranges_ch)
-//
-//     output:
-//     file("*.tab") into filterscore_per_joining
-//     file("best_scored_EX_matches_by_targetgene.txt")
-//
-//     script:
-//     def species = comp_id.split("-")
-//     if (dist_range == "long")
-// 	dist_range_par = "${params.long_dist}".split(",")
-//     if (dist_range == "medium")
-// 	dist_range_par = "${params.medium_dist}".split(",")
-//     if (dist_range == "short")
-// 	dist_range_par = "${params.short_dist}".split(",")
-//     """
-//     C2_filter_and_select_best_EX_matches_by_targetgene.pl -b ${all_scores} -sps ${species[0]},${species[1]} -int ${dist_range_par[0]} -id ${dist_range_par[1]} -max_size ${dist_range_par[2]}
-//     """
-// }
-//
-// /*
-//  * join filtered scored EX matches
-//  */
-// process join_filtered_EX_matches {
-//     publishDir "${params.output}/", mode: 'copy'
-//
-//     input:
-//     file ("filtered_best_scored-*") from filterscore_per_joining.collect()
-//
-//     output:
-//     file("filtered_best_scored_EX_matches_by_targetgene.tab") into filtered_all_scores
-//
-// 	script:
-// 	"""
-//     echo "GeneID_sp1\tExon_coords_sp1\tGeneID_sp2\tExon_coords_sp2\tSp1\tSp2" > filtered_best_scored_EX_matches_by_targetgene.tab;
-//     for file in \$(ls filtered_best_scored-*); do cat \$file | tail -n+2 >> filtered_best_scored_EX_matches_by_targetgene.tab; done
-//     """
-// }
 //
 // /*
 //  * Removing matches from overlapping exons
