@@ -97,8 +97,10 @@ LOCAL_MODULES='./modules/local/exorthist'
 
 include { CHECK_INPUT } from "${LOCAL_MODULES}/check_input.nf"
 include { GENERATE_ANNOTATIONS } from "${LOCAL_MODULES}/generate_annotations.nf"
+include { MERGE_PROT_EX_INT_ALN_INFO } from "${LOCAL_MODULES}/merge_aligns.nf"
 include { PARSE_IPA_PROT_ALN } from "${LOCAL_MODULES}/align_pairs.nf"
 include { REALIGN_EX_PAIRS } from "${LOCAL_MODULES}/realign_pairs.nf"
+include { SCORE_EX_MATCHES } from "${LOCAL_MODULES}/score_matches.nf"
 include { SPLIT_CLUSTERS_IN_CHUNKS } from "${LOCAL_MODULES}/split_clusters_chunks.nf"
 include { SPLIT_CLUSTERS_BY_SPECIES_PAIRS } from "${LOCAL_MODULES}/split_clusters_species.nf"
 include { SPLIT_EX_PAIRS_TO_REALIGN } from "${LOCAL_MODULES}/split_pairs.nf"
@@ -213,6 +215,16 @@ workflow {
     EXs_to_realign = EXs_to_realign_batches.flatten().map{[it.getName().toString().split("_")[0],it]}.groupTuple().join(clusters_split_ch).transpose()
     //  Realign exons pairs (with multiple hits)
     REALIGN_EX_PAIRS(blosumfile, EXs_to_realign)
+    //Combine all the aln_info with the realigned_exon_info for each species pair
+    aligned_subclusters_4_splitting = PARSE_IPA_PROT_ALN.out.aligned_subclusters_4_splitting
+    realigned_exons_4_merge = REALIGN_EX_PAIRS.out.realigned_exons_4_merge
+    data_4_merge = aligned_subclusters_4_splitting.groupTuple().join(realigned_exons_4_merge.groupTuple())
+    // Merge alignments information
+    MERGE_PROT_EX_INT_ALN_INFO(data_4_merge)
+    folder_jscores = MERGE_PROT_EX_INT_ALN_INFO.out.folder_jscores
+    data_to_score = folder_jscores.join(clusters_split_ch).map{ [it[0], it[1..-1] ]}
+    // Score EX matches from aln info
+    SCORE_EX_MATCHES(data_to_score)
 
     // Review outputs below
     CHECK_INPUT.out.run_info.view()
@@ -226,79 +238,13 @@ workflow {
     PARSE_IPA_PROT_ALN.out.EXs_to_split.view { "EX: $it" }
     EXs_to_realign.view { "EXR: $it" }
     REALIGN_EX_PAIRS.out.realigned_exons_4_merge.view{ "RER: $it" }
+    MERGE_PROT_EX_INT_ALN_INFO.out.folder_jscores.view()
+    MERGE_PROT_EX_INT_ALN_INFO.out.aln_features.view()
+    MERGE_PROT_EX_INT_ALN_INFO.out.exint_aln.view()
+    SCORE_EX_MATCHES.out.all_features.view()
+    SCORE_EX_MATCHES.out.all_scores_to_filt.view()
 }
 
-
-//
-// //Combine all the aln_info with the realigned_exon_info for each species pair
-// aligned_subclusters_4_splitting.groupTuple().join(realigned_exons_4_merge.groupTuple()).set{data_4_merge}
-//
-//
-// /*
-//  * Merge alignments information
-//  */
-//
-// process merge_PROT_EX_INT_aln_info {
-//     tag { "${comp_id}" }
-//     label 'incr_time_cpus'
-//
-//     stageInMode = 'copy'
-//     //this matches all_PROT_aln_features.txt, all_EX_aln_features.txt, all_INT_aln_features.txt, Exint_Alignments.aln.gz
-//     publishDir "${params.output}", mode: "copy", pattern: "${comp_id}/all_*_aln_features.txt"
-//     publishDir "${params.output}", mode: "copy", pattern: "${comp_id}/EXINT_aln.gz"
-//
-//     input:
-//     set comp_id, file("FOLDERS_*"), file("*") from data_4_merge //05/03/21
-//
-//     output:
-//     set val(comp_id), file("${comp_id}/") into folder_jscores
-//     file("${comp_id}/all_*_aln_features.txt")
-//     file("${comp_id}/EXINT_aln.gz")
-// 	script:
-// 	"""
-// 	    mkdir ${comp_id}
-// 	    mv FOLDERS_*/* ${comp_id}/
-// 	    mv realigned_* ${comp_id}/
-//
-//     	B4_merge_PROT_EX_INT_aln_info.pl ${comp_id}
-// 	"""
-// }
-//
-// folder_jscores.join(anno_2_score_ex_int).map{
-//    [it[0], it[1..-1] ]
-// }.set{data_to_score}
-//
-//
-// /*
-//  * Score EX matches from aln info
-//  */
-//
-// process score_EX_matches {
-//     tag { "${comp_id}" }
-//     label('big_mem_retry')
-//     //I need to modify the name so that it has the species pair in the output.
-//     storeDir "${params.output}/${comp_id}"
-//
-//     input:
-//     set val(comp_id), file("*") from data_to_score
-//
-//     output:
-//     file("all_PROT_EX_INT_aln_features_*")
-//     set val(comp_id), file("all_scored_EX_matches.txt") into all_scores_to_filt
-//
-// 	script:
-//     def species = comp_id.split("-")
-// 	"""
-//     B5_format_aln_info_by_best_isoform_match.pl ${species[0]} ${species[1]} \
-//     ${comp_id}/all_PROT_aln_features.txt ${comp_id}/all_EX_aln_features.txt ${comp_id}/all_INT_aln_features.txt \
-//     ${species[0]}/${species[0]}.exint ${species[1]}/${species[1]}.exint \
-//     ${species[0]}/${species[0]}_protein_ids_intron_pos_CDS.txt ${species[1]}/${species[1]}_protein_ids_intron_pos_CDS.txt \
-//     all_PROT_EX_INT_aln_features_${comp_id}.txt;
-//     C1_score_EX_matches.pl all_PROT_EX_INT_aln_features_${comp_id}.txt .
-//     """
-// }
-//
-//
 // /*
 //  * Filter the best matches above score cutoffs by target gene.
 //  */
