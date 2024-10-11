@@ -97,9 +97,10 @@ LOCAL_MODULES='./modules/local/exorthist'
 
 include { CHECK_INPUT } from "${LOCAL_MODULES}/check_input.nf"
 include { GENERATE_ANNOTATIONS } from "${LOCAL_MODULES}/generate_annotations.nf"
-include { SPLIT_CLUSTERS_BY_SPECIES_PAIRS } from "${LOCAL_MODULES}/split_clusters_species.nf"
+include { PARSE_IPA_PROT_ALN } from "${LOCAL_MODULES}/align_pairs.nf"
 include { SPLIT_CLUSTERS_IN_CHUNKS } from "${LOCAL_MODULES}/split_clusters_chunks.nf"
-
+include { SPLIT_CLUSTERS_BY_SPECIES_PAIRS } from "${LOCAL_MODULES}/split_clusters_species.nf"
+include { SPLIT_EX_PAIRS_TO_REALIGN } from "${LOCAL_MODULES}/split_pairs.nf"
 /*
  * Validate input and print log file
  */
@@ -197,7 +198,20 @@ workflow {
     dist_ranges_ch = clusters_split_ch.join(species_pairs_dist).map{[it[0], it[3]]}
     alignment_input = cls_files_2_align_t.groupTuple().join(dist_ranges_ch).transpose()
 
-// Review outputs below
+    //the last argument is the protein similarity alignment.
+    //if a prevaln folder is provided, the protein alignments present in each species pair subfolder will not be repeated.
+    PARSE_IPA_PROT_ALN(blosumfile, alignment_input)
+
+    // Collapse EXs_to_split in batches of 500 files
+    EXs_to_split = PARSE_IPA_PROT_ALN.out.EXs_to_split
+    EXs_to_split_batches = EXs_to_split.toSortedList().flatten().buffer(size : 500, remainder: true)
+    // Split exons pairs to realign
+    SPLIT_EX_PAIRS_TO_REALIGN(EXs_to_split_batches)
+    EXs_to_realign_batches = SPLIT_EX_PAIRS_TO_REALIGN.out.EXs_to_realign_batches
+    // Flatten the results from the previous batch run and combine with sp1 and sp2 information, using sp1-sp2 as key.
+    EXs_to_realign = EXs_to_realign_batches.flatten().map{[it.getName().toString().split("_")[0],it]}.groupTuple().join(clusters_split_ch).transpose()
+
+    // Review outputs below
     CHECK_INPUT.out.run_info.view()
     GENERATE_ANNOTATIONS.out.idfolders.view { "ANN: $it" }
     SPLIT_CLUSTERS_BY_SPECIES_PAIRS.out.cls_tab_files.view()
@@ -205,76 +219,13 @@ workflow {
     clusters_split_ch.view { "CL: $it" }
     dist_ranges_ch.view { "DR: $it" }
     alignment_input.view { "AL: $it" }
+    PARSE_IPA_PROT_ALN.out.aligned_subclusters_4_splitting.view { "SC: $it" }
+    PARSE_IPA_PROT_ALN.out.EXs_to_split.view { "EX: $it" }
+    EXs_to_realign.view { "EXR: $it" }
+
 }
 
-    //
-//
-// /*
-//  * Align pairs
-//  */
-// //the last argument is the protein similarity alignment.
-// //if a prevaln folder is provided, the protein alignments present in each species pair subfolder will not be repeated.
-//
-//
-// process parse_IPA_prot_aln {
-//     tag { "${cls_part_file}" }
-//     label 'big_cpus'
-//
-//     input:
-//     file(blosumfile)
-//     set combid, file(sp1), file(sp2), file(cls_part_file), val(dist_range) from alignment_input
-//
-//     output:
-// 	set val("${sp1}-${sp2}"), path("${sp1}-${sp2}-*") into aligned_subclusters_4_splitting //05/03/21
-// 	file("${sp1}-${sp2}_EXs_to_split_part_*.txt") into EXs_to_split //05/03/21
-//
-// 	script:
-//     def prev_alignments = ""
-//     if (params.prevaln) {prev_alignments = "${params.prevaln}"}
-//
-//     def cls_parts = "${cls_part_file}".split("_")
-//     if (dist_range == "long")
-// 	dist_range_par = "${params.long_dist}".split(",")
-//     if (dist_range == "medium")
-// 	dist_range_par = "${params.medium_dist}".split(",")
-//     if (dist_range == "short")
-// 	dist_range_par = "${params.short_dist}".split(",")
-//
-// 	"""
-// 		B1_parse_IPA_prot_aln.pl ${sp1} ${sp2} ${cls_part_file} \
-// ${sp1}/${sp1}_annot_exons_prot_ids.txt ${sp2}/${sp2}_annot_exons_prot_ids.txt \
-// ${sp1}/${sp1}_protein_ids_exons_pos.txt ${sp2}/${sp2}_protein_ids_exons_pos.txt \
-// ${sp1}/${sp1}_protein_ids_intron_pos_CDS.txt ${sp2}/${sp2}_protein_ids_intron_pos_CDS.txt \
-// ${sp1}/${sp1}.exint ${sp2}/${sp2}.exint ${cls_parts[1]} ${blosumfile} ${sp1}-${sp2}-${cls_parts[1]} ${dist_range_par[3]} ${task.cpus} ${prev_alignments}
-// 	"""
-// }
-//
-// //Collapse EXs_to_split in batches of 500 files
-// EXs_to_split.toSortedList().flatten().buffer(size : 500, remainder: true).set{EXs_to_split_batches}
-//
-//
-// /*
-//  * Split exons pairs to realign
-//  */
-//
-// process split_EX_pairs_to_realign {
-//
-//     input:
-//     file("*") from EXs_to_split_batches
-//
-//     output:
-//     file("*EXs_to_realign_part_*") into EXs_to_realign_batches
-//
-//     script:
-//     """
-// 	for file in \$(ls *); do B2_split_EX_pairs_to_realign.py -i \${file} -n ${params.alignmentnum}; done
-//     """
-// }
-//
-// //Flatten the results from the previous batch run and combine with sp1 and sp2 information, using sp1-sp2 as key.
-// EXs_to_realign_batches.flatten().map{[it.getName().toString().split("_")[0],it]}.groupTuple()
-// .join(pairs_4_EXs_to_realign).transpose().set{EXs_to_realign}
-//
+
 // /*
 //  * Realign exons pairs (with multiple hits)
 //  */
