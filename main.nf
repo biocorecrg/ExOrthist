@@ -97,6 +97,8 @@ LOCAL_MODULES='./modules/local/exorthist'
 
 include { CHECK_INPUT } from "${LOCAL_MODULES}/check_input.nf"
 include { GENERATE_ANNOTATIONS } from "${LOCAL_MODULES}/generate_annotations.nf"
+include { SPLIT_CLUSTERS_BY_SPECIES_PAIRS } from "${LOCAL_MODULES}/split_clusters_species.nf"
+include { SPLIT_CLUSTERS_IN_CHUNKS } from "${LOCAL_MODULES}/split_clusters_chunks.nf"
 
 /*
  * Validate input and print log file
@@ -164,91 +166,48 @@ workflow {
          GENERATE_ANNOTATIONS(data_to_annotation, file("/path/to/NO_FILE"))
     }
 
-    // Review outputs below
+    clusters_split_ch = GENERATE_ANNOTATIONS.out.idfolders.toList().map{ [it, it].combinations().findAll{ a, b -> a[0] < b[0]} }
+        .flatMap()
+        .map { ["${it[0][0]}-${it[1][0]}".toString(), it[0][1], it[1][1]] }
 
+
+    // Copy the gene cluster file to output to use for the exint_plotter and compare_exon_sets modules
+    SPLIT_CLUSTERS_BY_SPECIES_PAIRS(clusterfile_ch)
+
+    // Split clusters
+    cls_tab_files_ch = SPLIT_CLUSTERS_BY_SPECIES_PAIRS.out.cls_tab_files
+    SPLIT_CLUSTERS_IN_CHUNKS(cls_tab_files_ch.collect(), clusters_split_ch)
+
+    cls_files_2_align = SPLIT_CLUSTERS_IN_CHUNKS.out.cls_files_2_align
+    cls_files_2_align_t = cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}
+
+    //Create a channel for the evo distances
+    sp1_sp2_dist = Channel
+     .fromPath("${params.evodists}")
+     .splitText()
+     .map{"${it}".trim().split("\t")}.map{[it[0]+"-"+it[1], it[2]]}
+
+    sp2_sp1_dist = Channel
+     .fromPath("${params.evodists}")
+     .splitText()
+     .map{"${it}".trim().split("\t")}.map{[it[1]+"-"+it[0], it[2]]}
+
+    species_pairs_dist = sp1_sp2_dist.concat(sp2_sp1_dist)
+    //Only the species pairs with a common index will be kept
+    dist_ranges_ch = clusters_split_ch.join(species_pairs_dist).map{[it[0], it[3]]}
+    alignment_input = cls_files_2_align_t.groupTuple().join(dist_ranges_ch).transpose()
+
+// Review outputs below
     CHECK_INPUT.out.run_info.view()
-    GENERATE_ANNOTATIONS.out.idfolders.view()
-
+    GENERATE_ANNOTATIONS.out.idfolders.view { "ANN: $it" }
+    SPLIT_CLUSTERS_BY_SPECIES_PAIRS.out.cls_tab_files.view()
+    SPLIT_CLUSTERS_BY_SPECIES_PAIRS.out.gene_cluster_file.view()
+    clusters_split_ch.view { "CL: $it" }
+    dist_ranges_ch.view { "DR: $it" }
+    alignment_input.view { "AL: $it" }
 }
 
-//
-//
-// /*
-//  * split cluster file
-//  */
-// //Copy the gene cluster file to output to use for the exint_plotter and compare_exon_sets modules
-// process split_clusters_by_species_pairs {
-//     tag { clusterfile }
-//     publishDir "${params.output}/", mode: 'copy', pattern: "gene_cluster_file.gz"
-//
-//     input:
-//     file(clusterfile)
-//
-//     output:
-//     file "*.cls.tab"  into cls_tab_files, cls_tab_file_4_clustering
-//     file("gene_cluster_file.gz")
-//
-// 	script:
-// 	"""
-//    if [ `echo ${clusterfile} | grep ".gz"` ]; then
-//        zcat ${clusterfile} > gene_cluster_file
-//        A2_split_clusters_by_species_pairs.pl -f gene_cluster_file
-//        gzip gene_cluster_file
-//        #rm cluster_file
-//     else
-//        cat ${clusterfile} > gene_cluster_file
-//        #A2_split_clusters_by_species_pairs.pl -f ${clusterfile}
-//        A2_split_clusters_by_species_pairs.pl -f gene_cluster_file
-//        gzip gene_cluster_file
-//     fi
-// 	"""
-// }
-//
-// idfolders
-//   .toList().map{ [it, it] .combinations().findAll{ a, b -> a[0] < b[0]} }
-//   .flatMap()
-//   .map { ["${it[0][0]}-${it[1][0]}".toString(), it[0][1], it[1][1]] }
-//   .into{cluster_2_split; anno_2_score_ex_int; species_to_recluster_genes; pairs_4_evodists; pairs_4_EXs_to_realign}
-//
-//
-//
-// /*
-//  * split clusters
-// */
-//
-// process split_clusters_in_chunks {
-//     tag { id_comb }
-//
-//     input:
-//     file(cls_tab_files).collect()
-//     set id_comb, file(idfolder_A), file(idfolder_B) from cluster_2_split
-//
-//     output:
-//     set file(idfolder_A), file(idfolder_B), file("${idfolder_A}_${idfolder_B}/*.cls.tab-part_*") into cls_files_2_align
-//
-// 	script:
-// 	"""
-// 		A3_split_clusters_in_chunks.pl --sp1 ${idfolder_A} --sp2 ${idfolder_B} --expath ./ --project_dir ./ --N_split ${params.alignmentnum} --gene_cluster ${id_comb}.cls.tab
-// 	"""
-// }
-//
-// cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}.set{cls_files_2_align_t}
-//
-// //Create a channel for the evo distances
-// Channel
-//     .fromPath("${params.evodists}")
-//     .splitText()
-//     .map{"${it}".trim().split("\t")}.map{[it[0]+"-"+it[1], it[2]]}.set{sp1_sp2_dist}
-//
-// Channel
-//     .fromPath("${params.evodists}")
-//     .splitText()
-//     .map{"${it}".trim().split("\t")}.map{[it[1]+"-"+it[0], it[2]]}.set{sp2_sp1_dist}
-//
-// sp1_sp2_dist.concat(sp2_sp1_dist).set{species_pairs_dist}
-// //Only the species pairs with a common index will be kept
-// pairs_4_evodists.join(species_pairs_dist).map{[it[0], it[3]]}.into{dist_ranges_ch; dist_ranges_ch1; dist_ranges_ch2}
-//
+    //
 //
 // /*
 //  * Align pairs
@@ -256,7 +215,6 @@ workflow {
 // //the last argument is the protein similarity alignment.
 // //if a prevaln folder is provided, the protein alignments present in each species pair subfolder will not be repeated.
 //
-// cls_files_2_align_t.groupTuple().join(dist_ranges_ch1).transpose().set{alignment_input}
 //
 // process parse_IPA_prot_aln {
 //     tag { "${cls_part_file}" }
