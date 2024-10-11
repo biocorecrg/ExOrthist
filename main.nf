@@ -98,6 +98,7 @@ LOCAL_MODULES='./modules/local/exorthist'
 include { CHECK_INPUT } from "${LOCAL_MODULES}/check_input.nf"
 include { GENERATE_ANNOTATIONS } from "${LOCAL_MODULES}/generate_annotations.nf"
 include { PARSE_IPA_PROT_ALN } from "${LOCAL_MODULES}/align_pairs.nf"
+include { REALIGN_EX_PAIRS } from "${LOCAL_MODULES}/realign_pairs.nf"
 include { SPLIT_CLUSTERS_IN_CHUNKS } from "${LOCAL_MODULES}/split_clusters_chunks.nf"
 include { SPLIT_CLUSTERS_BY_SPECIES_PAIRS } from "${LOCAL_MODULES}/split_clusters_species.nf"
 include { SPLIT_EX_PAIRS_TO_REALIGN } from "${LOCAL_MODULES}/split_pairs.nf"
@@ -210,6 +211,8 @@ workflow {
     EXs_to_realign_batches = SPLIT_EX_PAIRS_TO_REALIGN.out.EXs_to_realign_batches
     // Flatten the results from the previous batch run and combine with sp1 and sp2 information, using sp1-sp2 as key.
     EXs_to_realign = EXs_to_realign_batches.flatten().map{[it.getName().toString().split("_")[0],it]}.groupTuple().join(clusters_split_ch).transpose()
+    //  Realign exons pairs (with multiple hits)
+    REALIGN_EX_PAIRS(blosumfile, EXs_to_realign)
 
     // Review outputs below
     CHECK_INPUT.out.run_info.view()
@@ -222,31 +225,10 @@ workflow {
     PARSE_IPA_PROT_ALN.out.aligned_subclusters_4_splitting.view { "SC: $it" }
     PARSE_IPA_PROT_ALN.out.EXs_to_split.view { "EX: $it" }
     EXs_to_realign.view { "EXR: $it" }
-
+    REALIGN_EX_PAIRS.out.realigned_exons_4_merge.view{ "RER: $it" }
 }
 
 
-// /*
-//  * Realign exons pairs (with multiple hits)
-//  */
-//
-// process realign_EX_pairs {
-//     label 'incr_time_cpus'
-//
-//     input:
-//     file(blosumfile)
-//     set val(comp_id), file(EXs_to_realign), file(sp1), file(sp2) from EXs_to_realign //05/03/21
-//
-//     output:
-//     set val(comp_id), file("realigned_*") into realigned_exons_4_merge //05/03/21
-//
-//     script:
-//     """
-// 	B3_realign_EX_pairs.pl ${sp1} ${sp2} ${EXs_to_realign} \
-// 	${sp1}/${sp1}.exint ${sp2}/${sp2}.exint 1 realigned_${EXs_to_realign} \
-// 	${sp1}_${sp2} ${blosumfile} ${task.cpus}
-//     """
-// }
 //
 // //Combine all the aln_info with the realigned_exon_info for each species pair
 // aligned_subclusters_4_splitting.groupTuple().join(realigned_exons_4_merge.groupTuple()).set{data_4_merge}
