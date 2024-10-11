@@ -1,6 +1,6 @@
 process PARSE_IPA_PROT_ALN {
     tag { cls_part_file.name }
-    label 'big_cpus'
+    label 'aligners'
 
     input:
     path blosumfile

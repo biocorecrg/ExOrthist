@@ -17,7 +17,7 @@ print "\nRunning intron position alignment for $root...\n\n";
 
 ### with clustal
 if ($aligner=~/clustal/i){
-    system "clustalw2 $exint -output=gde";
+    system "clustalw $exint -output=gde";
 }
 elsif ($aligner=~/MAFFT/i){
     system "mafft --auto --thread $cpus --quiet $exint | sed 's/>/%/g' > $root.gde";  
