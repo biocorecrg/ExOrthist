@@ -2,8 +2,8 @@ process FORMAT_EX_CLUSTERS_OUTPUT {
     publishDir "${params.output}/", mode: 'copy'
 
     input:
-    path "*", stageAs: 'ex_clusters_*'
-    path "*", stageAs: 'unclustered_exs_*'
+    path ex_clusters
+    path unclustered_exs
 
     output:
     path "EX_clusters.tab", emit: exon_cluster_for_reclustering

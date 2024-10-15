@@ -229,7 +229,7 @@ workflow {
     EXs_to_realign = EXs_to_realign_batches.flatten().map{[it.getName().toString().split("_")[0],it]}.groupTuple().join(clusters_split_ch).transpose()
     //  Realign exons pairs (with multiple hits)
     REALIGN_EX_PAIRS(blosumfile, EXs_to_realign)
-    //Combine all the aln_info with the realigned_exon_info for each species pair
+    // Combine all the aln_info with the realigned_exon_info for each species pair
     aligned_subclusters_4_splitting = PARSE_IPA_PROT_ALN.out.aligned_subclusters_4_splitting
     realigned_exons_4_merge = REALIGN_EX_PAIRS.out.realigned_exons_4_merge
     data_4_merge = aligned_subclusters_4_splitting.groupTuple().join(realigned_exons_4_merge.groupTuple())
@@ -244,7 +244,7 @@ workflow {
     FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE(all_scores_to_filt_ch.join(dist_ranges_ch))
     //  Join filtered scored EX matches
     filterscore_per_joining_ch = FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.filterscore_per_joining
-    JOIN_FILTERED_EX_MATCHES(filterscore_per_joining_ch)
+    JOIN_FILTERED_EX_MATCHES(filterscore_per_joining_ch.collect())
     //  Removing matches from overlapping exons
 
     filtered_all_scores = JOIN_FILTERED_EX_MATCHES.out.filtered_all_scores
@@ -256,11 +256,12 @@ workflow {
     }
     score_exon_hits_pairs = COLLAPSE_OVERLAPPING_MATCHES.out.score_exon_hits_pairs
     FORMAT_EX_CLUSTERS_INPUT(score_exon_hits_pairs, file(params.cluster))
+
     // Split the file of exon pairs
     // Unclustered are the exons ending up in single-exon clusters
-    cluster_parts = FORMAT_EX_CLUSTERS_INPUT.out.cluster_parts
+    cluster_parts = FORMAT_EX_CLUSTERS_INPUT.out.cluster_parts.flatten()
     CLUSTER_EXS(cluster_parts)
-    FORMAT_EX_CLUSTERS_OUTPUT(CLUSTER_EXS.out.ex_clusters, CLUSTER_EXS.out.unclustered_exs)
+    FORMAT_EX_CLUSTERS_OUTPUT(CLUSTER_EXS.out.ex_clusters.collect(), CLUSTER_EXS.out.unclustered_exs.collect())
 
     // Re-clustering of genes
     RECLUSTER_GENES_BY_SPECIES_PAIR(
@@ -277,7 +278,7 @@ workflow {
         orthopairs_ch
     )
 
-    // Review outputs below
+    // // Review outputs below
     CHECK_INPUT.out.run_info.view()
     GENERATE_ANNOTATIONS.out.idfolders.view { "ANN: $it" }
     SPLIT_CLUSTERS_BY_SPECIES_PAIRS.out.cls_tab_files.view()
