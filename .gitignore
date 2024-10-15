@@ -5,5 +5,5 @@ work
 trace*
 *report*
 logs/*
-output/*
+output*/*
 .nextflow*
