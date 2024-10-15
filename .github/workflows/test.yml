@@ -9,9 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out the repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Install Nextflow
-      uses: nf-core/setup-nextflow@v1.2.0
-      with:
-        version: 20.04.1
+      uses: nf-core/setup-nextflow@v2.0.0
     - run: nextflow run ${GITHUB_WORKSPACE} -with-docker
