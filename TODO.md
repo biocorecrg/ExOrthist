@@ -5,3 +5,4 @@
 - Move parts into subworkflows for clarity if possible
 - Convert params.config to params.yaml
 - Include colors into the terminal messages
+- Consider notifications

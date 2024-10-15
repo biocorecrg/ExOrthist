@@ -99,12 +99,15 @@ include { CHECK_INPUT } from "${LOCAL_MODULES}/check_input.nf"
 include { CLUSTER_EXS } from "${LOCAL_MODULES}/cluster_exons.nf"
 include { COLLAPSE_OVERLAPPING_MATCHES } from "${LOCAL_MODULES}/collapse_matches.nf"
 include { FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE } from "${LOCAL_MODULES}/filter_matches.nf"
-include { FORMAT_EX_CLUSTERS_INPUT } from "${LOCAL_MODULES}/format_clusters.nf"
+include { FORMAT_EX_CLUSTERS_INPUT } from "${LOCAL_MODULES}/format_input.nf"
+include { FORMAT_EX_CLUSTERS_OUTPUT } from "${LOCAL_MODULES}/format_output.nf"
 include { GENERATE_ANNOTATIONS } from "${LOCAL_MODULES}/generate_annotations.nf"
 include { JOIN_FILTERED_EX_MATCHES } from "${LOCAL_MODULES}/join_matches.nf"
 include { MERGE_PROT_EX_INT_ALN_INFO } from "${LOCAL_MODULES}/merge_aligns.nf"
 include { PARSE_IPA_PROT_ALN } from "${LOCAL_MODULES}/align_pairs.nf"
 include { REALIGN_EX_PAIRS } from "${LOCAL_MODULES}/realign_pairs.nf"
+include { RECLUSTER_EXS_BY_SPECIES_PAIR } from "${LOCAL_MODULES}/recluster_exs.nf"
+include { RECLUSTER_GENES_BY_SPECIES_PAIR } from "${LOCAL_MODULES}/recluster_genes.nf"
 include { SCORE_EX_MATCHES } from "${LOCAL_MODULES}/score_matches.nf"
 include { SPLIT_CLUSTERS_IN_CHUNKS } from "${LOCAL_MODULES}/split_clusters_chunks.nf"
 include { SPLIT_CLUSTERS_BY_SPECIES_PAIRS } from "${LOCAL_MODULES}/split_clusters_species.nf"
@@ -155,6 +158,12 @@ workflow {
 
     evodists_ch = Channel.fromPath(params.evodists)
     clusterfile_ch = Channel.fromPath(params.cluster)
+    if ( params.orthopairs ) {
+        orthopairs_ch = file(params.orthopairs)
+    } else {
+        orthopairs_ch = file("/path/to/NO_FILE")
+    }
+
 
     CHECK_INPUT(
         evodists_ch,
@@ -251,6 +260,22 @@ workflow {
     // Unclustered are the exons ending up in single-exon clusters
     cluster_parts = FORMAT_EX_CLUSTERS_INPUT.out.cluster_parts
     CLUSTER_EXS(cluster_parts)
+    FORMAT_EX_CLUSTERS_OUTPUT(CLUSTER_EXS.out.ex_clusters, CLUSTER_EXS.out.unclustered_exs)
+
+    // Re-clustering of genes
+    RECLUSTER_GENES_BY_SPECIES_PAIR(
+        clusters_split_ch,
+        clusterfile_ch,
+        orthopairs_ch
+    )
+
+    // Re-clustering of exons
+    RECLUSTER_EXS_BY_SPECIES_PAIR(
+        RECLUSTER_GENES_BY_SPECIES_PAIR.out.recl_genes_for_rec_exons,
+        FORMAT_EX_CLUSTERS_OUTPUT.out.exon_cluster_for_reclustering,
+        COLLAPSE_OVERLAPPING_MATCHES.out.score_exon_hits_pairs,
+        orthopairs_ch
+    )
 
     // Review outputs below
     CHECK_INPUT.out.run_info.view()
@@ -277,118 +302,16 @@ workflow {
     FORMAT_EX_CLUSTERS_INPUT.out.cluster_parts.view()
     CLUSTER_EXS.out.unclustered_exs.view()
     CLUSTER_EXS.out.ex_clusters.view()
+    FORMAT_EX_CLUSTERS_OUTPUT.out.exon_cluster_for_reclustering.view()
+    RECLUSTER_GENES_BY_SPECIES_PAIR.out.recl_genes_for_rec_exons.view()
+    RECLUSTER_EXS_BY_SPECIES_PAIR.out.recl_exs.view()
 }
 
-//
-// /*
-// * Final exon clusters
-// */
-// process format_EX_clusters_output {
-//     publishDir "${params.output}/", mode: 'copy'
-//
-//     input:
-//     file("*") from ex_clusters.collect()
-//     file("*") from unclustered_exs.collect()
-//
-//     output:
-//     file("EX_clusters.tab") into exon_cluster_for_reclustering
-//     file("EX_clusters_info.tab.gz")
-//     file("unclustered_EXs.txt")
-//
-// 	script:
-// 	"""
-// 	D3_format_EX_clusters_output.pl
-// 	"""
-// }
-//
-// /*
-// * Re-clustering of genes
-// */
-//
-// process recluster_genes_by_species_pair {
-//     publishDir "${params.output}/reclustering", mode: 'copy'
-//     tag { "${combid}" }
-//
-//     when:
-//     params.orthopairs != ""
-//
-//     input:
-//     set combid, file(folderA), file(folderB) from species_to_recluster_genes
-//     file(clusterfile)
-//     //file(orthopairs) from orthopairs_file
-//
-//     output:
-//     set combid, file("reclustered_genes_*.tab") into recl_genes_for_rec_exons
-//
-// 	script:
-// 	def species = "${combid}".split("-")
-// 	def orthopairs = file("${params.orthopairs}")
-// 	"""
-//  	D3.1_recluster_genes_by_species_pair.py -og ${clusterfile} -op ${orthopairs} --species1 ${species[0]} --species2 ${species[1]} -out reclustered_genes_${combid}.tab
-//     	"""
-// }
-//
-//
-// /*
-// * Re-clustering of exons
-// */
-//
-// process recluster_EXs_by_species_pair {
-//     publishDir "${params.output}/reclustering", mode: 'copy'
-//     tag { "${combid}" }
-//
-// 	when:
-// 	params.orthopairs != ""
-//
-//     input:
-//     set combid, file(recl_genes) from recl_genes_for_rec_exons
-//     file(exon_clusters) from exon_cluster_for_reclustering
-//     file(exon_pairs) from exon_pairs_for_reclustering
-//
-//     output:
-//     file("reclustered_EXs_*.tab")
-//
-// 	script:
-// 	def combid1 = combid.replace("-", "_")
-// 	def species = "${combid1}".split("-")
-// 	"""
-// 	D3.2_recluster_EXs_by_species_pair.py -ep ${exon_pairs} -rg ${recl_genes} -ec ${exon_clusters} -sp1 ${species[0]} -sp2 ${species[1]} -out reclustered_EXs_${combid1}.tab
-//     	"""
-// }
-//
-// /*
-//  * Mail notification
-//  */
-//
-// if (params.email == "yourmail@yourdomain" || params.email == "") {
-//     log.info 'Skipping the email\n'
-// }
-// else {
-//     log.info "Sending the email to ${params.email}\n"
-//
-//     workflow.onComplete {
-//
-//     def msg = """\
-//         Pipeline execution summary
-//         ---------------------------
-//         Completed at: ${workflow.complete}
-//         Duration    : ${workflow.duration}
-//         Success     : ${workflow.success}
-//         workDir     : ${workflow.workDir}
-//         exit status : ${workflow.exitStatus}
-//         Error report: ${workflow.errorReport ?: '-'}
-//         """
-//         .stripIndent()
-//
-//         sendMail(to: params.email, subject: "VectorQC execution", body: msg,  attach: "${outputMultiQC}/multiqc_report.html")
-//     }
-// }
-//
-// workflow.onComplete {
-//     println "--- Pipeline BIOCORE@CRG ExOrthist ---"
-//     println "Started at  $workflow.start"
-//     println "Finished at $workflow.complete"
-//     println "Time elapsed: $workflow.duration"
-//     println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
-// }
-//
+workflow.onComplete {
+    println "--- Pipeline BIOCORE@CRG ExOrthist ---"
+    println "Started at  $workflow.start"
+    println "Finished at $workflow.complete"
+    println "Time elapsed: $workflow.duration"
+    println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+}
+
