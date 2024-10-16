@@ -3,7 +3,7 @@ process FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE {
 
     publishDir "${params.output}", mode: "copy",
         pattern: "best_scored_EX_matches_by_targetgene.txt",
-        saveAs: { filename -> "${comp_id}/foo_$filename" }
+        saveAs: { filename -> "${comp_id}/$filename" }
 
     input:
     tuple val(comp_id), path(all_scores), val(dist_range)
