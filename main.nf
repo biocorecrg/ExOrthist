@@ -94,6 +94,7 @@ if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
 //
 
 LOCAL_MODULES='./modules/local/exorthist'
+LOCAL_SUBWORKFLOWS='./subworkflows/local/exorthist'
 
 include { CHECK_INPUT } from "${LOCAL_MODULES}/check_input.nf"
 include { CLUSTER_EXS } from "${LOCAL_MODULES}/cluster_exons.nf"
@@ -112,6 +113,9 @@ include { SCORE_EX_MATCHES } from "${LOCAL_MODULES}/score_matches.nf"
 include { SPLIT_CLUSTERS_IN_CHUNKS } from "${LOCAL_MODULES}/split_clusters_chunks.nf"
 include { SPLIT_CLUSTERS_BY_SPECIES_PAIRS } from "${LOCAL_MODULES}/split_clusters_species.nf"
 include { SPLIT_EX_PAIRS_TO_REALIGN } from "${LOCAL_MODULES}/split_pairs.nf"
+
+include { PREPARE_INPUT } from "${LOCAL_SUBWORKFLOWS}/prepare_input.nf"
+
 /*
  * Validate input and print log file
  */
@@ -140,21 +144,7 @@ workflow {
 
     // We join channels. If no extraexons, then it's empty, so no problem
     data_to_annotation_raw = genomes.join(annotations)
-    pipe_data = data_to_annotation_raw
     data_to_annotation = data_to_annotation_raw.join(extraexons, remainder: true)
-
-    // Print contents of each channel
-    gtfs.view { "GTF file: $it" }
-    fastas.view { "FASTA file: $it" }
-    gtfs_suffix.view { "GTF suffix: $it" }
-    fastas_suffix.view { "FASTA suffix: $it" }
-
-    genomes.view { "Genome file: $it" }
-    annotations.view { "Genome file: $it" }
-    extraexons.view { "Extra: $it" }
-    data_to_annotation_raw.view { "DAR: $it"}
-    data_to_annotation.view { "DA: $it"}
-    pipe_data.view { "PD: $it"}
 
     evodists_ch = Channel.fromPath(params.evodists)
     clusterfile_ch = Channel.fromPath(params.cluster)
@@ -164,8 +154,7 @@ workflow {
         orthopairs_ch = file("/path/to/NO_FILE")
     }
 
-
-    CHECK_INPUT(
+    PREPARE_INPUT(
         evodists_ch,
         clusterfile_ch,
         gtfs,
@@ -174,50 +163,14 @@ workflow {
         fastas_suffix,
         params.long_dist,
         params.medium_dist,
-        params.short_dist
+        params.short_dist,
+        data_to_annotation,
+        params.extraexons
     )
 
-    // Sic: https://nextflow-io.github.io/patterns/optional-input/
-    if ( params.extraexons ) {
-         GENERATE_ANNOTATIONS(data_to_annotation, extraexons)
-    } else {
-         GENERATE_ANNOTATIONS(data_to_annotation, file("/path/to/NO_FILE"))
-    }
-
-    clusters_split_ch = GENERATE_ANNOTATIONS.out.idfolders.toList().map{ [it, it].combinations().findAll{ a, b -> a[0] < b[0]} }
-        .flatMap()
-        .map { ["${it[0][0]}-${it[1][0]}".toString(), it[0][1], it[1][1]] }
-
-
-    // Copy the gene cluster file to output to use for the exint_plotter and compare_exon_sets modules
-    SPLIT_CLUSTERS_BY_SPECIES_PAIRS(clusterfile_ch)
-
-    // Split clusters
-    cls_tab_files_ch = SPLIT_CLUSTERS_BY_SPECIES_PAIRS.out.cls_tab_files
-    SPLIT_CLUSTERS_IN_CHUNKS(cls_tab_files_ch.collect(), clusters_split_ch)
-
-    cls_files_2_align = SPLIT_CLUSTERS_IN_CHUNKS.out.cls_files_2_align
-    cls_files_2_align_t = cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}
-
-    //Create a channel for the evo distances
-    sp1_sp2_dist = Channel
-     .fromPath("${params.evodists}")
-     .splitText()
-     .map{"${it}".trim().split("\t")}.map{[it[0]+"-"+it[1], it[2]]}
-
-    sp2_sp1_dist = Channel
-     .fromPath("${params.evodists}")
-     .splitText()
-     .map{"${it}".trim().split("\t")}.map{[it[1]+"-"+it[0], it[2]]}
-
-    species_pairs_dist = sp1_sp2_dist.concat(sp2_sp1_dist)
-    //Only the species pairs with a common index will be kept
-    dist_ranges_ch = clusters_split_ch.join(species_pairs_dist).map{[it[0], it[3]]}
-    alignment_input = cls_files_2_align_t.groupTuple().join(dist_ranges_ch).transpose()
-
-    //the last argument is the protein similarity alignment.
-    //if a prevaln folder is provided, the protein alignments present in each species pair subfolder will not be repeated.
-    PARSE_IPA_PROT_ALN(blosumfile, alignment_input)
+    // the last argument is the protein similarity alignment.
+    // if a prevaln folder is provided, the protein alignments present in each species pair subfolder will not be repeated.
+    PARSE_IPA_PROT_ALN(blosumfile, PREPARE_INPUT.out.alignment_input)
 
     // Collapse EXs_to_split in batches of 500 files
     EXs_to_split = PARSE_IPA_PROT_ALN.out.EXs_to_split
@@ -226,7 +179,7 @@ workflow {
     SPLIT_EX_PAIRS_TO_REALIGN(EXs_to_split_batches)
     EXs_to_realign_batches = SPLIT_EX_PAIRS_TO_REALIGN.out.EXs_to_realign_batches
     // Flatten the results from the previous batch run and combine with sp1 and sp2 information, using sp1-sp2 as key.
-    EXs_to_realign = EXs_to_realign_batches.flatten().map{[it.getName().toString().split("_")[0],it]}.groupTuple().join(clusters_split_ch).transpose()
+    EXs_to_realign = EXs_to_realign_batches.flatten().map{[it.getName().toString().split("_")[0],it]}.groupTuple().join(PREPARE_INPUT.out.clusters_split_ch).transpose()
     //  Realign exons pairs (with multiple hits)
     REALIGN_EX_PAIRS(blosumfile, EXs_to_realign)
     // Combine all the aln_info with the realigned_exon_info for each species pair
@@ -236,12 +189,12 @@ workflow {
     // Merge alignments information
     MERGE_PROT_EX_INT_ALN_INFO(data_4_merge)
     folder_jscores = MERGE_PROT_EX_INT_ALN_INFO.out.folder_jscores
-    data_to_score = folder_jscores.join(clusters_split_ch).map{ [it[0], it[1..-1] ]}
+    data_to_score = folder_jscores.join(PREPARE_INPUT.out.clusters_split_ch).map{ [it[0], it[1..-1] ]}
     // Score EX matches from aln info
     SCORE_EX_MATCHES(data_to_score)
     // Filter the best matches above score cutoffs by target gene.
     all_scores_to_filt_ch = SCORE_EX_MATCHES.out.all_scores_to_filt
-    FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE(all_scores_to_filt_ch.join(dist_ranges_ch))
+    FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE(all_scores_to_filt_ch.join(PREPARE_INPUT.out.dist_ranges_ch))
     //  Join filtered scored EX matches
     filterscore_per_joining_ch = FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.filterscore_per_joining
     JOIN_FILTERED_EX_MATCHES(filterscore_per_joining_ch.collect())
@@ -265,7 +218,7 @@ workflow {
 
     // Re-clustering of genes
     RECLUSTER_GENES_BY_SPECIES_PAIR(
-        clusters_split_ch,
+        PREPARE_INPUT.out.clusters_split_ch,
         clusterfile_ch,
         orthopairs_ch
     )
@@ -278,34 +231,6 @@ workflow {
         orthopairs_ch
     )
 
-    // // Review outputs below
-    CHECK_INPUT.out.run_info.view()
-    GENERATE_ANNOTATIONS.out.idfolders.view { "ANN: $it" }
-    SPLIT_CLUSTERS_BY_SPECIES_PAIRS.out.cls_tab_files.view()
-    SPLIT_CLUSTERS_BY_SPECIES_PAIRS.out.gene_cluster_file.view()
-    clusters_split_ch.view { "CL: $it" }
-    dist_ranges_ch.view { "DR: $it" }
-    alignment_input.view { "AL: $it" }
-    PARSE_IPA_PROT_ALN.out.aligned_subclusters_4_splitting.view { "SC: $it" }
-    PARSE_IPA_PROT_ALN.out.EXs_to_split.view { "EX: $it" }
-    EXs_to_realign.view { "EXR: $it" }
-    REALIGN_EX_PAIRS.out.realigned_exons_4_merge.view{ "RER: $it" }
-    MERGE_PROT_EX_INT_ALN_INFO.out.folder_jscores.view()
-    MERGE_PROT_EX_INT_ALN_INFO.out.aln_features.view()
-    MERGE_PROT_EX_INT_ALN_INFO.out.exint_aln.view()
-    SCORE_EX_MATCHES.out.all_features.view()
-    SCORE_EX_MATCHES.out.all_scores_to_filt.view()
-    FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.filterscore_per_joining.view()
-    FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.best_scored_matches.view()
-    JOIN_FILTERED_EX_MATCHES.out.filtered_all_scores.view()
-    COLLAPSE_OVERLAPPING_MATCHES.out.score_exon_hits_pairs.view()
-    COLLAPSE_OVERLAPPING_MATCHES.out.overlapping_exs.view()
-    FORMAT_EX_CLUSTERS_INPUT.out.cluster_parts.view()
-    CLUSTER_EXS.out.unclustered_exs.view()
-    CLUSTER_EXS.out.ex_clusters.view()
-    FORMAT_EX_CLUSTERS_OUTPUT.out.exon_cluster_for_reclustering.view()
-    RECLUSTER_GENES_BY_SPECIES_PAIR.out.recl_genes_for_rec_exons.view()
-    RECLUSTER_EXS_BY_SPECIES_PAIR.out.recl_exs.view()
 }
 
 workflow.onComplete {
