@@ -147,14 +147,23 @@ workflow {
     /*
      * Facultative processes for isoform and exons highlighting
      */
+    GENERATE_FAKE_COORDS_TABLE.out.fake_coords_tables.collect().view()
+    BREAK_BESTHITS_SPECIESPAIR.out.best_hits_speciespairs.view()
 
-    plot_input = GENERATE_FAKE_COORDS_TABLE.out.fake_coords_tables.collect().mix(BREAK_BESTHITS_SPECIESPAIR.out.best_hits_speciespairs).collect()
+    // plot_input = GENERATE_FAKE_COORDS_TABLE.out.fake_coords_tables.collect().mix(BREAK_BESTHITS_SPECIESPAIR.out.best_hits_speciespairs).collect()
+    // We remove species of the channel
+    plot_input = GENERATE_FAKE_COORDS_TABLE.out.fake_coords_tables.collect()
+    .mix(BREAK_BESTHITS_SPECIESPAIR.out.best_hits_speciespairs.collect())
+    .flatten()
+    .filter { it instanceof Path }
+    .collect()
+
     //Get the order of the species for the plot. It can be either provided by the user or computed from the gene cluster file.
     if (params.ordered_species) {
       ordered_target = Channel.value("${params.ordered_species}")
     }
     else {
-      all_species = Channel
+        all_species = Channel
           .fromFilePairs(params.annotations, size: 1)
           .map{"${it[0]}".toString()}.flatMap().collect().map{it -> it.join(",")}
 
@@ -164,6 +173,7 @@ workflow {
             ISOLATE_QUERY_SPECIES.out.query_species,
             ISOLATE_CLUSTER_ID.out.gene_clusterID
         )
+        ordered_target = DERIVE_ORDERED_SPECIES.out.ordered_target
     }
 
     if (params.isoformID) {
@@ -177,13 +187,13 @@ workflow {
     } else {
       isoform_interesting_exs = Channel.from("None")
     }
-
     //Rscript to actually make the plot
     if (params.relevant_exs) {relevant_exons = "${params.relevant_exs}"} else {relevant_exons = "None"}
+
     PLOT_EXINT(
-        ISOLATE_CLUSTER_ID.out.gene_clusterID
+        my_geneID,
         ISOLATE_QUERY_SPECIES.out.query_species,
-        DERIVE_ORDERED_SPECIES.out.ordered_target,
+        ordered_target,
         relevant_exons,
         gene_clusters,
         GET_ISOFORM_EXONS.out.isoform_interesting_exs,
