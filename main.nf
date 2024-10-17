@@ -83,8 +83,8 @@ if( !workflow.resume ) {
 	  new File("${params.output}").delete()
 }
 
+// TODO: Handle checks
 // clusterfile       = file(params.cluster)
-outputQC          = "${params.output}/QC"
 blosumfile        = file("${baseDir}/files/blosum62.txt")
 // evodisfile	  = file(params.evodists)
 
