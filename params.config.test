@@ -1,4 +1,5 @@
 params {
+    wf             = "main"
     cluster        = "$baseDir/test/hg38_mm10_bosTau9.tab"
     genomes        = "$baseDir/test/GENOMES/*_gDNA-subsetted.fasta.gz"
     annotations    = "$baseDir/test/GTF/*_annot-subsetted.gtf.gz"

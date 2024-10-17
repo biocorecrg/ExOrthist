@@ -33,28 +33,28 @@ params.help            = false
 params.resume          = false
 
 
-log.info """
+log_main = """
 
 ╔╦╗┬ ┬┌─┐  ╔═╗─┐ ┬╔═╗┬─┐┌┬┐┬ ┬┬┌─┐┌┬┐
  ║ ├─┤├┤   ║╣ ┌┴┬┘║ ║├┬┘ │ ├─┤│└─┐ │
  ╩ ┴ ┴└─┘  ╚═╝┴ └─╚═╝┴└─ ┴ ┴ ┴┴└─┘ ┴
 
 ==============================================================================
-annotations (GTF files)          : ${params.annotations}
-genomes (fasta files)            : ${params.genomes}
-cluster file (txt files)         : ${params.cluster}
-pairwise evo distances           : ${params.evodists}
-long distance parameters         : ${params.long_dist}
-medium distance parameters       : ${params.medium_dist}
-short distance parameters        : ${params.short_dist}
-pre-computed alignments		 : ${params.prevaln}
-alignment number		 : ${params.alignmentnum}
-orthogroup number		 : ${params.orthogroupnum}
-extraexons (e.g. from VastDB)    : ${params.extraexons}
-bona fide orthologous exon pairs  : ${params.bonafide_pairs}
-orthopairs                       : ${params.orthopairs}
-output (output folder)           : ${params.output}
-email for notification           : ${params.email}
+annotations (GTF files)             : ${params.annotations}
+genomes (fasta files)               : ${params.genomes}
+cluster file (txt files)            : ${params.cluster}
+pairwise evo distances              : ${params.evodists}
+long distance parameters            : ${params.long_dist}
+medium distance parameters          : ${params.medium_dist}
+short distance parameters           : ${params.short_dist}
+pre-computed alignments             : ${params.prevaln}
+alignment number                    : ${params.alignmentnum}
+orthogroup number                   : ${params.orthogroupnum}
+extraexons (e.g. from VastDB)       : ${params.extraexons}
+bona fide orthologous exon pairs    : ${params.bonafide_pairs}
+orthopairs                          : ${params.orthopairs}
+output (output folder)              : ${params.output}
+email for notification              : ${params.email}
 
 INFORMATION ABOUT OPTIONS:
 The long, medium, short distance cut-offs are in the format: "int_num;ex_seq;ex_len;prot_sim".
@@ -71,6 +71,19 @@ Only exon matches respecting all cut-offs are considered homologous.
 See online README at https://github.com/biocorecrg/ExOrthist for further information about the options.
 """
 
+log_plot = """
+Executing with the following parameters:
+
+output main                         : ${params.output}
+output plot                         : ${params.output_plot}
+geneID                              : ${params.geneID}
+isoformID                           : ${params.isoformID}
+relevant exons                      : ${params.relevant_exs}
+reclustered gene orthology file     : ${params.sub_orthologs}
+
+"""
+
+
 if (params.help) {
     log.info """ExOrthist v2.0.0"""
     log.info """ExOrthist is a Nextflow-based pipeline to obtain groups of exon orthologous at all evolutionary timescales.\n"""
@@ -78,10 +91,10 @@ if (params.help) {
 }
 if (params.resume) exit 1, "Are you making the classical --resume typo? Be careful!!!! ;)"
 
-if( !workflow.resume ) {
-    println "Removing the output folder"
-	  new File("${params.output}").delete()
-}
+// if( !workflow.resume ) {
+//     println "Removing the output folder"
+// 	  new File("${params.output}").delete()
+// }
 
 // TODO: Handle checks
 // clusterfile       = file(params.cluster)
@@ -106,6 +119,7 @@ include { PLOT } from "${WORKFLOWS}/plot.nf"
 workflow {
 
     if (params.wf == "plot" ) {
+        log.info(log_plot)
         params.geneclusters = "${params.output}/gene_cluster_file.gz"
         params.annotations = "${params.output}/*/*_annot_fake.gtf.gz"
         params.overlap = "${params.output}/*/*_overlap_CDS_exons.txt"
@@ -141,6 +155,7 @@ workflow {
         PLOT(params.geneID, gene_clusters, annotations, all_input_info_raw, best_hits_input, exon_clusters, relevant_exons, params.ordered_species, params.isoformID)
 
     } else {
+        log.info(log_main)
         gtfs = Channel.fromPath(params.annotations).collect()
         fastas = Channel.fromPath(params.genomes).collect()
 
