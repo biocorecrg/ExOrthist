@@ -8,6 +8,7 @@ pdf_document: default
 ---
 
 -->
+
 [![Build Status](https://app.travis-ci.com/biocorecrg/ExOrthist.svg?branch=master)](https://app.travis-ci.com/biocorecrg/ExOrthist)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Nextflow version](https://img.shields.io/badge/Nextflow-20.04.1-brightgreen)](https://www.nextflow.io/)
@@ -77,14 +78,14 @@ ExOrthist is a Nextflow based pipeline to infer exon orthology groups at all evo
 
 ExOrthist requires the following software:
 
-- [Nextflow](https://www.nextflow.io/) version 20.04.1
-- A linux container engine (either [Docker](https://www.docker.com/) or [Singularity](https://sylabs.io/guides/3.1/user-guide/cli/singularity_apps.html). NB: singularity version >= 3.2.1 is required)
+- [Nextflow](https://www.nextflow.io/) version (tested with 24.04.4)
+- A linux container engine (either [Docker](https://www.docker.com/) or [Singularity](https://sylabs.io) / [Apptainer](https://apptainer.org/). NB: singularity version >= 3.2.1 is required)
 
 Additionally, [liftOver](https://genome-store.ucsc.edu/), [bedtools](https://bedtools.readthedocs.io/en/latest/) as well as specific pairwise [liftOver files](http://hgdownload.soe.ucsc.edu/downloads.html#liftover) are required to run `get_liftovers.pl` [see [below](#addition-of-manually-curated-exon-orthology-pairs)].
 
 ## Installation
 
-Install Nextflow (version 19.10.0):
+Install Nextflow (tested with 24.04.4):
 
 ```bash
 curl -s https://get.nextflow.io | bash
@@ -98,8 +99,8 @@ git clone https://github.com/biocorecrg/ExOrthist.git
 
 Install Docker:
 
-- Docker: https://docs.docker.com/install/ (version 10.03 or later is required).
-- Singularity: https://sylabs.io/guides/2.6/user-guide/quick_start.html#quick-installation-steps (version 3.2.1 or later is required).
+- Docker: https://docs.docker.com/install/ (tested with version >27).
+- Singularity/Apptainer: https://apptainer.org/docs/user/latest/quick_start.html#installation
 
 ExOrthist will take care of downloading the required docker image from DockerHub and eventually convert it into a singularity one.
 
@@ -112,13 +113,13 @@ ExOrthist main module infers exon homologous pairs and exon orthogroups within t
 The pipeline can be launched in this way:
 
 ```bash
-NXF_VER=20.04.1 nextflow run main.nf [-with-singularity | -with-docker] -bg > log.txt
+NXF_VER=24.04.4 nextflow run main.nf [-with-singularity | -with-docker] -bg > log.txt
 ```
 
 If the pipeline crashes at any step, it can be re-launched using the -resume option (- not --):
 
 ```bash
-NXF_VER=20.04.1 nextflow run main.nf -bg -resume > log.txt
+NXF_VER=24.04.4 nextflow run main.nf -bg -resume > log.txt
 ```
 
 #### Test run
@@ -128,7 +129,7 @@ The ExOrthist repository includes a folder named **test** containing all the inp
 The test run will extract the exon orthology for 37 gene orthogroups shared between hg38 (_human_), mm10 (_mouse_) and bosTau9 (_cow_) selected from a [Broccoli](https://github.com/rderelle/Broccoli) run. In order to familiarize yourself with ExOrthist main output, simply run the following code from the ExOrthist-master directory:
 
 ```bash
-NXF_VER=20.04.1 nextflow run main.nf [-with-docker | -with-singularity] > test_log.txt
+NXF_VER=24.04.4 nextflow run main.nf [-with-docker | -with-singularity] > test_log.txt
 ```
 
 ExOrthist will save all outputs in the **output_test** directory. All inputs and outputs are explained in details in the following sections.
