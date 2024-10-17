@@ -96,20 +96,10 @@ if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
 LOCAL_MODULES='./modules/local/exorthist'
 LOCAL_SUBWORKFLOWS='./subworkflows/local/exorthist'
 
-include { CLUSTER_EXS } from "${LOCAL_MODULES}/cluster_exons.nf"
-include { COLLAPSE_OVERLAPPING_MATCHES } from "${LOCAL_MODULES}/collapse_matches.nf"
-include { FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE } from "${LOCAL_MODULES}/filter_matches.nf"
-include { FORMAT_EX_CLUSTERS_INPUT } from "${LOCAL_MODULES}/format_input.nf"
-include { FORMAT_EX_CLUSTERS_OUTPUT } from "${LOCAL_MODULES}/format_output.nf"
-include { JOIN_FILTERED_EX_MATCHES } from "${LOCAL_MODULES}/join_matches.nf"
-include { RECLUSTER_EXS_BY_SPECIES_PAIR } from "${LOCAL_MODULES}/recluster_exs.nf"
-include { RECLUSTER_GENES_BY_SPECIES_PAIR } from "${LOCAL_MODULES}/recluster_genes.nf"
-include { SCORE_EX_MATCHES } from "${LOCAL_MODULES}/score_matches.nf"
-
-
 include { ALIGN } from "${LOCAL_SUBWORKFLOWS}/align.nf"
-include { PREPARE_INPUT } from "${LOCAL_SUBWORKFLOWS}/prepare_input.nf"
-
+include { CLUSTER } from "${LOCAL_SUBWORKFLOWS}/cluster.nf"
+include { PREPARE } from "${LOCAL_SUBWORKFLOWS}/prepare.nf"
+include { SCORE } from "${LOCAL_SUBWORKFLOWS}/score.nf"
 
 /*
  * Validate input and print log file
@@ -149,7 +139,7 @@ workflow {
         orthopairs_ch = file("/path/to/NO_FILE")
     }
 
-    PREPARE_INPUT(
+    PREPARE(
         evodists_ch,
         clusterfile_ch,
         gtfs,
@@ -163,51 +153,9 @@ workflow {
         params.extraexons
     )
 
-    ALIGN(blosumfile, PREPARE_INPUT.out.alignment_input, PREPARE_INPUT.out.clusters_split_ch)
-
-    folder_jscores = ALIGN.out.folder_jscores
-    data_to_score = folder_jscores.join(PREPARE_INPUT.out.clusters_split_ch).map{ [it[0], it[1..-1] ]}
-    // Score EX matches from aln info
-    SCORE_EX_MATCHES(data_to_score)
-    // Filter the best matches above score cutoffs by target gene.
-    all_scores_to_filt_ch = SCORE_EX_MATCHES.out.all_scores_to_filt
-    FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE(all_scores_to_filt_ch.join(PREPARE_INPUT.out.dist_ranges_ch))
-    //  Join filtered scored EX matches
-    filterscore_per_joining_ch = FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.filterscore_per_joining
-    JOIN_FILTERED_EX_MATCHES(filterscore_per_joining_ch.collect())
-    //  Removing matches from overlapping exons
-
-    filtered_all_scores = JOIN_FILTERED_EX_MATCHES.out.filtered_all_scores
-    // Sic: https://nextflow-io.github.io/patterns/optional-input/
-    if ( params.bonafide_pairs ) {
-        COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, params.bonafide_pairs)
-    } else {
-        COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, file("/path/to/NO_FILE"))
-    }
-    score_exon_hits_pairs = COLLAPSE_OVERLAPPING_MATCHES.out.score_exon_hits_pairs
-    FORMAT_EX_CLUSTERS_INPUT(score_exon_hits_pairs, file(params.cluster))
-
-    // Split the file of exon pairs
-    // Unclustered are the exons ending up in single-exon clusters
-    cluster_parts = FORMAT_EX_CLUSTERS_INPUT.out.cluster_parts.flatten()
-    CLUSTER_EXS(cluster_parts)
-    FORMAT_EX_CLUSTERS_OUTPUT(CLUSTER_EXS.out.ex_clusters.collect(), CLUSTER_EXS.out.unclustered_exs.collect())
-
-    // Re-clustering of genes
-    RECLUSTER_GENES_BY_SPECIES_PAIR(
-        PREPARE_INPUT.out.clusters_split_ch,
-        clusterfile_ch,
-        orthopairs_ch
-    )
-
-    // Re-clustering of exons
-    RECLUSTER_EXS_BY_SPECIES_PAIR(
-        RECLUSTER_GENES_BY_SPECIES_PAIR.out.recl_genes_for_rec_exons,
-        FORMAT_EX_CLUSTERS_OUTPUT.out.exon_cluster_for_reclustering,
-        COLLAPSE_OVERLAPPING_MATCHES.out.score_exon_hits_pairs,
-        orthopairs_ch
-    )
-
+    ALIGN(blosumfile, PREPARE.out.alignment_input, PREPARE.out.clusters_split_ch)
+    SCORE(ALIGN.out.folder_jscores, PREPARE.out.clusters_split_ch, PREPARE.out.dist_ranges_ch, params.bonafide_pairs)
+    CLUSTER(SCORE.out.score_exon_hits_pairs, file(params.cluster), PREPARE.out.clusters_split_ch, clusterfile_ch, orthopairs_ch)
 }
 
 workflow.onComplete {

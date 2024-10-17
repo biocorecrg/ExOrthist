@@ -5,7 +5,7 @@ include { GENERATE_ANNOTATIONS } from "${LOCAL_MODULES}/generate_annotations.nf"
 include { SPLIT_CLUSTERS_IN_CHUNKS } from "${LOCAL_MODULES}/split_clusters_chunks.nf"
 include { SPLIT_CLUSTERS_BY_SPECIES_PAIRS } from "${LOCAL_MODULES}/split_clusters_species.nf"
 
-workflow PREPARE_INPUT {
+workflow PREPARE {
 
     take:
     evodists_ch
