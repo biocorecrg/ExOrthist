@@ -93,69 +93,105 @@ if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
 // if ( !evodisfile.exists() ) exit 1, "Missing evodists file: ${evodisfile}!"
 //
 
-LOCAL_MODULES='./modules/local/exorthist'
 LOCAL_SUBWORKFLOWS='./subworkflows/local/exorthist'
+WORKFLOWS='./workflows/'
 
 include { ALIGN } from "${LOCAL_SUBWORKFLOWS}/align.nf"
 include { CLUSTER } from "${LOCAL_SUBWORKFLOWS}/cluster.nf"
 include { PREPARE } from "${LOCAL_SUBWORKFLOWS}/prepare.nf"
 include { SCORE } from "${LOCAL_SUBWORKFLOWS}/score.nf"
 
-/*
- * Validate input and print log file
- */
-//Prepare input channels
+include { PLOT } from "${WORKFLOWS}/plot.nf"
+
 workflow {
-    gtfs = Channel.fromPath(params.annotations).collect()
-    fastas = Channel.fromPath(params.genomes).collect()
 
-    // TODO: Review this in an easier way
-    gtfs_suffix = Channel.fromFilePairs(params.annotations, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()
-    fastas_suffix = Channel.fromFilePairs(params.genomes, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()
+    if (params.wf == "plot" ) {
+        params.geneclusters = "${params.output}/gene_cluster_file.gz"
+        params.annotations = "${params.output}/*/*_annot_fake.gtf.gz"
+        params.overlap = "${params.output}/*/*_overlap_CDS_exons.txt"
+        params.refprot = "${params.output}/*/*_ref_proteins.txt"
+        params.exonclusters = "${params.output}/EX_clusters.tab"
+        params.bestscores = "${params.output}/*/best_scored_EX_matches_by_targetgene.txt" //This are all unfiltered scores. I need to identify exons matched by sequence conservation but not phased conservation.
 
-    // Channels for sequences of data
-    genomes = Channel
-        .fromFilePairs(params.genomes, size: 1)
-        .ifEmpty { error "Cannot find any genome matching: ${params.genomes}" }
+        //This channel will contain a list of the GTF files, in theory each with a key
+        //The key corresponds to the value assumed by the wildcard in the annotation variable (which is defined in the params.config)
+        //annotations  = "$baseDir/data/GTF/*_annot.gtf"
+        annotations = Channel.fromFilePairs(params.annotations, size: 1)
+            .ifEmpty{error "Cannot find any annotation matching: ${params.annotations}"}
 
-    annotations = Channel
-        .fromFilePairs(params.annotations, size: 1)
-        .ifEmpty { error "Cannot find any annotation matching: ${params.annotations}" }
+        //The key is the species, same as for the annotations channel
+        overlap_info = Channel.fromFilePairs(params.overlap, size: 1)
+            .ifEmpty{error "Cannot find any overlap info: ${params.overlap}"}
 
-    extraexons = params.extraexons ?
-        Channel.fromFilePairs(params.extraexons, checkIfExists: true, size: 1)
-        .ifEmpty { error "Extra exons not found" } :
-        Channel.empty()
+        //Create channel for files with ref proteins info
+        refprot_info = Channel.fromFilePairs(params.refprot, size: 1)
+            .ifEmpty{error "Cannot find any overlap info: ${params.refprot}"}
 
-    // We join channels. If no extraexons, then it's empty, so no problem
-    data_to_annotation_raw = genomes.join(annotations)
-    data_to_annotation = data_to_annotation_raw.join(extraexons, remainder: true)
+        //Create a joint channel where each key is paired with the corresponding files
+        //annotations.join(overlap_info).join(refprot_info).into{all_input_info_raw; all_input_info_raw1}
+        all_input_info_raw = annotations.join(overlap_info).join(refprot_info)map{it.flatten()}
 
-    evodists_ch = Channel.fromPath(params.evodists)
-    clusterfile_ch = Channel.fromPath(params.cluster)
-    if ( params.orthopairs ) {
-        orthopairs_ch = file(params.orthopairs)
+        best_hits_input = Channel.fromPath(params.bestscores).toList()
+            .ifEmpty{error "Cannot find any overlap info: ${params.bestscores}"}
+
+        exon_clusters = file(params.exonclusters)
+        if (params.relevant_exs) {relevant_exons = "${params.relevant_exs}"} else {relevant_exons = "None"}
+
+        if (params.sub_orthologs) {gene_clusters = file(sub_orthologs)} else {gene_clusters = file(params.geneclusters)}
+        PLOT(params.geneID, gene_clusters, annotations, all_input_info_raw, best_hits_input, exon_clusters, relevant_exons, params.ordered_species, params.isoformID)
+
     } else {
-        orthopairs_ch = file("/path/to/NO_FILE")
+        gtfs = Channel.fromPath(params.annotations).collect()
+        fastas = Channel.fromPath(params.genomes).collect()
+
+        // TODO: Review this in an easier way
+        gtfs_suffix = Channel.fromFilePairs(params.annotations, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()
+        fastas_suffix = Channel.fromFilePairs(params.genomes, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()
+
+        // Channels for sequences of data
+        genomes = Channel
+            .fromFilePairs(params.genomes, size: 1)
+            .ifEmpty { error "Cannot find any genome matching: ${params.genomes}" }
+
+        annotations = Channel
+            .fromFilePairs(params.annotations, size: 1)
+            .ifEmpty { error "Cannot find any annotation matching: ${params.annotations}" }
+
+        extraexons = params.extraexons ?
+            Channel.fromFilePairs(params.extraexons, checkIfExists: true, size: 1)
+            .ifEmpty { error "Extra exons not found" } :
+            Channel.empty()
+
+        // We join channels. If no extraexons, then it's empty, so no problem
+        data_to_annotation_raw = genomes.join(annotations)
+        data_to_annotation = data_to_annotation_raw.join(extraexons, remainder: true)
+
+        evodists_ch = Channel.fromPath(params.evodists)
+        clusterfile_ch = Channel.fromPath(params.cluster)
+        if ( params.orthopairs ) {
+            orthopairs_ch = file(params.orthopairs)
+        } else {
+            orthopairs_ch = file("/path/to/NO_FILE")
+        }
+
+        PREPARE(
+            evodists_ch,
+            clusterfile_ch,
+            gtfs,
+            fastas,
+            gtfs_suffix,
+            fastas_suffix,
+            params.long_dist,
+            params.medium_dist,
+            params.short_dist,
+            data_to_annotation,
+            params.extraexons
+        )
+
+        ALIGN(blosumfile, PREPARE.out.alignment_input, PREPARE.out.clusters_split_ch)
+        SCORE(ALIGN.out.folder_jscores, PREPARE.out.clusters_split_ch, PREPARE.out.dist_ranges_ch, params.bonafide_pairs)
+        CLUSTER(SCORE.out.score_exon_hits_pairs, file(params.cluster), PREPARE.out.clusters_split_ch, clusterfile_ch, orthopairs_ch)
     }
-
-    PREPARE(
-        evodists_ch,
-        clusterfile_ch,
-        gtfs,
-        fastas,
-        gtfs_suffix,
-        fastas_suffix,
-        params.long_dist,
-        params.medium_dist,
-        params.short_dist,
-        data_to_annotation,
-        params.extraexons
-    )
-
-    ALIGN(blosumfile, PREPARE.out.alignment_input, PREPARE.out.clusters_split_ch)
-    SCORE(ALIGN.out.folder_jscores, PREPARE.out.clusters_split_ch, PREPARE.out.dist_ranges_ch, params.bonafide_pairs)
-    CLUSTER(SCORE.out.score_exon_hits_pairs, file(params.cluster), PREPARE.out.clusters_split_ch, clusterfile_ch, orthopairs_ch)
 }
 
 workflow.onComplete {
