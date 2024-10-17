@@ -58,7 +58,6 @@ workflow PREPARE_INPUT {
         .flatMap()
         .map { ["${it[0][0]}-${it[1][0]}".toString(), it[0][1], it[1][1]] }
 
-
     // Copy the gene cluster file to output to use for the exint_plotter and compare_exon_sets modules
     SPLIT_CLUSTERS_BY_SPECIES_PAIRS(clusterfile_ch)
 
