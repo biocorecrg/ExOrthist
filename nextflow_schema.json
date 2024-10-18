@@ -5,6 +5,23 @@
   "description": "Schema for the parameters of your ExOrthist pipeline",
   "type": "object",
   "$defs": {
+    "generic_options": {
+      "title": "Generic Options",
+      "type": "object",
+      "description": "",
+      "default": "",
+      "properties": {
+        "resume": {
+          "type": "string",
+          "description": "Convenient param for detecting resume mistake"
+        },
+        "wf": {
+          "type": "string",
+          "description": "Workflow to be run, by default the main one. Alternative is plot",
+          "default": "main"
+        }
+      }
+    },
     "input_output_options": {
       "title": "Input/Output Options",
       "type": "object",
@@ -18,22 +35,26 @@
         "annotations": {
           "type": "string",
           "description": "Path to GTF annotation files",
-          "format": "file-path"
+          "format": "file-path",
+          "default": "./test/GTF/*_annot-subsetted.gtf.gz"
         },
         "genomes": {
           "type": "string",
           "description": "Path to fasta genome files",
-          "format": "file-path"
+          "format": "file-path",
+          "default": "./test/GENOMES/*_gDNA-subsetted.fasta.gz"
         },
         "cluster": {
           "type": "string",
           "description": "Path to cluster file (txt files)",
-          "format": "file-path"
+          "format": "file-path",
+          "default": "./test/hg38_mm10_bosTau9.tab"
         },
         "output": {
           "type": "string",
           "description": "Output folder path",
-          "format": "directory-path"
+          "format": "directory-path",
+          "default": "./output_test"
         }
       }
     },
@@ -50,19 +71,23 @@
         "evodists": {
           "type": "string",
           "description": "Path to a file with pairwise evolutionary distances",
-          "format": "file-path"
+          "format": "file-path",
+          "default": "./test/evodists.txt"
         },
         "long_dist": {
           "type": "string",
-          "description": "Long distance parameters"
+          "description": "Long distance parameters",
+          "default": "2,0.10,0.40,0.15"
         },
         "medium_dist": {
           "type": "string",
-          "description": "Medium distance parameters"
+          "description": "Medium distance parameters",
+          "default": "2,0.30,0.60,0.20"
         },
         "short_dist": {
           "type": "string",
-          "description": "Short distance parameters"
+          "description": "Short distance parameters",
+          "default": "2,0.50,0.60,0.25"
         },
         "prevaln": {
           "type": "string",
@@ -70,11 +95,13 @@
         },
         "alignmentnum": {
           "type": "integer",
-          "description": "Alignment number"
+          "description": "Alignment number",
+          "default": 1000
         },
         "orthogroupnum": {
           "type": "integer",
-          "description": "Orthogroup number"
+          "description": "Orthogroup number",
+          "default": 500
         }
       }
     },
@@ -99,6 +126,45 @@
         }
       }
     },
+    "plot_parameters": {
+      "title": "Plot parameters",
+      "type": "object",
+      "description": "Specific parameters for generating plots",
+      "default": "",
+      "properties": {
+        "geneID": {
+          "type": "string",
+          "description": "Gene ID",
+          "default": "ENSG00000159055"
+        },
+        "ordered_species": {
+          "type": "string",
+          "description": "List of ordered species, separated by commas",
+          "default": "hg38,mm10,bosTau9"
+        },
+        "relevant_exs": {
+          "type": "string",
+          "description": "Relevant exons",
+          "default": "chr21:32274830-32274896"
+        },
+        "isoformID": {
+          "type": "string",
+          "description": "Isoform ID",
+          "default": "ENSP00000290130"
+        },
+        "sub_orthologs": {
+          "type": "string",
+          "description": "File with sub-orthologs information",
+          "format": "file-path"
+        },
+        "output_plot": {
+          "type": "string",
+          "description": "Path where to store resulting plot",
+          "format": "file-path",
+          "default": "./output_plot"
+        }
+      }
+    },
     "notification_options": {
       "title": "Notification Options",
       "type": "object",
@@ -106,12 +172,16 @@
         "email": {
           "type": "string",
           "description": "Email for notification",
-          "format": "email"
+          "format": "email",
+          "default": "yourmail@yourdomain"
         }
       }
     }
   },
   "allOf": [
+    {
+      "$ref": "#/$defs/generic_options"
+    },
     {
       "$ref": "#/$defs/input_output_options"
     },
@@ -120,6 +190,9 @@
     },
     {
       "$ref": "#/$defs/additional_data"
+    },
+    {
+      "$ref": "#/$defs/plot_parameters"
     },
     {
       "$ref": "#/$defs/notification_options"
