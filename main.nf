@@ -181,8 +181,8 @@ workflow {
         data_to_annotation_raw = genomes.join(annotations)
         data_to_annotation = data_to_annotation_raw.join(extraexons, remainder: true)
 
-        evodists_ch = Channel.fromPath(params.evodists)
-        clusterfile_ch = Channel.fromPath(params.cluster)
+        evodists_ch = Channel.fromPath(params.evodists, checkIfExists: true)
+        clusterfile_ch = Channel.fromPath(params.cluster, checkIfExists: true)
         if ( params.orthopairs ) {
             orthopairs_ch = file(params.orthopairs)
         } else {
