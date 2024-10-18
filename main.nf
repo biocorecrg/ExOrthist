@@ -98,12 +98,7 @@ if (params.resume) exit 1, "Are you making the classical --resume typo? Be caref
 
 // TODO: Handle checks
 // clusterfile       = file(params.cluster)
-blosumfile        = file("${baseDir}/files/blosum62.txt")
-// evodisfile	  = file(params.evodists)
-
-if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
 // if ( !clusterfile.exists() ) exit 1, "Missing clusterfile file: ${clusterfile}!"
-// if ( !evodisfile.exists() ) exit 1, "Missing evodists file: ${evodisfile}!"
 //
 
 LOCAL_SUBWORKFLOWS='./subworkflows/local/exorthist'
@@ -158,6 +153,9 @@ workflow {
         log.info(log_main)
         gtfs = Channel.fromPath(params.annotations).collect()
         fastas = Channel.fromPath(params.genomes).collect()
+
+        blosumfile = file("${baseDir}/files/blosum62.txt")
+        if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
 
         // TODO: Review this in an easier way
         gtfs_suffix = Channel.fromFilePairs(params.annotations, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()
