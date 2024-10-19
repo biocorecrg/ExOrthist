@@ -95,10 +95,6 @@ workflow PLOT {
     /*
      * Facultative processes for isoform and exons highlighting
      */
-    GENERATE_FAKE_COORDS_TABLE.out.fake_coords_tables.collect().view()
-    BREAK_BESTHITS_SPECIESPAIR.out.best_hits_speciespairs.view()
-
-    // plot_input = GENERATE_FAKE_COORDS_TABLE.out.fake_coords_tables.collect().mix(BREAK_BESTHITS_SPECIESPAIR.out.best_hits_speciespairs).collect()
     // We remove species of the channel
     plot_input = GENERATE_FAKE_COORDS_TABLE.out.fake_coords_tables.collect()
     .mix(BREAK_BESTHITS_SPECIESPAIR.out.best_hits_speciespairs.collect())

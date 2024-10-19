@@ -143,10 +143,10 @@ workflow {
         best_hits_input = Channel.fromPath(bestscores_path).toList()
             .ifEmpty{error "Cannot find any overlap info: ${bestscores_path}"}
 
-        exon_clusters = file(exonclusters_path)
+        exon_clusters = Channel.fromPath(exonclusters_path).collect()
         if (params.relevant_exs) {relevant_exons = "${params.relevant_exs}"} else {relevant_exons = "None"}
 
-        if (params.sub_orthologs) {gene_clusters = file(params.sub_orthologs)} else {gene_clusters = file(geneclusters_path)}
+        if (params.sub_orthologs) {gene_clusters = Channel.fromPath(params.sub_orthologs).collect()} else {gene_clusters = Channel.fromPath(geneclusters_path).collect()}
         PLOT(params.geneID, gene_clusters, annotations, all_input_info_raw, best_hits_input, exon_clusters, relevant_exons, params.ordered_species, params.isoformID)
 
     } else {
@@ -154,8 +154,7 @@ workflow {
         gtfs = Channel.fromPath(params.annotations).collect()
         fastas = Channel.fromPath(params.genomes).collect()
 
-        blosumfile = file("${baseDir}/files/blosum62.txt")
-        if ( !blosumfile.exists() ) exit 1, "Missing blosum file: ${blosumfile}!"
+        blosumfile = Channel.fromPath("${baseDir}/files/blosum62.txt", checkIfExists: true).collect()
 
         // TODO: Review this in an easier way
         gtfs_suffix = Channel.fromFilePairs(params.annotations, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()
