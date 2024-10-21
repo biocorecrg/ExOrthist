@@ -1,11 +1,12 @@
 process GET_ISOFORM_EXONS {
     tag "${isoformID}"
     label 'pandas'
-    publishDir "${params.output}/${params.geneID}/processed_table", mode: 'copy'
+    publishDir "${params.output}/${geneID}/processed_table", mode: 'copy'
 
     input:
     val(isoformID)
     tuple val(species), path(exons_info), path(overlap_info)
+    val(geneID)
 
     output:
     stdout emit: isoform_interesting_exs

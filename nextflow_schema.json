@@ -91,7 +91,8 @@
         },
         "prevaln": {
           "type": "string",
-          "description": "Pre-computed alignments"
+          "description": "Pre-computed alignments",
+          "format": "directory-path"
         },
         "alignmentnum": {
           "type": "integer",

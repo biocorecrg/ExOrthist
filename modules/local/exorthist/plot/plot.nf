@@ -3,7 +3,6 @@ process PLOT_EXINT {
     label 'rscript'
     // containerOptions '-B $PWD:/tmp' # TODO: To consider if this should be moved to nextflow.config
     publishDir "${params.output_plot}", mode: 'copy'
-    //publishDir "${params.output}/${params.geneID}", mode: 'copy'
 
     input:
     val(my_geneID)
