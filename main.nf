@@ -96,11 +96,6 @@ if (params.resume) exit 1, "Are you making the classical --resume typo? Be caref
 // 	  new File("${params.output}").delete()
 // }
 
-// TODO: Handle checks
-// clusterfile       = file(params.cluster)
-// if ( !clusterfile.exists() ) exit 1, "Missing clusterfile file: ${clusterfile}!"
-//
-
 LOCAL_SUBWORKFLOWS='./subworkflows/local/exorthist'
 WORKFLOWS='./workflows/'
 
@@ -178,12 +173,12 @@ workflow {
         data_to_annotation_raw = genomes.join(annotations)
         data_to_annotation = data_to_annotation_raw.join(extraexons, remainder: true)
 
-        evodists_ch = Channel.fromPath(params.evodists, checkIfExists: true)
-        clusterfile_ch = Channel.fromPath(params.cluster, checkIfExists: true)
+        evodists_ch = Channel.fromPath(params.evodists, checkIfExists: true).collect()
+        clusterfile_ch = Channel.fromPath(params.cluster, checkIfExists: true).collect()
         if ( params.orthopairs ) {
-            orthopairs_ch = file(params.orthopairs)
+            orthopairs_ch = Channel.fromPath(params.orthopairs, checkIfExists: true).collect()
         } else {
-            orthopairs_ch = file("/path/to/NO_FILE")
+            orthopairs_ch = Channel.fromPath("/path/to/NO_FILE").collect()
         }
 
         PREPARE(
@@ -202,7 +197,7 @@ workflow {
 
         ALIGN(blosumfile, PREPARE.out.alignment_input, PREPARE.out.clusters_split_ch)
         SCORE(ALIGN.out.folder_jscores, PREPARE.out.clusters_split_ch, PREPARE.out.dist_ranges_ch, params.bonafide_pairs)
-        CLUSTER(SCORE.out.score_exon_hits_pairs, file(params.cluster), PREPARE.out.clusters_split_ch, clusterfile_ch, orthopairs_ch)
+        CLUSTER(SCORE.out.score_exon_hits_pairs, PREPARE.out.clusters_split_ch, clusterfile_ch, orthopairs_ch)
     }
 }
 

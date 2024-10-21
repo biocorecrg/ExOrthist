@@ -31,7 +31,7 @@ workflow SCORE {
     if ( bonafide_pairs ) {
         COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, bonafide_pairs)
     } else {
-        COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, file("/path/to/NO_FILE"))
+        COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, Channel.fromPath("/path/to/NO_FILE").collect())
     }
 
     emit:

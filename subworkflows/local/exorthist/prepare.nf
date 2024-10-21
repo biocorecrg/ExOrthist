@@ -23,11 +23,11 @@ workflow PREPARE {
     main:
 
     // Print contents of each channel
-    gtfs.view { "GTF file: $it" }
-    fastas.view { "FASTA file: $it" }
-    gtfs_suffix.view { "GTF suffix: $it" }
-    fastas_suffix.view { "FASTA suffix: $it" }
-    data_to_annotation.view { "Data to annotation: $it" }
+    // gtfs.view { "GTF file: $it" }
+    // fastas.view { "FASTA file: $it" }
+    // gtfs_suffix.view { "GTF suffix: $it" }
+    // fastas_suffix.view { "FASTA suffix: $it" }
+    // data_to_annotation.view { "Data to annotation: $it" }
 
     extraexons_ch = params.extraexons ?
         Channel.fromFilePairs(params.extraexons, checkIfExists: true, size: 1)
@@ -51,7 +51,7 @@ workflow PREPARE {
     if ( extraexons ) {
          GENERATE_ANNOTATIONS(data_to_annotation, extraexons_ch)
     } else {
-         GENERATE_ANNOTATIONS(data_to_annotation, file("/path/to/NO_FILE"))
+         GENERATE_ANNOTATIONS(data_to_annotation, Channel.fromPath("/path/to/NO_FILE").collect())
     }
 
     clusters_split_ch = GENERATE_ANNOTATIONS.out.idfolders.toList().map{ [it, it].combinations().findAll{ a, b -> a[0] < b[0]} }
@@ -69,17 +69,16 @@ workflow PREPARE {
     cls_files_2_align_t = cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}
 
     //Create a channel for the evo distances
-    sp1_sp2_dist = Channel
-     .fromPath("${params.evodists}")
+    sp1_sp2_dist = evodists_ch.flatten()
      .splitText()
      .map{"${it}".trim().split("\t")}.map{[it[0]+"-"+it[1], it[2]]}
 
-    sp2_sp1_dist = Channel
-     .fromPath("${params.evodists}")
+    sp2_sp1_dist = evodists_ch.flatten()
      .splitText()
      .map{"${it}".trim().split("\t")}.map{[it[1]+"-"+it[0], it[2]]}
 
     species_pairs_dist = sp1_sp2_dist.concat(sp2_sp1_dist)
+
     //Only the species pairs with a common index will be kept
     dist_ranges_ch = clusters_split_ch.join(species_pairs_dist).map{[it[0], it[3]]}
     alignment_input = cls_files_2_align_t.groupTuple().join(dist_ranges_ch).transpose()

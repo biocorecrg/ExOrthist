@@ -10,14 +10,13 @@ workflow CLUSTER {
 
     take:
     score_exon_hits_pairs
-    cluster
     clusters_split_ch
     clusterfile_ch
     orthopairs_ch
 
     main:
 
-    FORMAT_EX_CLUSTERS_INPUT(score_exon_hits_pairs, cluster)
+    FORMAT_EX_CLUSTERS_INPUT(score_exon_hits_pairs, clusterfile_ch)
 
     // Split the file of exon pairs
     // Unclustered are the exons ending up in single-exon clusters
