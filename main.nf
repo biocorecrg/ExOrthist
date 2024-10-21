@@ -149,7 +149,7 @@ workflow {
         gtfs = Channel.fromPath(params.annotations).collect()
         fastas = Channel.fromPath(params.genomes).collect()
 
-        blosumfile = Channel.fromPath("${baseDir}/files/blosum62.txt", checkIfExists: true).collect()
+        blosumfile = Channel.fromPath("${projectDir}/files/blosum62.txt", checkIfExists: true).collect()
 
         // TODO: Review this in an easier way
         gtfs_suffix = Channel.fromFilePairs(params.annotations, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()

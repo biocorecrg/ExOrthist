@@ -142,20 +142,20 @@ For the pipeline to run, a `params.config` file with the following format has to
 
 ```
 params {
-    cluster        = "$baseDir/test/hg38_mm10_bosTau9.tab"
-    genomes        = "$baseDir/test/GENOMES/*_gDNA.fasta.gz"
-    annotations    = "$baseDir/test/GTF/*_annot.gtf.gz"
+    cluster        = "$projectDir/test/hg38_mm10_bosTau9.tab"
+    genomes        = "$projectDir/test/GENOMES/*_gDNA.fasta.gz"
+    annotations    = "$projectDir/test/GTF/*_annot.gtf.gz"
     alignmentnum   = 1000
     orthogroupnum  = 500
     extraexons     = ""
     bonafide_pairs = ""
     orthopairs     = ""
-    evodists       = "$baseDir/test/evodists.txt"
+    evodists       = "$projectDir/test/evodists.txt"
     long_dist      = "2,0.10,0.40,0.15"
     medium_dist    = "2,0.30,0.60,0.20"
     short_dist     = "2,0.50,0.60,0.25"
     prevaln        = ""
-    output         = "$baseDir/output_test"
+    output         = "$projectDir/output_test"
     email          = "yourmail@yourdomain"
 }
 ```
@@ -496,8 +496,8 @@ A template of the params.config file is provided together with the pipeline.
 ```
 params {
     geneID          = "ENSG00000159055"
-    output          = "$baseDir/../output_test"
-    output_plot     = "$baseDir/output_exint"
+    output          = "$projectDir/../output_test"
+    output_plot     = "$projectDir/output_exint"
     relevant_exs    = "chr21:32274830-32274896"
     ordered_species = "hg38,mm10,bosTau9"
     isoformID       = "ENSP00000290130"

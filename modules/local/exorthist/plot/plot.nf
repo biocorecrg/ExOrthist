@@ -19,6 +19,6 @@ process PLOT_EXINT {
 
     script:
     """
-    Rscript $baseDir/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${baseDir}/bin ${gene_clusters} ${ordered_target} ${isoform_interesting_exs} ${relevant_exons}
+    Rscript ${projectDir}/bin/exint_plotter.R ${my_geneID} ${my_query_species} ${projectDir}/bin ${gene_clusters} ${ordered_target} ${isoform_interesting_exs} ${relevant_exons}
     """
 }
