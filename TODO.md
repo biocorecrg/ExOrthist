@@ -1,4 +1,5 @@
-- Adding nextflow_schema.json
-- Convert params.config to params.yaml
-- Include colors into the terminal messages
+- Remove all params from modules
+- Make nextflow_schema.json by default (optional)
+- Convert params.config to params.yaml/json (optional)
+- Include colors into the terminal messages (optional)
 - Consider notifications
