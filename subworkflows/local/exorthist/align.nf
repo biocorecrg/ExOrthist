@@ -11,11 +11,14 @@ workflow ALIGN {
     blosumfile
     alignment_input
     clusters_split_ch
+    long_dist
+    medium_dist
+    short_dist
 
     main:
     // the last argument is the protein similarity alignment.
     // if a prevaln folder is provided, the protein alignments present in each species pair subfolder will not be repeated.
-    PARSE_IPA_PROT_ALN(blosumfile, alignment_input)
+    PARSE_IPA_PROT_ALN(blosumfile, alignment_input, long_dist, medium_dist, short_dist)
 
     // Collapse EXs_to_split in batches of 500 files
     EXs_to_split = PARSE_IPA_PROT_ALN.out.EXs_to_split

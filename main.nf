@@ -195,7 +195,15 @@ workflow {
             params.extraexons
         )
 
-        ALIGN(blosumfile, PREPARE.out.alignment_input, PREPARE.out.clusters_split_ch)
+        ALIGN(
+            blosumfile,
+            PREPARE.out.alignment_input,
+            PREPARE.out.clusters_split_ch,
+            params.long_dist,
+            params.medium_dist,
+            params.short_dist,
+        )
+
         SCORE(ALIGN.out.folder_jscores, PREPARE.out.clusters_split_ch, PREPARE.out.dist_ranges_ch, params.bonafide_pairs)
         CLUSTER(SCORE.out.score_exon_hits_pairs, PREPARE.out.clusters_split_ch, clusterfile_ch, orthopairs_ch)
     }

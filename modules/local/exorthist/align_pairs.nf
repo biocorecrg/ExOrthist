@@ -5,6 +5,9 @@ process PARSE_IPA_PROT_ALN {
     input:
     path blosumfile
     tuple val(combid), path(sp1), path(sp2), path(cls_part_file), val(dist_range)
+    val long_dist
+    val medium_dist
+    val short_dist
 
     output:
     tuple val("${sp1.name}-${sp2.name}"), path("${sp1.name}-${sp2.name}-*"), emit: aligned_subclusters_4_splitting
@@ -17,13 +20,13 @@ process PARSE_IPA_PROT_ALN {
 
     switch(dist_range) {
         case "long":
-            dist_range_par = params.long_dist.split(",")
+            dist_range_par = long_dist.split(",")
             break
         case "medium":
-            dist_range_par = params.medium_dist.split(",")
+            dist_range_par = medium_dist.split(",")
             break
         case "short":
-            dist_range_par = params.short_dist.split(",")
+            dist_range_par = short_dist.split(",")
             break
     }
 
