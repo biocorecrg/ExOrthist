@@ -24,6 +24,8 @@ workflow PREPARE {
 
     main:
 
+    evodists_ch = Channel.fromPath(evodists, checkIfExists: true).collect()
+
     CHECK_INPUT(
         evodists_ch,
         clusterfile_ch,
@@ -36,15 +38,15 @@ workflow PREPARE {
         short_dist
     )
 
-    evodists_ch = Channel.fromPath(evodists, checkIfExists: true).collect()
     extraexons_ch = extraexons ?
         Channel.fromFilePairs(extraexons, checkIfExists: true, size: 1)
         .ifEmpty { error "Extra exons not found" } :
         Channel.empty()
 
     // We join channels. If no extraexons, then it's empty, so no problem
-    data_to_annotation_raw = genomes.join(annotations)
-    data_to_annotation = data_to_annotation_raw.join(extraexons_ch, remainder: true)
+    data_to_annotation = genomes.join(annotations)
+    // TODO: To check what's goiing on here - check extraexons_ch
+    // data_to_annotation = data_to_annotation.join(extraexons_ch, remainder: true)
 
     if (extraexons) {
         GENERATE_ANNOTATIONS(data_to_annotation, extraexons_ch)
