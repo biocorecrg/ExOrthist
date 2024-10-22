@@ -12,11 +12,17 @@ workflow CLUSTER {
     score_exon_hits_pairs
     clusters_split_ch
     clusterfile_ch
-    orthopairs_ch
+    orthopairs
+    orthogroupnum
 
     main:
+    if (orthopairs) {
+        orthopairs_ch = Channel.fromPath(orthopairs, checkIfExists: true).collect()
+    } else {
+        orthopairs_ch = Channel.fromPath("/path/to/NO_FILE").collect()
+    }
 
-    FORMAT_EX_CLUSTERS_INPUT(score_exon_hits_pairs, clusterfile_ch)
+    FORMAT_EX_CLUSTERS_INPUT(score_exon_hits_pairs, clusterfile_ch, orthogroupnum)
 
     // Split the file of exon pairs
     // Unclustered are the exons ending up in single-exon clusters

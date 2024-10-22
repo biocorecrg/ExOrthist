@@ -8,7 +8,7 @@ include { SPLIT_CLUSTERS_BY_SPECIES_PAIRS } from "${LOCAL_MODULES}/split_cluster
 workflow PREPARE {
 
     take:
-    evodists_ch
+    evodists
     clusterfile_ch
     gtfs
     fastas
@@ -17,23 +17,12 @@ workflow PREPARE {
     long_dist
     medium_dist
     short_dist
-    data_to_annotation
+    genomes
+    annotations
     extraexons
+    alignmentnum
 
     main:
-
-    // Print contents of each channel
-    // gtfs.view { "GTF file: $it" }
-    // fastas.view { "FASTA file: $it" }
-    // gtfs_suffix.view { "GTF suffix: $it" }
-    // fastas_suffix.view { "FASTA suffix: $it" }
-    // data_to_annotation.view { "Data to annotation: $it" }
-
-    extraexons_ch = params.extraexons ?
-        Channel.fromFilePairs(params.extraexons, checkIfExists: true, size: 1)
-        .ifEmpty { error "Extra exons not found" } :
-        Channel.empty()
-
 
     CHECK_INPUT(
         evodists_ch,
@@ -47,11 +36,21 @@ workflow PREPARE {
         short_dist
     )
 
-    // Sic: https://nextflow-io.github.io/patterns/optional-input/
-    if ( extraexons ) {
-         GENERATE_ANNOTATIONS(data_to_annotation, extraexons_ch)
+    evodists_ch = Channel.fromPath(evodists, checkIfExists: true).collect()
+    extraexons_ch = extraexons ?
+        Channel.fromFilePairs(extraexons, checkIfExists: true, size: 1)
+        .ifEmpty { error "Extra exons not found" } :
+        Channel.empty()
+
+    // We join channels. If no extraexons, then it's empty, so no problem
+    data_to_annotation_raw = genomes.join(annotations)
+    data_to_annotation = data_to_annotation_raw.join(extraexons_ch, remainder: true)
+
+    if (extraexons) {
+        GENERATE_ANNOTATIONS(data_to_annotation, extraexons_ch)
     } else {
-         GENERATE_ANNOTATIONS(data_to_annotation, Channel.fromPath("/path/to/NO_FILE").collect())
+        // Sic: https://nextflow-io.github.io/patterns/optional-input/
+        GENERATE_ANNOTATIONS(data_to_annotation, Channel.fromPath("/path/to/NO_FILE").collect())
     }
 
     clusters_split_ch = GENERATE_ANNOTATIONS.out.idfolders.toList().map{ [it, it].combinations().findAll{ a, b -> a[0] < b[0]} }
@@ -63,7 +62,7 @@ workflow PREPARE {
 
     // Split clusters
     cls_tab_files_ch = SPLIT_CLUSTERS_BY_SPECIES_PAIRS.out.cls_tab_files
-    SPLIT_CLUSTERS_IN_CHUNKS(cls_tab_files_ch.collect(), clusters_split_ch)
+    SPLIT_CLUSTERS_IN_CHUNKS(cls_tab_files_ch.collect(), clusters_split_ch, alignmentnum)
 
     cls_files_2_align = SPLIT_CLUSTERS_IN_CHUNKS.out.cls_files_2_align
     cls_files_2_align_t = cls_files_2_align.transpose().map{[it[0].getFileName().toString()+"-"+it[1].getFileName().toString(), it[0], it[1], it[2]]}

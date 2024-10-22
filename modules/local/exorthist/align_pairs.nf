@@ -8,13 +8,14 @@ process PARSE_IPA_PROT_ALN {
     val long_dist
     val medium_dist
     val short_dist
+    path prevaln
 
     output:
     tuple val("${sp1.name}-${sp2.name}"), path("${sp1.name}-${sp2.name}-*"), emit: aligned_subclusters_4_splitting
     path "${sp1.name}-${sp2.name}_EXs_to_split_part_*.txt", emit: EXs_to_split
 
     script:
-    def prev_alignments = params.prevaln ? params.prevaln : ""
+    def prev_alignments = prevaln.name != 'NO_FILE' ? "${prevaln}" : ''
     def cls_parts = cls_part_file.name.split("_")
     def dist_range_par
 

@@ -12,6 +12,9 @@ workflow SCORE {
     clusters_split_ch
     dist_ranges_ch
     bonafide_pairs
+    long_dist
+    medium_dist
+    short_dist
 
     main:
 
@@ -20,7 +23,7 @@ workflow SCORE {
     SCORE_EX_MATCHES(data_to_score)
     // Filter the best matches above score cutoffs by target gene.
     all_scores_to_filt_ch = SCORE_EX_MATCHES.out.all_scores_to_filt
-    FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE(all_scores_to_filt_ch.join(dist_ranges_ch))
+    FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE(all_scores_to_filt_ch.join(dist_ranges_ch), long_dist, medium_dist, short_dist)
     //  Join filtered scored EX matches
     filterscore_per_joining_ch = FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.filterscore_per_joining
     JOIN_FILTERED_EX_MATCHES(filterscore_per_joining_ch.collect())

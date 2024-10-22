@@ -164,25 +164,10 @@ workflow {
             .fromFilePairs(params.annotations, size: 1)
             .ifEmpty { error "Cannot find any annotation matching: ${params.annotations}" }
 
-        extraexons = params.extraexons ?
-            Channel.fromFilePairs(params.extraexons, checkIfExists: true, size: 1)
-            .ifEmpty { error "Extra exons not found" } :
-            Channel.empty()
-
-        // We join channels. If no extraexons, then it's empty, so no problem
-        data_to_annotation_raw = genomes.join(annotations)
-        data_to_annotation = data_to_annotation_raw.join(extraexons, remainder: true)
-
-        evodists_ch = Channel.fromPath(params.evodists, checkIfExists: true).collect()
         clusterfile_ch = Channel.fromPath(params.cluster, checkIfExists: true).collect()
-        if ( params.orthopairs ) {
-            orthopairs_ch = Channel.fromPath(params.orthopairs, checkIfExists: true).collect()
-        } else {
-            orthopairs_ch = Channel.fromPath("/path/to/NO_FILE").collect()
-        }
 
         PREPARE(
-            evodists_ch,
+            params.evodists,
             clusterfile_ch,
             gtfs,
             fastas,
@@ -191,8 +176,10 @@ workflow {
             params.long_dist,
             params.medium_dist,
             params.short_dist,
-            data_to_annotation,
-            params.extraexons
+            genomes,
+            annotations,
+            params.extraexons,
+            params.alignmentnum
         )
 
         ALIGN(
@@ -202,10 +189,27 @@ workflow {
             params.long_dist,
             params.medium_dist,
             params.short_dist,
+            params.alignmentnum,
+            params.prevaln
         )
 
-        SCORE(ALIGN.out.folder_jscores, PREPARE.out.clusters_split_ch, PREPARE.out.dist_ranges_ch, params.bonafide_pairs)
-        CLUSTER(SCORE.out.score_exon_hits_pairs, PREPARE.out.clusters_split_ch, clusterfile_ch, orthopairs_ch)
+        SCORE(
+            ALIGN.out.folder_jscores,
+            PREPARE.out.clusters_split_ch,
+            PREPARE.out.dist_ranges_ch,
+            params.bonafide_pairs,
+            params.long_dist,
+            params.medium_dist,
+            params.short_dist
+        )
+
+        CLUSTER(
+            SCORE.out.score_exon_hits_pairs,
+            PREPARE.out.clusters_split_ch,
+            clusterfile_ch,
+            params.orthopairs,
+            params.orthogroupnum
+        )
     }
 }
 

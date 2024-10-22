@@ -7,6 +7,9 @@ process FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE {
 
     input:
     tuple val(comp_id), path(all_scores), val(dist_range)
+    val(long_dist)
+    val(medium_dist)
+    val(short_dist)
 
     output:
     path "*.tab", emit: filterscore_per_joining
@@ -18,13 +21,13 @@ process FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE {
 
     switch(dist_range) {
         case "long":
-            dist_range_par = params.long_dist.split(",")
+            dist_range_par = long_dist.split(",")
             break
         case "medium":
-            dist_range_par = params.medium_dist.split(",")
+            dist_range_par = medium_dist.split(",")
             break
         case "short":
-            dist_range_par = params.short_dist.split(",")
+            dist_range_par = short_dist.split(",")
             break
     }
 

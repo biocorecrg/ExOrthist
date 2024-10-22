@@ -14,17 +14,25 @@ workflow ALIGN {
     long_dist
     medium_dist
     short_dist
+    alignmentnum
+    prevaln
 
     main:
+    if (prevaln) {
+        prevaln_ch = Channel.fromPath(prevaln, type: 'dir', checkIfExists: true).collect()
+    } else {
+        prevaln_ch = Channel.fromPath("/path/to/NO_FILE").collect()
+    }
+
     // the last argument is the protein similarity alignment.
     // if a prevaln folder is provided, the protein alignments present in each species pair subfolder will not be repeated.
-    PARSE_IPA_PROT_ALN(blosumfile, alignment_input, long_dist, medium_dist, short_dist)
+    PARSE_IPA_PROT_ALN(blosumfile, alignment_input, long_dist, medium_dist, short_dist, prevaln_ch)
 
     // Collapse EXs_to_split in batches of 500 files
     EXs_to_split = PARSE_IPA_PROT_ALN.out.EXs_to_split
     EXs_to_split_batches = EXs_to_split.toSortedList().flatten().buffer(size : 500, remainder: true)
     // Split exons pairs to realign
-    SPLIT_EX_PAIRS_TO_REALIGN(EXs_to_split_batches)
+    SPLIT_EX_PAIRS_TO_REALIGN(EXs_to_split_batches, alignmentnum)
     EXs_to_realign_batches = SPLIT_EX_PAIRS_TO_REALIGN.out.EXs_to_realign_batches
     // Flatten the results from the previous batch run and combine with sp1 and sp2 information, using sp1-sp2 as key.
     EXs_to_realign = EXs_to_realign_batches.flatten().map{[it.getName().toString().split("_")[0],it]}.groupTuple().join(clusters_split_ch).transpose()
