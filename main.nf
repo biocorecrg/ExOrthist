@@ -29,7 +29,6 @@ version = '2.0.0'
  * Input parameters:
 */
 
-params.help            = false
 params.resume          = false
 
 
@@ -83,12 +82,8 @@ reclustered gene orthology file     : ${params.sub_orthologs}
 
 """
 
+include { paramsHelp; paramsSummaryMap; validateParameters } from 'plugin/nf-schema'
 
-if (params.help) {
-    log.info """ExOrthist v2.0.0"""
-    log.info """ExOrthist is a Nextflow-based pipeline to obtain groups of exon orthologous at all evolutionary timescales.\n"""
-    exit 1
-}
 if (params.resume) exit 1, "Are you making the classical --resume typo? Be careful!!!! ;)"
 
 // if( !workflow.resume ) {
@@ -106,7 +101,11 @@ include { SCORE } from "${LOCAL_SUBWORKFLOWS}/score.nf"
 
 include { PLOT } from "${WORKFLOWS}/plot.nf"
 
+// println paramsSummaryMap(workflow)
+
 workflow {
+
+    // validateParameters()
 
     if (params.wf == "plot" ) {
         log.info(log_plot)

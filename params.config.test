@@ -5,20 +5,20 @@ params {
     annotations    = "$projectDir/test/GTF/*_annot-subsetted.gtf.gz"
     alignmentnum   = 1000
     orthogroupnum  = 500
-    extraexons     = ""
-    bonafide_pairs = ""
-    orthopairs     = ""
+    extraexons     = null
+    bonafide_pairs = null
+    orthopairs     = null
     evodists       = "$projectDir/test/evodists.txt"
     long_dist      = "2,0.10,0.40,0.15"
     medium_dist    = "2,0.30,0.60,0.20"
     short_dist     = "2,0.50,0.60,0.25"
-    prevaln        = ""
+    prevaln        = null
     output         = "$projectDir/output_test"
-    email          = "yourmail@yourdomain"
+    email          = "yourmail@yourdomain.xyz"
     geneID         = "ENSG00000159055"
     output_plot    = "$projectDir/output_plot"
     relevant_exs   = "chr21:32274830-32274896"
     ordered_species= "hg38,mm10,bosTau9"
     isoformID      = "ENSP00000290130"
-    sub_orthologs  = ""
+    sub_orthologs  = null
 }
