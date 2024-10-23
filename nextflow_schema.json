@@ -11,10 +11,6 @@
       "description": "",
       "default": "",
       "properties": {
-        "resume": {
-          "type": "string",
-          "description": "Convenient param for detecting resume mistake"
-        },
         "wf": {
           "type": "string",
           "description": "Workflow to be run, by default the main one. Alternative is plot",
@@ -35,13 +31,13 @@
         "annotations": {
           "type": "string",
           "description": "Path to GTF annotation files",
-          "format": "file-path",
+          "format": "file-path-pattern",
           "default": "./test/GTF/*_annot-subsetted.gtf.gz"
         },
         "genomes": {
           "type": "string",
           "description": "Path to fasta genome files",
-          "format": "file-path",
+          "format": "file-path-pattern",
           "default": "./test/GENOMES/*_gDNA-subsetted.fasta.gz"
         },
         "cluster": {
@@ -128,7 +124,7 @@
       }
     },
     "plot_parameters": {
-      "title": "Plot parameters",
+      "title": "Plot Parameters",
       "type": "object",
       "description": "Specific parameters for generating plots",
       "default": "",
@@ -161,7 +157,7 @@
         "output_plot": {
           "type": "string",
           "description": "Path where to store resulting plot",
-          "format": "file-path",
+          "format": "directory-path",
           "default": "./output_plot"
         }
       }
@@ -173,8 +169,7 @@
         "email": {
           "type": "string",
           "description": "Email for notification",
-          "format": "email",
-          "default": "yourmail@yourdomain.xyz"
+          "format": "email"
         }
       }
     }

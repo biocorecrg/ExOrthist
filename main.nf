@@ -29,7 +29,7 @@ version = '2.0.0'
  * Input parameters:
 */
 
-params.resume          = false
+// params.resume          = false
 
 
 log_main = """
@@ -82,9 +82,7 @@ reclustered gene orthology file     : ${params.sub_orthologs}
 
 """
 
-include { paramsHelp; paramsSummaryMap; validateParameters } from 'plugin/nf-schema'
-
-if (params.resume) exit 1, "Are you making the classical --resume typo? Be careful!!!! ;)"
+include { paramsHelp; validateParameters } from 'plugin/nf-schema'
 
 // if( !workflow.resume ) {
 //     println "Removing the output folder"
@@ -101,11 +99,9 @@ include { SCORE } from "${LOCAL_SUBWORKFLOWS}/score.nf"
 
 include { PLOT } from "${WORKFLOWS}/plot.nf"
 
-// println paramsSummaryMap(workflow)
-
 workflow {
 
-    // validateParameters()
+    validateParameters()
 
     if (params.wf == "plot" ) {
         log.info(log_plot)

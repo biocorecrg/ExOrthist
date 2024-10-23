@@ -14,7 +14,7 @@ params {
     short_dist     = "2,0.50,0.60,0.25"
     prevaln        = null
     output         = "$projectDir/output_test"
-    email          = "yourmail@yourdomain.xyz"
+    email          = null
     geneID         = "ENSG00000159055"
     output_plot    = "$projectDir/output_plot"
     relevant_exs   = "chr21:32274830-32274896"
