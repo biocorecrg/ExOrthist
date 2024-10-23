@@ -23,17 +23,8 @@ ExOrthist pipeline for Bioinformatics Core @ CRG
 
 nextflow.enable.dsl=2
 
-version = '2.0.0'
-
-/*
- * Input parameters:
-*/
-
-// params.resume          = false
-
 
 log_main = """
-
 ╔╦╗┬ ┬┌─┐  ╔═╗─┐ ┬╔═╗┬─┐┌┬┐┬ ┬┬┌─┐┌┬┐
  ║ ├─┤├┤   ║╣ ┌┴┬┘║ ║├┬┘ │ ├─┤│└─┐ │
  ╩ ┴ ┴└─┘  ╚═╝┴ └─╚═╝┴└─ ┴ ┴ ┴┴└─┘ ┴
