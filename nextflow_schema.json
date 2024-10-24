@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/biocorecrg/exorthist/master/nextflow_schema.json",
-  "title": "ExOrthist pipeline parameters",
-  "description": "ExOrthist is a Nextflow-based pipeline to obtain groups of exon orthologous at all evolutionary timescales",
+  "$id": "https://raw.githubusercontent.com/biocorecrg/ExOrthist/master/nextflow_schema.json",
+  "title": "biocorecrg/ExOrthist pipeline parameters",
+  "description": "ExOrthist is a Nextflow-based pipeline to obtain groups of exon orthologous at all evolutionary timescales.",
   "type": "object",
   "$defs": {
     "generic_options": {
