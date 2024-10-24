@@ -18,6 +18,9 @@ workflow ALIGN {
     prevaln
 
     main:
+
+    blosumfile_ch = Channel.fromPath(blosumfile, checkIfExists: true).collect()
+
     if (prevaln) {
         prevaln_ch = Channel.fromPath(prevaln, type: 'dir', checkIfExists: true).collect()
     } else {
@@ -26,7 +29,7 @@ workflow ALIGN {
 
     // the last argument is the protein similarity alignment.
     // if a prevaln folder is provided, the protein alignments present in each species pair subfolder will not be repeated.
-    PARSE_IPA_PROT_ALN(blosumfile, alignment_input, long_dist, medium_dist, short_dist, prevaln_ch)
+    PARSE_IPA_PROT_ALN(blosumfile_ch, alignment_input, long_dist, medium_dist, short_dist, prevaln_ch)
 
     // Collapse EXs_to_split in batches of 500 files
     EXs_to_split = PARSE_IPA_PROT_ALN.out.EXs_to_split
@@ -37,7 +40,7 @@ workflow ALIGN {
     // Flatten the results from the previous batch run and combine with sp1 and sp2 information, using sp1-sp2 as key.
     EXs_to_realign = EXs_to_realign_batches.flatten().map{[it.getName().toString().split("_")[0],it]}.groupTuple().join(clusters_split_ch).transpose()
     //  Realign exons pairs (with multiple hits)
-    REALIGN_EX_PAIRS(blosumfile, EXs_to_realign)
+    REALIGN_EX_PAIRS(blosumfile_ch, EXs_to_realign)
     // Combine all the aln_info with the realigned_exon_info for each species pair
     aligned_subclusters_4_splitting = PARSE_IPA_PROT_ALN.out.aligned_subclusters_4_splitting
     realigned_exons_4_merge = REALIGN_EX_PAIRS.out.realigned_exons_4_merge

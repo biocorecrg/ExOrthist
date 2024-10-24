@@ -11,17 +11,49 @@ include { SUBSET_INPUT_FILES } from "${LOCAL_MODULES}/subset_input.nf"
 
 workflow PLOT {
     take:
+    inputdir
     geneID
-    gene_clusters
-    annotations
-    all_input_info_raw
-    best_hits_input
-    exon_clusters
-    relevant_exons
+    relevant_exs
     ordered_species
     isoformID
+    sub_orthologs
 
     main:
+
+    // Prepare channels
+    geneclusters_path = "${inputdir}/gene_cluster_file.gz"
+    annotations_path = "${inputdir}/*/*_annot_fake.gtf.gz"
+    overlap_path = "${inputdir}/*/*_overlap_CDS_exons.txt"
+    refprot_path = "${inputdir}/*/*_ref_proteins.txt"
+    exonclusters_path = "${inputdir}/EX_clusters.tab"
+    bestscores_path = "${inputdir}/*/best_scored_EX_matches_by_targetgene.txt" //This are all unfiltered scores. I need to identify exons matched by sequence conservation but not phased conservation.
+
+    // This channel will contain a list of the GTF files, in theory each with a key
+    // The key corresponds to the value assumed by the wildcard in the annotation variable (which is defined in the params.config)
+    // annotations  = "$baseDir/data/GTF/*_annot.gtf"
+    annotations = Channel.fromFilePairs(annotations_path, size: 1)
+        .ifEmpty{error "Cannot find any annotation matching: ${annotations_path}"}
+
+    // The key is the species, same as for the annotations channel
+    overlap_info = Channel.fromFilePairs(overlap_path, size: 1)
+        .ifEmpty{error "Cannot find any overlap info: ${overlap_path}"}
+
+    // Create channel for files with ref proteins info
+    refprot_info = Channel.fromFilePairs(refprot_path, size: 1)
+        .ifEmpty{error "Cannot find any overlap info: ${params.refprot}"}
+
+    // Create a joint channel where each key is paired with the corresponding files
+    // annotations.join(overlap_info).join(refprot_info).into{all_input_info_raw; all_input_info_raw1}
+    all_input_info_raw = annotations.join(overlap_info).join(refprot_info)map{it.flatten()}
+
+    best_hits_input = Channel.fromPath(bestscores_path).toList()
+        .ifEmpty{error "Cannot find any overlap info: ${bestscores_path}"}
+
+    exon_clusters = Channel.fromPath(exonclusters_path).collect()
+    if (relevant_exs) {relevant_exons = "${relevant_exs}"} else {relevant_exons = "None"}
+
+    if (sub_orthologs) {gene_clusters = Channel.fromPath(sub_orthologs).collect()} else {gene_clusters = Channel.fromPath(geneclusters_path).collect()}
+
     /*
      * Create channels for input data
      */

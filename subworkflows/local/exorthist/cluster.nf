@@ -11,11 +11,13 @@ workflow CLUSTER {
     take:
     score_exon_hits_pairs
     clusters_split_ch
-    clusterfile_ch
+    clusterfile
     orthopairs
     orthogroupnum
 
     main:
+
+    clusterfile_ch = Channel.fromPath(clusterfile, checkIfExists: true).collect()
     if (orthopairs) {
         orthopairs_ch = Channel.fromPath(orthopairs, checkIfExists: true).collect()
     } else {

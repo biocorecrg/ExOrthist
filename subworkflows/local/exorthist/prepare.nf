@@ -9,22 +9,33 @@ workflow PREPARE {
 
     take:
     evodists
-    clusterfile_ch
-    gtfs
-    fastas
-    gtfs_suffix
-    fastas_suffix
+    clusterfile
+    fasta_files
+    annotation_files
     long_dist
     medium_dist
     short_dist
-    genomes
-    annotations
     extraexons
     alignmentnum
 
     main:
 
     evodists_ch = Channel.fromPath(evodists, checkIfExists: true).collect()
+    clusterfile_ch = Channel.fromPath(clusterfile, checkIfExists: true).collect()
+
+    fastas = Channel.fromPath(fasta_files).collect()
+    gtfs = Channel.fromPath(annotation_files).collect()
+
+    fastas_suffix = Channel.fromFilePairs(fasta_files, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()
+    gtfs_suffix = Channel.fromFilePairs(annotation_files, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()
+
+    // Channels for sequences of data
+    genomes = Channel
+        .fromFilePairs(params.genomes, size: 1)
+        .ifEmpty { error "Cannot find any genome matching: ${fasta_files}" }
+    annotations = Channel
+        .fromFilePairs(params.annotations, size: 1)
+        .ifEmpty { error "Cannot find any annotation matching: ${annotation_files}" }
 
     CHECK_INPUT(
         evodists_ch,

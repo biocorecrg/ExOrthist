@@ -96,80 +96,32 @@ workflow {
 
     if (params.wf == "plot" ) {
         log.info(log_plot)
-        geneclusters_path = "${params.output}/gene_cluster_file.gz"
-        annotations_path = "${params.output}/*/*_annot_fake.gtf.gz"
-        overlap_path = "${params.output}/*/*_overlap_CDS_exons.txt"
-        refprot_path = "${params.output}/*/*_ref_proteins.txt"
-        exonclusters_path = "${params.output}/EX_clusters.tab"
-        bestscores_path = "${params.output}/*/best_scored_EX_matches_by_targetgene.txt" //This are all unfiltered scores. I need to identify exons matched by sequence conservation but not phased conservation.
-
-        //This channel will contain a list of the GTF files, in theory each with a key
-        //The key corresponds to the value assumed by the wildcard in the annotation variable (which is defined in the params.config)
-        //annotations  = "$baseDir/data/GTF/*_annot.gtf"
-        annotations = Channel.fromFilePairs(annotations_path, size: 1)
-            .ifEmpty{error "Cannot find any annotation matching: ${annotations_path}"}
-
-        //The key is the species, same as for the annotations channel
-        overlap_info = Channel.fromFilePairs(overlap_path, size: 1)
-            .ifEmpty{error "Cannot find any overlap info: ${overlap_path}"}
-
-        //Create channel for files with ref proteins info
-        refprot_info = Channel.fromFilePairs(refprot_path, size: 1)
-            .ifEmpty{error "Cannot find any overlap info: ${params.refprot}"}
-
-        //Create a joint channel where each key is paired with the corresponding files
-        //annotations.join(overlap_info).join(refprot_info).into{all_input_info_raw; all_input_info_raw1}
-        all_input_info_raw = annotations.join(overlap_info).join(refprot_info)map{it.flatten()}
-
-        best_hits_input = Channel.fromPath(bestscores_path).toList()
-            .ifEmpty{error "Cannot find any overlap info: ${bestscores_path}"}
-
-        exon_clusters = Channel.fromPath(exonclusters_path).collect()
-        if (params.relevant_exs) {relevant_exons = "${params.relevant_exs}"} else {relevant_exons = "None"}
-
-        if (params.sub_orthologs) {gene_clusters = Channel.fromPath(params.sub_orthologs).collect()} else {gene_clusters = Channel.fromPath(geneclusters_path).collect()}
-        PLOT(params.geneID, gene_clusters, annotations, all_input_info_raw, best_hits_input, exon_clusters, relevant_exons, params.ordered_species, params.isoformID)
+        PLOT(
+            params.output,
+            params.geneID,
+            params.relevant_exs,
+            params.ordered_species,
+            params.isoformID,
+            params.sub_orthologs
+        )
 
     } else {
         log.info(log_main)
-        gtfs = Channel.fromPath(params.annotations).collect()
-        fastas = Channel.fromPath(params.genomes).collect()
-
-        blosumfile = Channel.fromPath("${projectDir}/files/blosum62.txt", checkIfExists: true).collect()
-
-        // TODO: Review this in an easier way
-        gtfs_suffix = Channel.fromFilePairs(params.annotations, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()
-        fastas_suffix = Channel.fromFilePairs(params.genomes, size: 1).flatten().collate(2).map{[it[1].getName().toString().split(it[0].toString())[1]]}.unique().flatten()
-
-        // Channels for sequences of data
-        genomes = Channel
-            .fromFilePairs(params.genomes, size: 1)
-            .ifEmpty { error "Cannot find any genome matching: ${params.genomes}" }
-
-        annotations = Channel
-            .fromFilePairs(params.annotations, size: 1)
-            .ifEmpty { error "Cannot find any annotation matching: ${params.annotations}" }
-
-        clusterfile_ch = Channel.fromPath(params.cluster, checkIfExists: true).collect()
 
         PREPARE(
             params.evodists,
-            clusterfile_ch,
-            gtfs,
-            fastas,
-            gtfs_suffix,
-            fastas_suffix,
+            params.cluster,
+            params.genomes,
+            params.annotations,
             params.long_dist,
             params.medium_dist,
             params.short_dist,
-            genomes,
-            annotations,
             params.extraexons,
             params.alignmentnum
         )
 
         ALIGN(
-            blosumfile,
+            "${projectDir}/files/blosum62.txt",
             PREPARE.out.alignment_input,
             PREPARE.out.clusters_split_ch,
             params.long_dist,
@@ -192,7 +144,7 @@ workflow {
         CLUSTER(
             SCORE.out.score_exon_hits_pairs,
             PREPARE.out.clusters_split_ch,
-            clusterfile_ch,
+            params.cluster,
             params.orthopairs,
             params.orthogroupnum
         )
