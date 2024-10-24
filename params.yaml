@@ -11,7 +11,7 @@ genomes: "./test/GENOMES/*_gDNA-subsetted.fasta.gz"
 annotations: "./test/GTF/*_annot-subsetted.gtf.gz"
 alignmentnum: 1000
 orthogroupnum: 500
-evodists: "./test/evodists.new.txt"
+evodists: "./test/evodists.txt"
 long_dist: "2,0.10,0.40,0.15"
 medium_dist: "2,0.30,0.60,0.20"
 short_dist: "2,0.50,0.60,0.25"
