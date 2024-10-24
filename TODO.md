@@ -1,4 +1,6 @@
-- Remove all params from modules
 - Convert params.config to params.yaml/json (optional)
+- Review params.output from modules (optional)
+- Add stub to modules (optional)
 - Include colors into the terminal messages (optional)
-- Consider notifications
+- Add nf-test
+- Improve profiles
