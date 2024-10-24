@@ -45,6 +45,7 @@ bona fide orthologous exon pairs    : ${params.bonafide_pairs}
 orthopairs                          : ${params.orthopairs}
 output (output folder)              : ${params.output}
 email for notification              : ${params.email}
+hook_url                            : ${params.hook_url}
 
 INFORMATION ABOUT OPTIONS:
 The long, medium, short distance cut-offs are in the format: "int_num;ex_seq;ex_len;prot_sim".
@@ -70,7 +71,8 @@ geneID                              : ${params.geneID}
 isoformID                           : ${params.isoformID}
 relevant exons                      : ${params.relevant_exs}
 reclustered gene orthology file     : ${params.sub_orthologs}
-
+email for notification              : ${params.email}
+hook_url                            : ${params.hook_url}
 """
 
 include { paramsHelp; validateParameters } from 'plugin/nf-schema'
@@ -89,6 +91,8 @@ include { PREPARE } from "${LOCAL_SUBWORKFLOWS}/prepare.nf"
 include { SCORE } from "${LOCAL_SUBWORKFLOWS}/score.nf"
 
 include { PLOT } from "${WORKFLOWS}/plot.nf"
+
+include { final_message; notify_slack } from "./lib/functions.nf"
 
 workflow {
 
@@ -149,13 +153,16 @@ workflow {
             params.orthogroupnum
         )
     }
+
 }
 
 workflow.onComplete {
-    println "--- Pipeline BIOCORE@CRG ExOrthist ---"
-    println "Started at  $workflow.start"
-    println "Finished at $workflow.complete"
-    println "Time elapsed: $workflow.duration"
-    println "Execution status: ${ workflow.success ? 'OK' : 'failed' }"
+    def text = final_message("ExOrthist", params.wf)
+    println text
+    if (params.email) {
+        sendMail(to: params.email, subject: "[ExOrthist] Execution finished", body: msg)
+    }
+    if (params.hook_url) {
+        notify_slack(text, params.hook_url)
+    }
 }
-

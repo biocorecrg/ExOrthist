@@ -170,6 +170,13 @@
           "type": "string",
           "description": "Email for notification",
           "format": "email"
+        },
+        "hook_url": {
+          "type": "string",
+          "description": "Incoming hook URL for messaging service",
+          "fa_icon": "fas fa-broadcast-tower",
+          "help_text": "Incoming hook URL for messaging service. Currently, MS Teams and Slack are supported.",
+          "hidden": true
         }
       }
     }
