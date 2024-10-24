@@ -15,6 +15,13 @@
           "type": "string",
           "description": "Workflow to be run, by default the main one. Alternative is plot",
           "default": "main"
+        },
+        "validate_params": {
+          "type": "boolean",
+          "description": "Boolean whether to validate parameters against the schema at runtime",
+          "default": true,
+          "fa_icon": "fas fa-check-square",
+          "hidden": true
         }
       }
     },
@@ -85,11 +92,6 @@
           "description": "Short distance parameters",
           "default": "2,0.50,0.60,0.25"
         },
-        "prevaln": {
-          "type": "string",
-          "description": "Pre-computed alignments",
-          "format": "directory-path"
-        },
         "alignmentnum": {
           "type": "integer",
           "description": "Alignment number",
@@ -120,6 +122,11 @@
           "type": "string",
           "description": "Orthopairs",
           "format": "file-path"
+        },
+        "prevaln": {
+          "type": "string",
+          "description": "Pre-computed alignments",
+          "format": "directory-path"
         }
       }
     },
