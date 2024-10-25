@@ -1,0 +1,20 @@
+nextflow_pipeline {
+
+    name "Test pipeline with default settings"
+    script "../main.nf"
+
+    test("Params: default") {
+
+        when {
+            params {
+                output = "$output"
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success }
+            )
+        }
+    }
+}
