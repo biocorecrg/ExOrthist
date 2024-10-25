@@ -1,0 +1,19 @@
+{
+    "Should run without failures": {
+        "content": [
+            {
+                "0": [
+                    "EX_clusters.tab:md5,02479360ed2b8d659612fc60477ad355"
+                ],
+                "exon_cluster_for_reclustering": [
+                    "EX_clusters.tab:md5,02479360ed2b8d659612fc60477ad355"
+                ]
+            }
+        ],
+        "meta": {
+            "nf-test": "0.9.1",
+            "nextflow": "24.04.4"
+        },
+        "timestamp": "2024-10-25T19:47:18.31238939"
+    }
+}
