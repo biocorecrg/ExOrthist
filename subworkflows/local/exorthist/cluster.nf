@@ -48,6 +48,8 @@ workflow CLUSTER {
     )
 
     emit:
+
+    exon_cluster_for_reclustering = FORMAT_EX_CLUSTERS_OUTPUT.out.exon_cluster_for_reclustering
     recl_exs = RECLUSTER_EXS_BY_SPECIES_PAIR.out.recl_exs
     recl_genes_for_rec_exons = RECLUSTER_GENES_BY_SPECIES_PAIR.out.recl_genes_for_rec_exons
 

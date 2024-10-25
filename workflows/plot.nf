@@ -175,4 +175,6 @@ workflow PLOT {
         plot_input
     )
 
+    emit:
+    pdf = PLOT_EXINT.out.pdf
 }

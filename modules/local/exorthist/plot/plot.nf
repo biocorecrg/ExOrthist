@@ -14,7 +14,7 @@ process PLOT_EXINT {
     path("*")
 
     output:
-    path("*_exint_plot.pdf")
+    path("*_exint_plot.pdf"), emit: pdf
 
     script:
     """
