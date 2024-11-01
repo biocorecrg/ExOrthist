@@ -1,6 +1,5 @@
 process SPLIT_CLUSTERS_BY_SPECIES_PAIRS {
     tag { clusterfile.name }
-    publishDir "${params.output}/", mode: 'copy', pattern: "gene_cluster_file.gz"
 
     input:
     path clusterfile
