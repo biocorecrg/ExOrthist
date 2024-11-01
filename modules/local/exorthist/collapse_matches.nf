@@ -1,5 +1,5 @@
 process COLLAPSE_OVERLAPPING_MATCHES {
-    publishDir "${params.output}/", mode: "copy"
+    label 'publish'
 
     input:
     path scores

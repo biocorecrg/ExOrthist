@@ -1,7 +1,7 @@
 process GENERATE_ANNOTATIONS {
     tag { genomeid }
     label 'big_cpus'
-    publishDir "${params.output}/", mode: 'copy'
+    label 'publish'
 
     input:
     tuple val(genomeid), path(genome), path(annotation)

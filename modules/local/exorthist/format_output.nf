@@ -1,5 +1,5 @@
 process FORMAT_EX_CLUSTERS_OUTPUT {
-    publishDir "${params.output}/", mode: 'copy'
+    label 'publish'
 
     input:
     path ex_clusters

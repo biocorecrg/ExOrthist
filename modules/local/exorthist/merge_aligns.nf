@@ -1,6 +1,6 @@
 process MERGE_PROT_EX_INT_ALN_INFO {
     tag { comp_id }
-    label 'incr_time_cpus'
+    label 'aligners'
 
     stageInMode 'copy'
 

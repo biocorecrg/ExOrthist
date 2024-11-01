@@ -16,7 +16,7 @@ ExOrthist pipeline for Bioinformatics Core @ CRG
 ===========================================================
 */
 
-nextflow.enable.dsl=2
+nextflow.enable.dsl = 2
 
 // if( !workflow.resume ) {
 //     println "Removing the output folder"
@@ -28,7 +28,8 @@ WORKFLOWS='./workflows/'
 
 include { PIPELINE_COMPLETION; PIPELINE_INITIALISATION } from "${LOCAL_SUBWORKFLOWS}/util.nf"
 
-include { MAIN; PLOT } from "${WORKFLOWS}/plot.nf"
+include { MAIN } from "${WORKFLOWS}/main.nf"
+include { PLOT } from "${WORKFLOWS}/plot.nf"
 
 
 workflow {
@@ -58,5 +59,4 @@ workflow {
         params.email,
         params.hook_url
     )
-
 }

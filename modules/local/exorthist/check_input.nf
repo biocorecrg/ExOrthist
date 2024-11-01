@@ -1,6 +1,6 @@
 process CHECK_INPUT {
     tag "Checking input files"
-    publishDir "${params.output}", mode: 'copy'
+    label 'publish'
 
     input:
     path evodisfile

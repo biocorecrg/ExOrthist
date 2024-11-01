@@ -1,5 +1,5 @@
 process REALIGN_EX_PAIRS {
-    label 'incr_time_cpus'
+    label 'aligners'
 
     input:
     path blosumfile

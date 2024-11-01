@@ -1,6 +1,6 @@
 process SCORE_EX_MATCHES {
     tag { comp_id }
-    label 'big_mem_retry'
+    label 'big_mem'
 
     storeDir "${params.output}/${comp_id}"
 

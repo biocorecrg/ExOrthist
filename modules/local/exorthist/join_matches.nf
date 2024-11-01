@@ -1,5 +1,5 @@
 process JOIN_FILTERED_EX_MATCHES {
-    publishDir "${params.output}/", mode: 'copy'
+    label 'publish'
 
     input:
     path "filtered_best_scored-*"

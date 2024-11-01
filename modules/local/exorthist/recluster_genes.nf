@@ -1,6 +1,6 @@
 process RECLUSTER_GENES_BY_SPECIES_PAIR {
-    publishDir "${params.output}/reclustering", mode: 'copy'
     label 'pandas'
+    label 'publish_reclustering'
     tag { combid }
 
     input:
