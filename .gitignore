@@ -7,3 +7,4 @@ trace*
 logs/*
 output*/*
 .nextflow*
+.nf-test*

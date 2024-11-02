@@ -269,6 +269,9 @@
       "$ref": "#/$defs/plot_parameters"
     },
     {
+      "$ref": "#/$defs/institutional_config_options"
+    },
+    {
       "$ref": "#/$defs/notification_options"
     }
   ]
