@@ -10,7 +10,7 @@ pdf_document: default
 -->
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Nextflow version](https://img.shields.io/badge/Nextflow-24.04.4-brightgreen)](https://www.nextflow.io/)
+[![Nextflow version](https://img.shields.io/badge/Nextflow-24.10.0-brightgreen)](https://www.nextflow.io/)
 [![Singularity version](https://img.shields.io/badge/Singularity-v3.2.1-green.svg)](https://www.sylabs.io/)
 [![Docker version](https://img.shields.io/badge/Docker-v19.03-blue)](https://www.docker.com/)
 
@@ -77,14 +77,14 @@ ExOrthist is a Nextflow based pipeline to infer exon orthology groups at all evo
 
 ExOrthist requires the following software:
 
-- [Nextflow](https://www.nextflow.io/) version (tested with 24.04.4)
+- [Nextflow](https://www.nextflow.io/) version (tested with 24.10.0)
 - A linux container engine (either [Docker](https://www.docker.com/) or [Singularity](https://sylabs.io) / [Apptainer](https://apptainer.org/). NB: singularity version >= 3.2.1 is required)
 
 Additionally, [liftOver](https://genome-store.ucsc.edu/), [bedtools](https://bedtools.readthedocs.io/en/latest/) as well as specific pairwise [liftOver files](http://hgdownload.soe.ucsc.edu/downloads.html#liftover) are required to run `get_liftovers.pl` [see [below](#addition-of-manually-curated-exon-orthology-pairs)].
 
 ## Installation
 
-Install Nextflow (tested with 24.04.4):
+Install Nextflow (tested with 24.10.0):
 
 ```bash
 curl -s https://get.nextflow.io | bash
@@ -112,14 +112,22 @@ ExOrthist main module infers exon homologous pairs and exon orthogroups within t
 The pipeline can be launched in this way:
 
 ```bash
-NXF_VER=24.04.4 nextflow run main.nf [-with-singularity | -with-docker] -bg > log.txt
+NXF_VER=24.10.0 nextflow run main.nf [-profile docker | -profile singularity | ... ] -bg > log.txt
+
 ```
+
+There are also several profiles available for different institutions or systems (source: [nf-core configs](https://github.com/nf-core/configs/tree/master/conf)). Example:
+
+````bash
+NXF_VER=24.10.0 nextflow run main.nf -profile crg -bg > log.txt
+
+`
 
 If the pipeline crashes at any step, it can be re-launched using the -resume option (- not --):
 
 ```bash
-NXF_VER=24.04.4 nextflow run main.nf -bg -resume > log.txt
-```
+NXF_VER=24.10.0 nextflow run main.nf -bg -resume > log.txt
+````
 
 #### Test run
 
@@ -128,38 +136,24 @@ The ExOrthist repository includes a folder named **test** containing all the inp
 The test run will extract the exon orthology for 37 gene orthogroups shared between hg38 (_human_), mm10 (_mouse_) and bosTau9 (_cow_) selected from a [Broccoli](https://github.com/rderelle/Broccoli) run. In order to familiarize yourself with ExOrthist main output, simply run the following code from the ExOrthist-master directory:
 
 ```bash
-NXF_VER=24.04.4 nextflow run main.nf [-with-docker | -with-singularity] > test_log.txt
+NXF_VER=24.10.0 nextflow run main.nf [-profile docker | -profile singularity | ... ] > test_log.txt
 ```
 
 ExOrthist will save all outputs in the **output_test** directory. All inputs and outputs are explained in details in the following sections.
 
 ### Inputs
 
-#### params.config file
+#### params.yaml file
 
-For the pipeline to run, a `params.config` file with the following format has to be present in the working directory. A template of the `params.config` file is provided together with the pipeline.
+A `params.yaml` file with the default test values is provided in the root directory. This can be used as a template for generating a file with your own custom parameters.
 
-```
-params {
-    cluster        = "$projectDir/test/hg38_mm10_bosTau9.tab"
-    genomes        = "$projectDir/test/GENOMES/*_gDNA.fasta.gz"
-    annotations    = "$projectDir/test/GTF/*_annot.gtf.gz"
-    alignmentnum   = 1000
-    orthogroupnum  = 500
-    extraexons     = ""
-    bonafide_pairs = ""
-    orthopairs     = ""
-    evodists       = "$projectDir/test/evodists.txt"
-    long_dist      = "2,0.10,0.40,0.15"
-    medium_dist    = "2,0.30,0.60,0.20"
-    short_dist     = "2,0.50,0.60,0.25"
-    prevaln        = ""
-    output         = "$projectDir/output_test"
-    email          = "yourmail@yourdomain"
-}
+To use that custom values, `-params-file` can be used as below:
+
+```bash
+NXF_VER=24.10.0 nextflow run main.nf [-profile docker | -profile singularity | ... ] -bg -params-file my_params.yaml > my_test.txt
 ```
 
-Alternatively, the arguments in the `params.config` can be specified as independent command line flags. The command line-provided values overwrite the ones defined in the `params.config` file.
+Alternatively, the arguments in the `params.yaml` can be specified as independent command line flags (use: `--`). The command line-provided values overwrite the default ones.
 
 #### Required inputs
 
@@ -183,7 +177,7 @@ bosTau9_annot.gtf
 
 ```
 GF000001	hg38    ENSG00000151690
-GF000001	mm10    ENSMUSG00000041439
+GF000001	mm10    ENSMUSG0000010.039
 GF000001	bosTau9 ENSBTAG00000007719
 GF000002	hg38    ENSG00000091127
 GF000002	mm10    ENSMUSG00000057541
@@ -290,7 +284,7 @@ Species annotations: hg38: Ensembl v88, mm10: Ensembl v88, danRer11: Ensembl v99
 
 #### Default outputs
 
-**output_main/:**
+**output/:**
 
 - **run info file**: file containing the stringency parameters for each evolutionary distance range used for the `main.nf` run, together with the considered evolutionary distances for each species pair. Eventual warnings about problematic cases (e.g. genes included in the orthology but without annotated exons in the GTF) are also printed out here.
 - **gene_cluster_file.gz**: the **--cluster** gene cluster file [[see Inputs](#inputs)] is copied and gzipped in the output directory. This is necessary to run the `exint_plotter` and `compare_exon_sets` modules without external dependencies.
@@ -302,7 +296,7 @@ Species annotations: hg38: Ensembl v88, mm10: Ensembl v88, danRer11: Ensembl v99
 - **unclustered_EXs.txt**: exons excluded from the final orthogroups by the clustering algorithm.
 
 ExOrthist creates a folder in the output directory for each species, containing the following files:  
-**output_main/\${species}/:**
+**output/\${species}/:**
 
 - **\${species}\_ref_proteins.txt**: geneID and proteinID of reference proteins.
 - **\${species}.exint**: fasta files by protein isoform. The header reports the aminoacidic positions corresponding to exon boundaries (i.e. intron positions).
@@ -316,7 +310,7 @@ ExOrthist creates a folder in the output directory for each species, containing 
 
 ExOrthist creates a folder in the output directory for each species pair, containing the following files:  
 [**NB**: in all cases, both species1 and species2 are considered as query and target in turn.]  
-**output_main/\${species_pair}/:**
+**output/\${species_pair}/:**
 
 - **EXINT_aln.gz**: all query isoforms vs target isoforms protein alignments.
 - **all_PROT_aln_features.txt**: information regarding the protein alignments of all query isoforms vs all target isoforms.
@@ -329,13 +323,13 @@ ExOrthist creates a folder in the output directory for each species pair, contai
 #### Facultative outputs
 
 ExOrthist is also able to consider non-annotated exons in the orthology inference, which can be added via the **--extraexons** argument [[see Facultative inputs](#facultative-inputs)]. If non-annotated exons are added, ExOrthist also generates the following files:  
-**output_main/\${species}/:**
+**output/\${species}/:**
 
 - **FakeTranscripts-${species}-vB.gtf**: GTF file where a fake transcript for each of the not-annotated exons is introduced. ExOrthist first maps the upstream and downstream exons (which must be provided in the input) to the annotated transcripts. When both exons exactly match the same transcript, this becomes the template of the fake transcript to which the non-annotated exon is added; otherwise, ExOrthist uses partial matches of the upstream or downstream exon to identify the template transcript. ExOrthist prioritizes fake transcripts where both the matching upstream and downstream exons are coding exons.
 - **LOG_FakeTranscripts-${species}-vB.tab**: it contains info of the mapping of non-annotated exons to the relative fake transcript.
 
 ExOrthist provides the possibility to subset the exon orthology files based on reclustering information. This step is performed when a file with orthologous pairs from all species pairwise combinations is provided with the **--orthopairs argument** [[see Facultative inputs](#facultative-inputs)]. In that case, an extra "reclustering"" folder is saved to the output folder directory, with the following files:  
-**output_main/reclustering/:**
+**output/reclustering/:**
 
 - **reclustered*genes*${species_pair}.tab**: orthogroups reclustered according to species pairwise orthologs.
 - **reclustered*exons*${species_pair}.tab**: exon orthologous relationships within the reclustered gene orthogroups for each species pair.
@@ -480,47 +474,40 @@ The `exint_plotter worfklow will take one of the genes for which the `main.nf`te
 To get acquainted with the `exint_plotter` output, simply run the following command:
 
 ```bash
-nextflow run main.nf --wf plot [-with-docker | -with-singularity] > exint_test_log.txt
+nextflow run main.nf --wf plot [-profile docker | -profile singularity | ... ] > plot_test_log.txt
 ```
 
 By default, ExOrthist will save a pdf file containing the exint plot in the **output_plot** directory (the expected output is shown in the [Plot structure](#output) section). All inputs and outputs are explained in details in the following sections.
 
 ## Inputs:
 
-### params.config file
+### params.yaml file
 
-For the pipeline to run, a params.config file with the following format has to be present in the working directory.  
-A template of the params.config file is provided together with the pipeline.
+A `params.yaml` file with the default test values is provided in the root directory. This can be used as a template for generating a file with your own custom parameters.
 
-```
-params {
-    geneID          = "ENSG00000159055"
-    output          = "$projectDir/../output_test"
-    output_plot     = "$projectDir/output_exint"
-    relevant_exs    = "chr21:32274830-32274896"
-    ordered_species = "hg38,mm10,bosTau9"
-    isoformID       = "ENSP00000290130"
-    sub_orthologs   = ""
-}
+To use that custom values, `-params-file` can be used as below:
+
+```bash
+NXF_VER=24.10.0 nextflow run main.nf [-profile docker | -profile singularity | ... ] --wf plot -bg -params-file my_params.yaml > my_test.txt
 ```
 
-Alternatively, the arguments in the params.config can be specified as independent command line flags. The command line-provided values overwrite the ones defined in the params.config file.
+Alternatively, the arguments in the `params.yaml` can be specified as independent command line flags (use: `--`). The command line-provided values overwrite the default ones.
 
 ### Required inputs
 
-**--geneID**: query gene ID (it has to match a geneID included in the **EX_clusters.tab** in **--output_main**).  
+**--geneID**: query gene ID (it has to match a geneID included in the **EX_clusters.tab** in **--output**).  
 **--output**: output directory of the ExOrthist `main.nf` workflow run.  
 **--output_plot**: output folder destination. [[See Output](#output)]
 
 ### Facultative inputs
 
-**--ordered_species**: a comma separated list of speciesID, specifying the vertical order (top-bottom) of the species in the plot. The query gene is always printed on top. If not provided, the order of the species will be derived from the gene cluster file in the **--output_main** directory (**gene_cluster_file.gz**). Example:
+**--ordered_species**: a comma separated list of speciesID, specifying the vertical order (top-bottom) of the species in the plot. The query gene is always printed on top. If not provided, the order of the species will be derived from the gene cluster file in the **--output** directory (**gene_cluster_file.gz**). Example:
 
 ```
 --ordered_species "hg38,mm10,bosTau9"
 ```
 
-**--sub_orthologs**: subset of the **gene_cluster_file.gz** in **--output_main**, with a selection of homologs of **--geneID** to be plotted.  
+**--sub_orthologs**: subset of the **gene_cluster_file.gz** in **--output**, with a selection of homologs of **--geneID** to be plotted.  
 **--relevant_exs**: comma separated list of coordinates (chr:start-stop) of query gene exons (**NB:** coordinates must match the CDS portion of the exon), which will be highlighted in the plot with different colors. All homologous exons in the target genes will be highlighted with the same color. This feature is useful to quickly visualize the conservation of one/few exons of interest. Example:
 
 ```
