@@ -30,7 +30,7 @@ workflow MAIN {
         params.medium_dist,
         params.short_dist,
         params.alignmentnum,
-        params.prevaln
+        params.prevaln,
         params.output
     )
 
