@@ -47,7 +47,8 @@ workflow {
             params.relevant_exs,
             params.ordered_species,
             params.isoformID,
-            params.sub_orthologs
+            params.sub_orthologs,
+            params.output
         )
 
     } else {

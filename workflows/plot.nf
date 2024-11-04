@@ -17,6 +17,7 @@ workflow PLOT {
     ordered_species
     isoformID
     sub_orthologs
+    outdir
 
     main:
 

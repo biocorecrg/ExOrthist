@@ -1,7 +1,7 @@
 process FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE {
     tag { comp_id }
 
-    publishDir "${params.output}", mode: "copy",
+    publishDir "${outdir}", mode: "copy",
         pattern: "best_scored_EX_matches_by_targetgene.txt",
         saveAs: { filename -> "${comp_id}/$filename" }
 
@@ -10,6 +10,7 @@ process FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE {
     val(long_dist)
     val(medium_dist)
     val(short_dist)
+    path outdir
 
     output:
     path "*.tab", emit: filterscore_per_joining

@@ -1,3 +1,2 @@
-- Review params.output from modules (optional)
 - Add stub to modules (optional)
 - Include colors into the terminal messages (optional)

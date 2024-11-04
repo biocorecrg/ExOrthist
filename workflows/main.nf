@@ -31,6 +31,7 @@ workflow MAIN {
         params.short_dist,
         params.alignmentnum,
         params.prevaln
+        params.output
     )
 
     SCORE(
