@@ -40,7 +40,8 @@ workflow MAIN {
         params.bonafide_pairs,
         params.long_dist,
         params.medium_dist,
-        params.short_dist
+        params.short_dist,
+        params.output
     )
 
     CLUSTER(

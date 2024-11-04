@@ -15,12 +15,13 @@ workflow SCORE {
     long_dist
     medium_dist
     short_dist
+    outdir
 
     main:
 
     data_to_score = folder_jscores.join(clusters_split_ch).map{ [it[0], it[1..-1] ]}
     // Score EX matches from aln info
-    SCORE_EX_MATCHES(data_to_score)
+    SCORE_EX_MATCHES(data_to_score, outdir)
     // Filter the best matches above score cutoffs by target gene.
     all_scores_to_filt_ch = SCORE_EX_MATCHES.out.all_scores_to_filt
     FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE(all_scores_to_filt_ch.join(dist_ranges_ch), long_dist, medium_dist, short_dist)
