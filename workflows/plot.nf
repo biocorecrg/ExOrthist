@@ -159,7 +159,8 @@ workflow PLOT {
         GENERATE_FAKE_COORDS_TABLE.out.ExNum_number_in_isoform
             .join(SUBSET_INPUT_FILES.out.overlap_info_4_isoforms)
             .join(ISOLATE_QUERY_SPECIES.out.query_species),
-        geneID
+        geneID,
+        outdir
       )
     } else {
       isoform_interesting_exs = Channel.from("None")
