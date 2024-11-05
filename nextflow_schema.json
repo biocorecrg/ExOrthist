@@ -8,8 +8,8 @@
     "generic_options": {
       "title": "Generic Options",
       "type": "object",
-      "description": "",
-      "default": "",
+      "fa_icon": "fas fa-file-import",
+      "description": "Less common options for the pipeline, typically set in a config file.",
       "properties": {
         "wf": {
           "type": "string",
@@ -44,6 +44,8 @@
     "input_output_options": {
       "title": "Input/Output Options",
       "type": "object",
+      "fa_icon": "fas fa-terminal",
+      "description": "Define where the pipeline should find input data and save output data.",
       "required": [
         "annotations",
         "genomes",
@@ -55,31 +57,33 @@
           "type": "string",
           "description": "Path to GTF annotation files",
           "format": "file-path-pattern",
-          "default": "./test/GTF/*_annot-subsetted.gtf.gz"
+          "default": "${projectDir}/test/GTF/*_annot-subsetted.gtf.gz"
         },
         "genomes": {
           "type": "string",
           "description": "Path to fasta genome files",
           "format": "file-path-pattern",
-          "default": "./test/GENOMES/*_gDNA-subsetted.fasta.gz"
+          "default": "${projectDir}/test/GENOMES/*_gDNA-subsetted.fasta.gz"
         },
         "cluster": {
           "type": "string",
           "description": "Path to cluster file (txt files)",
           "format": "file-path",
-          "default": "./test/hg38_mm10_bosTau9.tab"
+          "default": "${projectDir}/test/hg38_mm10_bosTau9.tab"
         },
         "output": {
           "type": "string",
           "description": "Output folder path",
           "format": "directory-path",
-          "default": "./output_test"
+          "default": "${projectDir}/output_test",
+          "fa_icon": "fas fa-folder-open"
         }
       }
     },
     "analysis_parameters": {
       "title": "Analysis Parameters",
       "type": "object",
+      "fa_icon": "fas fa-map-signs",
       "required": [
         "evodists",
         "long_dist",
@@ -91,7 +95,7 @@
           "type": "string",
           "description": "Path to a file with pairwise evolutionary distances",
           "format": "file-path",
-          "default": "./test/evodists.txt"
+          "default": "${projectDir}/test/evodists.txt"
         },
         "long_dist": {
           "type": "string",
@@ -123,6 +127,7 @@
     "additional_data": {
       "title": "Additional Data",
       "type": "object",
+      "fa_icon": "fas fa-terminal",
       "properties": {
         "extraexons": {
           "type": "string",
@@ -149,6 +154,7 @@
     "plot_parameters": {
       "title": "Plot Parameters",
       "type": "object",
+      "fa_icon": "fas fa-terminal",
       "description": "Specific parameters for generating plots",
       "default": "",
       "properties": {
@@ -181,7 +187,7 @@
           "type": "string",
           "description": "Path where to store resulting plot",
           "format": "directory-path",
-          "default": "./output_plot"
+          "default": "${projectDir}/output_plot"
         }
       }
     },
