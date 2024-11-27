@@ -4,8 +4,7 @@ process GENERATE_ANNOTATIONS {
     label 'publish'
 
     input:
-    tuple val(genomeid), path(genome), path(annotation)
-    path extraexons
+    tuple val(genomeid), path(genome), path(annotation), path(extraexons)
 
     output:
     tuple val(genomeid), path("${genomeid}"), emit: idfolders

@@ -132,7 +132,7 @@
         "extraexons": {
           "type": "string",
           "description": "Extra exons (e.g. from VastDB)",
-          "format": "file-path"
+          "format": "file-path-pattern"
         },
         "bonafide_pairs": {
           "type": "string",

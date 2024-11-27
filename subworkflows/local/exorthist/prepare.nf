@@ -56,14 +56,20 @@ workflow PREPARE {
 
     // We join channels. If no extraexons, then it's empty, so no problem
     data_to_annotation = genomes.join(annotations)
-    // TODO: To check what's goiing on here - check extraexons_ch
-    // data_to_annotation = data_to_annotation.join(extraexons_ch, remainder: true)
+
+    // print("EXTRAEXONS")
 
     if (extraexons) {
-        GENERATE_ANNOTATIONS(data_to_annotation, extraexons_ch)
+        data_to_annotation = data_to_annotation.join(extraexons_ch, remainder: true)
+        // data_to_annotation.view()
+        GENERATE_ANNOTATIONS(data_to_annotation)
     } else {
         // Sic: https://nextflow-io.github.io/patterns/optional-input/
-        GENERATE_ANNOTATIONS(data_to_annotation, Channel.fromPath("/path/to/NO_FILE").collect())
+        data_to_annotation.map { entry ->
+            entry.add(['/path/to/NO_FILE'])
+        }
+        data_to_annotation.view()
+        GENERATE_ANNOTATIONS(data_to_annotation)
     }
 
     clusters_split_ch = GENERATE_ANNOTATIONS.out.idfolders.toList().map{ [it, it].combinations().findAll{ a, b -> a[0] < b[0]} }
