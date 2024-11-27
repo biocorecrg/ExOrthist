@@ -68,7 +68,7 @@ workflow PREPARE {
         data_to_annotation.map { entry ->
             entry.add(['/path/to/NO_FILE'])
         }
-        data_to_annotation.view()
+        // data_to_annotation.view()
         GENERATE_ANNOTATIONS(data_to_annotation)
     }
 
