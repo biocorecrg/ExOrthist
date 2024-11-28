@@ -10,7 +10,7 @@ process COLLAPSE_OVERLAPPING_MATCHES {
     path "overlapping_EXs_by_species.tab", emit: overlapping_exs
 
     script:
-    def bonafide = bonafide_pairs.name != 'NO_FILE' ? "-b ${bonafide_pairs}" : ''
+    def bonafide = bonafide_pairs.name != 'NO_FILE' ? "${bonafide_pairs}" : ''
     """
     C3_count_matches_by_EX.pl ${scores} EX_matches_count_by_species.tab ${bonafide}
     C4_get_overlapping_EXs.pl -i EX_matches_count_by_species.tab -o overlapping_EXs_by_species.tab
