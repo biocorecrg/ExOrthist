@@ -20,11 +20,12 @@ workflow SCORE {
     main:
 
     data_to_score = folder_jscores.join(clusters_split_ch).map{ [it[0], it[1..-1] ]}
-    // Score EX matches from aln info
-    SCORE_EX_MATCHES(data_to_score, outdir)
+    // Score EX matches from aln info. TODO: This needs to be changed once new publish approach
+    outdir_ch = Channel.fromPath(outdir, checkIfExists: true).collect()
+    SCORE_EX_MATCHES(data_to_score, outdir_ch)
     // Filter the best matches above score cutoffs by target gene.
     all_scores_to_filt_ch = SCORE_EX_MATCHES.out.all_scores_to_filt
-    FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE(all_scores_to_filt_ch.join(dist_ranges_ch), long_dist, medium_dist, short_dist, outdir)
+    FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE(all_scores_to_filt_ch.join(dist_ranges_ch), long_dist, medium_dist, short_dist, outdir_ch)
     //  Join filtered scored EX matches
     filterscore_per_joining_ch = FILTER_AND_SELECT_BEST_EX_MATCHES_BY_TARGETGENE.out.filterscore_per_joining
     JOIN_FILTERED_EX_MATCHES(filterscore_per_joining_ch.collect())
@@ -33,7 +34,8 @@ workflow SCORE {
     filtered_all_scores = JOIN_FILTERED_EX_MATCHES.out.filtered_all_scores
     // Sic: https://nextflow-io.github.io/patterns/optional-input/
     if ( bonafide_pairs ) {
-        COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, bonafide_pairs)
+        bonafide_pairs_ch = Channel.fromPath(bonafide_pairs, checkIfExists: true).collect()
+        COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, bonafide_pairs_ch)
     } else {
         COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, Channel.fromPath("/path/to/NO_FILE").collect())
     }
