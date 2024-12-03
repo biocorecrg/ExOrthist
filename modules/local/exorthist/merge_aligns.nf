@@ -4,14 +4,11 @@ process MERGE_PROT_EX_INT_ALN_INFO {
 
     stageInMode 'copy'
 
-    publishDir "${outdir}", mode: "copy", pattern: "${comp_id}/all_*_aln_features.txt"
-    publishDir "${outdir}", mode: "copy", pattern: "${comp_id}/EXINT_aln.gz"
-
     input:
     tuple val(comp_id), path("FOLDERS_*"), path("*")
-    path outdir
 
     output:
+    // TODO: We should only publish certain files, not all directory
     tuple val(comp_id), path("${comp_id}/"), emit: folder_jscores
     path "${comp_id}/all_*_aln_features.txt", emit: aln_features
     path "${comp_id}/EXINT_aln.gz", emit: exint_aln
@@ -23,5 +20,6 @@ process MERGE_PROT_EX_INT_ALN_INFO {
     mv realigned_* ${comp_id}/
 
     B4_merge_PROT_EX_INT_aln_info.pl ${comp_id}
+    rmdir FOLDERS_
     """
 }

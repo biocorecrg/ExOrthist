@@ -35,7 +35,6 @@ workflow MAIN {
         params.short_dist,
         params.alignmentnum,
         params.prevaln,
-        params.output,
         nofile
     )
 
@@ -47,7 +46,6 @@ workflow MAIN {
         params.long_dist,
         params.medium_dist,
         params.short_dist,
-        params.output,
         nofile
     )
 

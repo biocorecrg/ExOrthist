@@ -16,7 +16,6 @@ workflow ALIGN {
     short_dist
     alignmentnum
     prevaln
-    outdir
     nofile
 
     main:
@@ -48,9 +47,7 @@ workflow ALIGN {
     realigned_exons_4_merge = REALIGN_EX_PAIRS.out.realigned_exons_4_merge
     data_4_merge = aligned_subclusters_4_splitting.groupTuple().join(realigned_exons_4_merge.groupTuple())
     // Merge alignments information
-    // TODO: Outdir approach should be eventually changed
-    outdir_ch = Channel.fromPath(outdir, checkIfExists: true).collect()
-    MERGE_PROT_EX_INT_ALN_INFO(data_4_merge, outdir_ch)
+    MERGE_PROT_EX_INT_ALN_INFO(data_4_merge)
 
     emit:
     folder_jscores = MERGE_PROT_EX_INT_ALN_INFO.out.folder_jscores

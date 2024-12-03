@@ -2,11 +2,11 @@ process SCORE_EX_MATCHES {
     tag { comp_id }
     label 'big_mem'
 
-    storeDir "${outdir}/${comp_id}"
+    // TODO: This needs to be changed once new publish approach
+    storeDir "${params.output}/${comp_id}"
 
     input:
     tuple val(comp_id), path("*")
-    path outdir
 
     output:
     path "all_PROT_EX_INT_aln_features_*", emit: all_features
