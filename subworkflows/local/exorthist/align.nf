@@ -17,6 +17,7 @@ workflow ALIGN {
     alignmentnum
     prevaln
     outdir
+    nofile
 
     main:
 
@@ -25,7 +26,7 @@ workflow ALIGN {
     if (prevaln) {
         prevaln_ch = Channel.fromPath(prevaln, type: 'dir', checkIfExists: true).collect()
     } else {
-        prevaln_ch = Channel.fromPath("/path/to/NO_FILE").collect()
+        prevaln_ch = Channel.fromPath(nofile).collect()
     }
 
     // the last argument is the protein similarity alignment.

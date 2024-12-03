@@ -5,6 +5,9 @@ include { CLUSTER } from "${LOCAL_SUBWORKFLOWS}/cluster.nf"
 include { PREPARE } from "${LOCAL_SUBWORKFLOWS}/prepare.nf"
 include { SCORE } from "${LOCAL_SUBWORKFLOWS}/score.nf"
 
+def blosum = "${projectDir}/files/blosum62.txt"
+// https://nextflow-io.github.io/patterns/optional-input/
+def nofile = "${projectDir}/files/NO_FILE"
 
 workflow MAIN {
 
@@ -19,11 +22,12 @@ workflow MAIN {
         params.medium_dist,
         params.short_dist,
         params.extraexons,
-        params.alignmentnum
+        params.alignmentnum,
+        nofile
     )
 
     ALIGN(
-        "${projectDir}/files/blosum62.txt",
+        blosum,
         PREPARE.out.alignment_input,
         PREPARE.out.clusters_split_ch,
         params.long_dist,
@@ -31,7 +35,8 @@ workflow MAIN {
         params.short_dist,
         params.alignmentnum,
         params.prevaln,
-        params.output
+        params.output,
+        nofile
     )
 
     SCORE(
@@ -42,7 +47,8 @@ workflow MAIN {
         params.long_dist,
         params.medium_dist,
         params.short_dist,
-        params.output
+        params.output,
+        nofile
     )
 
     CLUSTER(
@@ -50,7 +56,8 @@ workflow MAIN {
         PREPARE.out.clusters_split_ch,
         params.cluster,
         params.orthopairs,
-        params.orthogroupnum
+        params.orthogroupnum,
+        nofile
     )
 
     emit:

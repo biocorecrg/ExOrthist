@@ -17,6 +17,7 @@ workflow PREPARE {
     short_dist
     extraexons
     alignmentnum
+    nofile
 
     main:
 
@@ -66,7 +67,7 @@ workflow PREPARE {
     } else {
         // Sic: https://nextflow-io.github.io/patterns/optional-input/
         data_to_annotation.map { entry ->
-            entry.add(['/path/to/NO_FILE'])
+            entry.add([nofile])
         }
         // data_to_annotation.view()
         GENERATE_ANNOTATIONS(data_to_annotation)

@@ -16,6 +16,7 @@ workflow SCORE {
     medium_dist
     short_dist
     outdir
+    nofile
 
     main:
 
@@ -37,7 +38,7 @@ workflow SCORE {
         bonafide_pairs_ch = Channel.fromPath(bonafide_pairs, checkIfExists: true).collect()
         COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, bonafide_pairs_ch)
     } else {
-        COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, Channel.fromPath("/path/to/NO_FILE").collect())
+        COLLAPSE_OVERLAPPING_MATCHES(filtered_all_scores, Channel.fromPath(nofile).collect())
     }
 
     emit:

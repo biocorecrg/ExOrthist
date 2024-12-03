@@ -14,6 +14,7 @@ workflow CLUSTER {
     clusterfile
     orthopairs
     orthogroupnum
+    nofile
 
     main:
 
@@ -21,7 +22,7 @@ workflow CLUSTER {
     if (orthopairs) {
         orthopairs_ch = Channel.fromPath(orthopairs, checkIfExists: true).collect()
     } else {
-        orthopairs_ch = Channel.fromPath("/path/to/NO_FILE").collect()
+        orthopairs_ch = Channel.fromPath(nofile).collect()
     }
 
     FORMAT_EX_CLUSTERS_INPUT(score_exon_hits_pairs, clusterfile_ch, orthogroupnum)
