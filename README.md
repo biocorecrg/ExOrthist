@@ -118,10 +118,10 @@ NXF_VER=24.10.0 nextflow run main.nf [-profile docker | -profile singularity | .
 
 There are also several profiles available for different institutions or systems (source: [nf-core configs](https://github.com/nf-core/configs/tree/master/conf)). Example:
 
-````bash
+```bash
 NXF_VER=24.10.0 nextflow run main.nf -profile crg -bg > log.txt
 
-`
+```
 
 If the pipeline crashes at any step, it can be re-launched using the -resume option (- not --):
 
