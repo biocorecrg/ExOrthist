@@ -131,7 +131,7 @@ NXF_VER=24.10.0 nextflow run main.nf -bg -resume > log.txt
 
 #### Test run
 
-The ExOrthist repository includes a folder named **test** containing all the input files necessary for a test run. The relative configuration files (`nextflow.config` and `params.config`) are also provided, and can be used as templates for customized runs.
+The ExOrthist repository includes a folder named **test** containing all the input files necessary for a test run. The relative configuration files (`nextflow.config` and `params.yaml`) are also provided and can be used as templates for customized runs.
 
 The test run will extract the exon orthology for 37 gene orthogroups shared between hg38 (_human_), mm10 (_mouse_) and bosTau9 (_cow_) selected from a [Broccoli](https://github.com/rderelle/Broccoli) run. In order to familiarize yourself with ExOrthist main output, simply run the following code from the ExOrthist-master directory:
 
@@ -139,13 +139,13 @@ The test run will extract the exon orthology for 37 gene orthogroups shared betw
 NXF_VER=24.10.0 nextflow run main.nf [-profile docker | -profile singularity | ... ] > test_log.txt
 ```
 
-ExOrthist will save all outputs in the **output_test** directory. All inputs and outputs are explained in details in the following sections.
+ExOrthist will save all outputs in the **output_test** directory. The following sections explain all inputs and outputs in detail.
 
 ### Inputs
 
 #### params.yaml file
 
-A `params.yaml` file with the default test values is provided in the root directory. This can be used as a template for generating a file with your own custom parameters.
+The root directory provides a `params.yaml` file with the default test values. This file can be used as a template for generating a file with your own custom parameters.
 
 To use that custom values, `-params-file` can be used as below:
 
@@ -153,7 +153,7 @@ To use that custom values, `-params-file` can be used as below:
 NXF_VER=24.10.0 nextflow run main.nf [-profile docker | -profile singularity | ... ] -bg -params-file my_params.yaml > my_test.txt
 ```
 
-Alternatively, the arguments in the `params.yaml` can be specified as independent command line flags (use: `--`). The command line-provided values overwrite the default ones.
+Alternatively, the arguments in the `params.yaml` can be specified as independent command-line flags (use: `--`). The command-line provided values overwrite the default ones.
 
 #### Required inputs
 
@@ -173,7 +173,7 @@ mm10_annot.gtf
 bosTau9_annot.gtf
 ```
 
-**--cluster**: a tsv file containing gene orthogroups with the following format: ClusterID SpeciesID GeneID. The SpeciesID must match the prefixes of --genomes and --annotations. All genes represented in the gene orthogroups should be protein-coding genes present in the provided GTF annotations. Else, ExOrthist will create warnings at different steps. The file can be compressed (.gz). Example:
+**--cluster**: a tsv file containing gene orthogroups with the following format: ClusterID SpeciesID GeneID. The SpeciesID must match the prefixes of --genomes and --annotations. All genes represented in the gene orthogroups should be protein-coding genes present in the provided GTF annotations. Otherwise, ExOrthist will create warnings at different steps. The file can be compressed (.gz). Example:
 
 ```
 GF000001	hg38    ENSG00000151690
@@ -235,7 +235,7 @@ HsaEX0000064	ENSG00000258498	chr14:101558633-101558834	chr14:101559800-101560025
 HsaEX0000091	ENSG00000137871	chr15:56917065-56917212	chr15:56917540-56918571	chr15:56890014-56890167
 ```
 
-**NB**: The ExonIDs reported in this example are the vastID of exons quantified by [vast-tools](https://github.com/vastgroup/vast-tools). However, the ExonID column accept any kind of identifier. In case an "official" identifier is missing, simply assign a numerical ID (e.g. 1,2,3 etc).  
+**NB**: The ExonIDs reported in this example are the vastID of exons quantified by [vast-tools](https://github.com/vastgroup/vast-tools). However, the ExonID column accepts any kind of identifier. In case an "official" identifier is missing, simply assign a numerical ID (e.g. 1,2,3, etc.).  
 **NB1**: ExOrthist differentiates between C1 (upstream) and C2 (downstream) based on the strand, exactly as defined in transcription. In contrast, programs like rMATS ignore strand information and always report neighboring exons following the (+) strand definition of upstream (C1) and downstream (C2).  
 For the extraexon table, make sure that the exon coordinates satisfy these statements:
 
@@ -266,7 +266,7 @@ ENSG00000189129 ENSMUSG00000094800
 ENSG00000167863 ENSMUSG00000034566
 ```
 
-**--prevaln:** path to the output folder of a previous ExOrthist `main.nf` run. If this argument is provided, the previously generated protein alignments are integrated in the current run. Only the alignments between newly introduced proteinID pairs (for previously run species pairs) or extra species pairs will be generated _de novo_ [[see Algorithm, section B](#b-pairwise-alignments-and-feature-extraction)].
+**--prevaln:** path to the output folder of a previous ExOrthist `main.nf` run. If this argument is provided, the previously generated protein alignments are integrated into the current run. Only the alignments between newly introduced proteinID pairs (for previously run species pairs) or extra species pairs will be generated _de novo_ [[see Algorithm, section B](#b-pairwise-alignments-and-feature-extraction)].
 
 Pre-computed protein alignments for various pairs of species have been generated using ExOrthist v1.0.0 and can be downloaded from the links below.
 Species annotations: hg38: Ensembl v88, mm10: Ensembl v88, danRer11: Ensembl v99, dm6: Ensembl Metazoa: v26.
@@ -328,7 +328,7 @@ ExOrthist is also able to consider non-annotated exons in the orthology inferenc
 - **FakeTranscripts-${species}-vB.gtf**: GTF file where a fake transcript for each of the not-annotated exons is introduced. ExOrthist first maps the upstream and downstream exons (which must be provided in the input) to the annotated transcripts. When both exons exactly match the same transcript, this becomes the template of the fake transcript to which the non-annotated exon is added; otherwise, ExOrthist uses partial matches of the upstream or downstream exon to identify the template transcript. ExOrthist prioritizes fake transcripts where both the matching upstream and downstream exons are coding exons.
 - **LOG_FakeTranscripts-${species}-vB.tab**: it contains info of the mapping of non-annotated exons to the relative fake transcript.
 
-ExOrthist provides the possibility to subset the exon orthology files based on reclustering information. This step is performed when a file with orthologous pairs from all species pairwise combinations is provided with the **--orthopairs argument** [[see Facultative inputs](#facultative-inputs)]. In that case, an extra "reclustering"" folder is saved to the output folder directory, with the following files:  
+ExOrthist provides the possibility to subset the exon orthology files based on reclustering information. This step is performed when a file with orthologous pairs from all species pairwise combinations is provided with the **--orthopairs argument** [[see Facultative inputs](#facultative-inputs)]. In that case, an extra "reclustering"" folder is saved to the output folder directory with the following files:  
 **output/reclustering/:**
 
 - **reclustered*genes*${species_pair}.tab**: orthogroups reclustered according to species pairwise orthologs.
@@ -338,11 +338,11 @@ ExOrthist provides the possibility to subset the exon orthology files based on r
 
 ExOrthist infers exon orthology groups within gene orthogroups (or clusters) provided as input (e.g. generated by [Orthofinder](https://github.com/davidemms/OrthoFinder), [Broccoli](https://github.com/rderelle/Broccoli) or similar tools) for all the species for which annotation (GTF) and genomic (fasta) files are provided [[see Inputs](#inputs) for details].
 
-ExOrthist starts by creating files with annotation information for all the considered species [[see Algorithm, section A](#a-input-generation)]. It next works by species pairs (species1-species2) and within gene orthogroups, generating **Intron Position Aware (IPA)** protein alignments for all isoforms in species1 vs all isoforms in species2. Considering species1 as query and species 2 as target (and vice versa), ExOrthist extracts **alignment features** at the protein, exon and intron level [[see Algorithm, section B](#b-pairwise-alignments-and-feature-extraction)]. For each query exon, the best exon match in each target isoform is selected based on sequence similarity.
+ExOrthist starts by creating files with annotation information for all the considered species [[see Algorithm, section A](#a-input-generation)]. Next, it works by species pairs (species1-species2) and within gene orthogroups, generating **Intron Position Aware (IPA)** protein alignments for all isoforms in species1 vs all isoforms in species2. Considering species1 as query and species 2 as target (and vice versa), ExOrthist extracts **alignment features** at the protein, exon and intron level [[see Algorithm, section B](#b-pairwise-alignments-and-feature-extraction)]. For each query exon, the best exon match in each target isoform is selected based on sequence similarity.
 
 All extracted features are translated into partial scores used to infer **pairwise exon homologous relationships**. In particular, ExOrthist considers five partial scores reflecting the conservation of different features of the exon-intron context: (1, 2) conservation of the immediately upstream and downstream intron positions and phases, (3) conservation of the query exon sequence and (4, 5) conservation of the immediately upstream and downstream exon sequences. Only the exon matches for which all features are above the specified conservation cutoffs will be selected as potential exon homologs. Importantly, ExOrthist sequentially evaluates the conservation of these features (1-2, 3, 4-5). Pairs of exons whose upstream and downstream intron positions and phases are not conserved will not be considered orthologs, independently of their sequence conservation. As an optional feature, ExOrthist allows to set different conservation cut-offs for short, medium and long evolutionary distances [[see Inputs](#inputs)].
 
-The sum of all partial scores gives a global score ranging from 0 to 1 and representing the overall goodness of a match. ExOrthist uses the global score to select the best exon match in a target gene for each query exon, specifically among the exon matches passing all the previous filters. The selected query exon-target gene best matches are considered as pairwise exon homologs. While the ExOrthist logic requires a query exon to match a unique exon in the target gene, each target-gene exon can potentially be matched by more query exons in the same gene. This setting captures cases of in-tandem exon duplication while preserving the information about which duplicated exon is more similar to the ancestral one [[see Algorithm, section C](#c-scoring-and-best-matches-selection)].
+The sum of all partial scores gives a global score ranging from 0 to 1 and represents the overall goodness of a match. ExOrthist uses the global score to select the best exon match in a target gene for each query exon, specifically among the exon matches passing all the previous filters. The selected query exon-target gene best matches are considered pairwise exon homologs. While the ExOrthist logic requires a query exon to match a unique exon in the target gene, each target-gene exon can potentially be matched by more query exons in the same gene. This setting captures cases of in-tandem exon duplication while preserving the information about which duplicated exon is more similar to the ancestral one [[see Algorithm, section C](#c-scoring-and-best-matches-selection)].
 
 Finally, the selected exon homologous matches for all species pairs are joined and translated in a directed graph, from which **exon orthogroups** (clusters) are inferred. ExOrthist computes a Membership Score (MS) for each exon in its relative exon cluster based on graph properties. Best reciprocal matches (i.e. a query exon is the best match of its own target exon) are taken into account in the MS computation. [[see Algorithm, section D](#d-clustering)].
 
@@ -397,7 +397,7 @@ In the end, among these pre-filtered matches, the match with the highest global 
 
 ExOrthist also allows the addition of _bona fide_ homology pairs, which will be directly integrated in the exon orthogroups inference. Such exons can be specified with the **--bonafide_pairs** flag [[see Inputs](#inputs)].
 
-To help generating a list with high confidence relationships across short evolutionary distances, ExOrthist includes a `get_liftovers.pl` script that extracts exon matches in a target species using the liftOver tool. This scripts needs annotation files (GTF) of the two considered species, the gene orthogroups file, and a [UCSC over.chain file](http://hgdownload.soe.ucsc.edu/downloads.html#liftover) to derive genome-wide exon pairs; alternatively, a list of exons from the query species can be provided.
+To help generate a list with high-confidence relationships across short evolutionary distances, ExOrthist includes a `get_liftovers.pl` script that extracts exon matches in a target species using the liftOver tool. This scripts needs annotation files (GTF) of the two considered species, the gene orthogroups file, and a [UCSC over.chain file](http://hgdownload.soe.ucsc.edu/downloads.html#liftover) to derive genome-wide exon pairs; alternatively, a list of exons from the query species can be provided.
 
 `get_liftovers.pl` parses exons at the CDS level by default (as ExOrthist), but it can work with mRNA exons if the option **--type exon** is specified. Furthermore, the script can require matches to have at least one cannonical dinucleotide using the **--canonical_ss** flag. Additional information is provided in the help message of `get_liftovers.pl`.
 
@@ -426,7 +426,7 @@ ExOrthist provides the possibility to subset the exon orthology files based on r
 
 #### Exon clusters statistics
 
-ExOrthist includes a script (`get_cluster_stats.pl`) to calculate some basic statistics on the generated exon clusters (orthogroups; OGs). This script only requires the output folder of `main.nf` as input. It consists of three related tables: a) the number of CDS exons from each species and the percent of those present in the final OGs (i.e. with at least one homolog); b) different types of OGs depending on the homology relationships (1:1, etc); and c) for those OGs in which at least one species is missing an homolog, the number of cases missed per species. Example for a genome-wide run between hg38, mm10 and bosTau9:
+ExOrthist includes a script (`get_cluster_stats.pl`) to calculate some basic statistics on the generated exon clusters (orthogroups; OGs). This script only requires the output folder of `main.nf` as input. It consists of three related tables: a) the number of CDS exons from each species and the percent of those present in the final OGs (i.e. with at least one homolog); b) different types of OGs depending on the homology relationships (1:1, etc); and c) for those OGs in which at least one species is missing a homolog, the number of cases missed per species. Example for a genome-wide run between hg38, mm10 and bosTau9:
 
 ```
 perl ~/ExOrthist/bin/GetStatsExonsClusters.pl --main_output hg38_mm10_bosTau9-test/
@@ -465,8 +465,6 @@ The `exint plotter` module allows to visualize conservation/changes in the exon-
 nextflow run main.nf --wf plot [-with-docker | -with-singularity] -bg > exint_plotter_log.txt
 ```
 
-**NB**: the pipeline will by default run with the -with-singularity option. In order to run it with the -with-docker option, please set `singularity.enabled = false` in the nextflow.config file (default: `singularity.enabled = true`).
-
 #### Test run
 
 After running ExOrthist `main.nf` module on the test set provided in this github repository [see [above](#test-run)], it will be possible to perform a test run of the `exint_plotter` workflow.  
@@ -477,7 +475,7 @@ To get acquainted with the `exint_plotter` output, simply run the following comm
 nextflow run main.nf --wf plot [-profile docker | -profile singularity | ... ] > plot_test_log.txt
 ```
 
-By default, ExOrthist will save a pdf file containing the exint plot in the **output_plot** directory (the expected output is shown in the [Plot structure](#output) section). All inputs and outputs are explained in details in the following sections.
+By default, ExOrthist will save a PDF file containing the exint plot in the **output_plot** directory (the expected output is shown in the [Plot structure](#output) section). The following sections explain all inputs and outputs in detail.
 
 ## Inputs:
 
@@ -491,7 +489,7 @@ To use that custom values, `-params-file` can be used as below:
 NXF_VER=24.10.0 nextflow run main.nf [-profile docker | -profile singularity | ... ] --wf plot -bg -params-file my_params.yaml > my_test.txt
 ```
 
-Alternatively, the arguments in the `params.yaml` can be specified as independent command line flags (use: `--`). The command line-provided values overwrite the default ones.
+Alternatively, the arguments in the `params.yaml` can be specified as independent command-line flags (use: `--`). The command-line provided values overwrite the default ones.
 
 ### Required inputs
 
@@ -501,14 +499,14 @@ Alternatively, the arguments in the `params.yaml` can be specified as independen
 
 ### Facultative inputs
 
-**--ordered_species**: a comma separated list of speciesID, specifying the vertical order (top-bottom) of the species in the plot. The query gene is always printed on top. If not provided, the order of the species will be derived from the gene cluster file in the **--output** directory (**gene_cluster_file.gz**). Example:
+**--ordered_species**: a comma-separated list of speciesID, specifying the vertical order (top-bottom) of the species in the plot. The query gene is always printed on top. If not provided, the order of the species will be derived from the gene cluster file in the **--output** directory (**gene_cluster_file.gz**). Example:
 
 ```
 --ordered_species "hg38,mm10,bosTau9"
 ```
 
 **--sub_orthologs**: subset of the **gene_cluster_file.gz** in **--output**, with a selection of homologs of **--geneID** to be plotted.  
-**--relevant_exs**: comma separated list of coordinates (chr:start-stop) of query gene exons (**NB:** coordinates must match the CDS portion of the exon), which will be highlighted in the plot with different colors. All homologous exons in the target genes will be highlighted with the same color. This feature is useful to quickly visualize the conservation of one/few exons of interest. Example:
+**--relevant_exs**: comma-separated list of coordinates (chr:start-stop) of query gene exons (**NB:** coordinates must match the CDS portion of the exon), which will be highlighted in the plot with different colors. All homologous exons in the target genes will be highlighted with the same color. This feature is useful to quickly visualize the conservation of one/few exons of interest. Example:
 
 ```
 --relevant_exs ""chr21:32274830-32274896""
@@ -522,7 +520,7 @@ ExOrthist saves the exint plot in a pdf file containing the query geneID (e.g EN
 
 ### Plot structure
 
-Homologous genes are plotted on parallel horizontal axis. Exons are illustrated as gray rectangles. The query gene is plotted on top of the others, with all its exons represented with the sequential genomic order and relative exon length. Exons in the target genes are vertically aligned to their homologous exon in the query species.  
+Homologous genes are plotted on a parallel horizontal axis. Exons are illustrated as gray rectangles. The query gene is plotted on top of the others, with all its exons represented with the sequential genomic order and relative exon length. Exons in the target genes are vertically aligned to their homologous exon in the query species.  
 The following plot is the one returned by the `exint_plotter.nf` test run:
 
 <br />
@@ -533,7 +531,7 @@ The following plot is the one returned by the `exint_plotter.nf` test run:
 
 - **Not-annotated** exons (given as facultative input to main.nf, **--extraexons** argument, [[see Facultative inputs](#facultative-inputs)]) are represented as white boxes.
 - When **more target exons** are homologs of the same query exon, they are represented by a single rectangle. The total number of target exons is reported in the rectangle.
-- When target exons are **not orthologs** of any query exons, they are represented as smaller rectangles in the relative genomic position (i.e. directly downstream of the closest exon with an homolog in the query gene). The total number of target exons is reported in the rectangle.
+- When target exons are **not orthologs** of any query exons, they are represented as smaller rectangles in the relative genomic position (i.e. directly downstream of the closest exon with a homolog in the query gene). The total number of target exons is reported in the rectangle.
 - A dashed border surrounds target exons not detected as homologs of any query exons but still presenting an exon **best-hit** within the query gene. This allows to highlight exons which did not respect the conservation filters applied in the main.nf run, but present a certain degree of similarity with at least one query exon.
 - **First** and **last** exons in at least one isoform are represented by symmetric triangles.
 - Exons in the query gene taken from the **--relevant_exs** argument [[see Inputs](#inputs-1)] (and their homologs) are highlighted with different colors.
@@ -575,12 +573,12 @@ The following scheme highlights all different conservation scenarios:
 
 <img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/Compare_exon_sets_A-01.png" width=700 height=550 />
 
-Moreover, for all regulated exons in both species that fall in orthologous genes, `compare_exon_sets.pl` will perform a pairwise comparison to define whether the pair of exons are: (i) R-conserved; (ii) best exon matches (even if they do not fulfill all the conditions required, see [XXXX]()); (iii) non-orthologous, when it can be confidently determined that the two exons fall in different regions of the proteins; or (iv) unclear, when neither of this can be determine confidently. The different scenarios and sub-scenarios are summarized in the following figure:
+Moreover, for all regulated exons in both species that fall in orthologous genes, `compare_exon_sets.pl` will perform a pairwise comparison to define whether the pair of exons are: (i) R-conserved; (ii) best exon matches (even if they do not fulfill all the conditions required, see [XXXX]()); (iii) non-orthologous, when it can be confidently determined that the two exons fall in different regions of the proteins; or (iv) unclear, when neither of this can be determined confidently. The different scenarios and sub-scenarios are summarized in the following figure:
 <br />
 
 <img align="middle" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/Compare_exon_sets_B-01.png" />
 
-`compare_exon_sets.pl` run on two exon sets by default provides two kind of outputs: **(1)** the summary statistics, which are printed to standard output and **(2)** a graphical output, saved in a file named **Compare_exons_summary-sp1-sp2.pdf** in the working directory. Moreover, the flag **--print_out** allows to generate two extra files containing the output of the pairwise comparison: **OrthoGenes_with_reg_exons-sp1-sp2.tab** and **Conserved_exons-sp1-sp2.tab**, which contain the information about each exon as well as the result of the exon orthology test.
+`compare_exon_sets.pl` run on two exon sets by default provides two kinds of outputs: **(1)** the summary statistics, which are printed to standard output and **(2)** a graphical output, saved in a file named **Compare_exons_summary-sp1-sp2.pdf** in the working directory. Moreover, the flag **--print_out** allows to generate two extra files containing the output of the pairwise comparison: **OrthoGenes_with_reg_exons-sp1-sp2.tab** and **Conserved_exons-sp1-sp2.tab**, which contain the information about each exon as well as the result of the exon orthology test.
 
 **(1)** Example output text of the summary statistics:
 
