@@ -24,6 +24,7 @@ process MERGE_PROT_EX_INT_ALN_INFO {
 
     B4_merge_PROT_EX_INT_aln_info.pl ${comp_id}
     # We don't publish part files
+    mkdir -p FOLDERS_
     mv ${comp_id}/*part_* FOLDERS_/
     """
 }
