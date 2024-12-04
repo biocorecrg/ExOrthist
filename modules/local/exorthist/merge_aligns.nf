@@ -4,6 +4,9 @@ process MERGE_PROT_EX_INT_ALN_INFO {
 
     stageInMode 'copy'
 
+    // TODO: This needs to be changed once new publish approach
+    publishDir "${params.output}", mode: params.publish_dir_mode, pattern: "${comp_id}"
+
     input:
     tuple val(comp_id), path("FOLDERS_*"), path("*")
 
@@ -20,6 +23,7 @@ process MERGE_PROT_EX_INT_ALN_INFO {
     mv realigned_* ${comp_id}/
 
     B4_merge_PROT_EX_INT_aln_info.pl ${comp_id}
-    rmdir FOLDERS_
+    # We don't publish part files
+    mv ${comp_id}/*part_* FOLDERS_/
     """
 }
