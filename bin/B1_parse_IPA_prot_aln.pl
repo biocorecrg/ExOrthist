@@ -787,8 +787,8 @@ sub score_introns {
 		for ($f=$pa1; $f<$pa2; $f++){
 		    if ($seq1[$f]=~/[A-Z]/ && $seq2[$f]=~/[A-Z]/){
 			$np++;	
-			if ($sim{$seq1[$f].$seq2[$f]}){	
-			    $simfr+=$sim{$seq1[$f].$seq2[$f]};
+			if ($sim{$seq1[$f].$seq2[$f]} || $seq1[$f] eq $seq2[$f]){	
+			    $simfr+=1;
 			}			
 		    }
 		    if ($seq1[$f] eq "-" || $seq2[$f] eq "-"){
