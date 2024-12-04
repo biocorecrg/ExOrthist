@@ -10,6 +10,10 @@
 
 ## Pipeline tools
 
+- [Mafft](https://pubmed.ncbi.nlm.nih.gov/23329690/)
+
+  > Katoh K, Standley DM. MAFFT multiple sequence alignment software version 7: improvements in performance and usability. Mol Biol Evol. 2013 Apr;30(4):772-80. doi: 10.1093/molbev/mst010. Epub 2013 Jan 16. PMID: 23329690; PMCID: PMC3603318.
+
 ## Software packaging/containerisation tools
 
 - [BioContainers](https://pubmed.ncbi.nlm.nih.gov/28379341/)
