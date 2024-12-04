@@ -12,7 +12,7 @@ pdf_document: default
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Nextflow version](https://img.shields.io/badge/Nextflow-24.10.0-brightgreen)](https://www.nextflow.io/)
 [![Singularity version](https://img.shields.io/badge/Singularity-v3.2.1-green.svg)](https://www.sylabs.io/)
-[![Docker version](https://img.shields.io/badge/Docker-v19.03-blue)](https://www.docker.com/)
+[![Docker version](https://img.shields.io/badge/Docker-v27.3-blue)](https://www.docker.com/)
 
 <!--
 <img align="middle" href="https://github.com/biocorecrg/exon_intron_orthology_pipeline" src="https://github.com/biocorecrg/exon_intron_orthology_pipeline/blob/master/docs/logo_s.png?raw=true" />
