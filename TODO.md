@@ -1,2 +1,3 @@
 - Add stub to modules (optional)
 - Include colors into the terminal messages (optional)
+- Migrate to new publishDir approach with new versions
