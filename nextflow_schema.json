@@ -1,0 +1,284 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/biocorecrg/ExOrthist/master/nextflow_schema.json",
+  "title": "biocorecrg/ExOrthist pipeline parameters",
+  "description": "ExOrthist is a Nextflow-based pipeline to obtain groups of exon orthologous at all evolutionary timescales.",
+  "type": "object",
+  "$defs": {
+    "generic_options": {
+      "title": "Generic Options",
+      "type": "object",
+      "fa_icon": "fas fa-file-import",
+      "description": "Less common options for the pipeline, typically set in a config file.",
+      "properties": {
+        "wf": {
+          "type": "string",
+          "description": "Workflow to be run, by default the main one. Alternative is plot",
+          "default": "main"
+        },
+        "publish_dir_mode": {
+          "type": "string",
+          "default": "copy",
+          "description": "Method used to save pipeline results to output directory.",
+          "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
+          "fa_icon": "fas fa-copy",
+          "enum": [
+            "symlink",
+            "rellink",
+            "link",
+            "copy",
+            "copyNoFollow",
+            "move"
+          ],
+          "hidden": true
+        },
+        "validate_params": {
+          "type": "boolean",
+          "description": "Boolean whether to validate parameters against the schema at runtime",
+          "default": true,
+          "fa_icon": "fas fa-check-square",
+          "hidden": true
+        }
+      }
+    },
+    "input_output_options": {
+      "title": "Input/Output Options",
+      "type": "object",
+      "fa_icon": "fas fa-terminal",
+      "description": "Define where the pipeline should find input data and save output data.",
+      "required": [
+        "annotations",
+        "genomes",
+        "cluster",
+        "output"
+      ],
+      "properties": {
+        "annotations": {
+          "type": "string",
+          "description": "Path to GTF annotation files",
+          "format": "file-path-pattern",
+          "default": "${projectDir}/test/GTF/*_annot-subsetted.gtf.gz"
+        },
+        "genomes": {
+          "type": "string",
+          "description": "Path to fasta genome files",
+          "format": "file-path-pattern",
+          "default": "${projectDir}/test/GENOMES/*_gDNA-subsetted.fasta.gz"
+        },
+        "cluster": {
+          "type": "string",
+          "description": "Path to cluster file (txt files)",
+          "format": "file-path",
+          "default": "${projectDir}/test/hg38_mm10_bosTau9.tab"
+        },
+        "output": {
+          "type": "string",
+          "description": "Output folder path",
+          "format": "directory-path",
+          "default": "${projectDir}/output_test",
+          "fa_icon": "fas fa-folder-open"
+        }
+      }
+    },
+    "analysis_parameters": {
+      "title": "Analysis Parameters",
+      "type": "object",
+      "fa_icon": "fas fa-map-signs",
+      "required": [
+        "evodists",
+        "long_dist",
+        "medium_dist",
+        "short_dist"
+      ],
+      "properties": {
+        "evodists": {
+          "type": "string",
+          "description": "Path to a file with pairwise evolutionary distances",
+          "format": "file-path",
+          "default": "${projectDir}/test/evodists.txt"
+        },
+        "long_dist": {
+          "type": "string",
+          "description": "Long distance parameters",
+          "default": "2,0.10,0.40,0.15"
+        },
+        "medium_dist": {
+          "type": "string",
+          "description": "Medium distance parameters",
+          "default": "2,0.30,0.60,0.20"
+        },
+        "short_dist": {
+          "type": "string",
+          "description": "Short distance parameters",
+          "default": "2,0.50,0.60,0.25"
+        },
+        "alignmentnum": {
+          "type": "integer",
+          "description": "Alignment number",
+          "default": 1000
+        },
+        "orthogroupnum": {
+          "type": "integer",
+          "description": "Orthogroup number",
+          "default": 500
+        }
+      }
+    },
+    "additional_data": {
+      "title": "Additional Data",
+      "type": "object",
+      "fa_icon": "fas fa-terminal",
+      "properties": {
+        "extraexons": {
+          "type": "string",
+          "description": "Extra exons (e.g. from VastDB)",
+          "format": "file-path-pattern"
+        },
+        "bonafide_pairs": {
+          "type": "string",
+          "description": "Bona fide orthologous exon pairs",
+          "format": "file-path"
+        },
+        "orthopairs": {
+          "type": "string",
+          "description": "Orthopairs",
+          "format": "file-path"
+        },
+        "prevaln": {
+          "type": "string",
+          "description": "Pre-computed alignments",
+          "format": "directory-path"
+        }
+      }
+    },
+    "plot_parameters": {
+      "title": "Plot Parameters",
+      "type": "object",
+      "fa_icon": "fas fa-terminal",
+      "description": "Specific parameters for generating plots",
+      "default": "",
+      "properties": {
+        "geneID": {
+          "type": "string",
+          "description": "Gene ID",
+          "default": "ENSG00000159055"
+        },
+        "ordered_species": {
+          "type": "string",
+          "description": "List of ordered species, separated by commas",
+          "default": "hg38,mm10,bosTau9"
+        },
+        "relevant_exs": {
+          "type": "string",
+          "description": "Relevant exons",
+          "default": "chr21:32274830-32274896"
+        },
+        "isoformID": {
+          "type": "string",
+          "description": "Isoform ID",
+          "default": "ENSP00000290130"
+        },
+        "sub_orthologs": {
+          "type": "string",
+          "description": "File with sub-orthologs information",
+          "format": "file-path"
+        },
+        "output_plot": {
+          "type": "string",
+          "description": "Path where to store resulting plot",
+          "format": "directory-path",
+          "default": "${projectDir}/output_plot"
+        }
+      }
+    },
+    "institutional_config_options": {
+      "title": "Institutional config options",
+      "type": "object",
+      "fa_icon": "fas fa-university",
+      "description": "Parameters used to describe centralised config profiles. These should not be edited.",
+      "help_text": "The centralised nf-core configuration profiles use a handful of pipeline parameters to describe themselves. This information is then printed to the Nextflow log when you run a pipeline. You should not need to change these values when you run a pipeline.",
+      "properties": {
+        "custom_config_version": {
+          "type": "string",
+          "description": "Git commit id for Institutional configs.",
+          "default": "master",
+          "hidden": true,
+          "fa_icon": "fas fa-users-cog"
+        },
+        "custom_config_base": {
+          "type": "string",
+          "description": "Base directory for Institutional configs.",
+          "default": "https://raw.githubusercontent.com/nf-core/configs/master",
+          "hidden": true,
+          "help_text": "If you're running offline, Nextflow will not be able to fetch the institutional config files from the internet. If you don't need them, then this is not a problem. If you do need them, you should download the files from the repo and tell Nextflow where to find them with this parameter.",
+          "fa_icon": "fas fa-users-cog"
+        },
+        "config_profile_name": {
+          "type": "string",
+          "description": "Institutional config name.",
+          "hidden": true,
+          "fa_icon": "fas fa-users-cog"
+        },
+        "config_profile_description": {
+          "type": "string",
+          "description": "Institutional config description.",
+          "hidden": true,
+          "fa_icon": "fas fa-users-cog"
+        },
+        "config_profile_contact": {
+          "type": "string",
+          "description": "Institutional config contact information.",
+          "hidden": true,
+          "fa_icon": "fas fa-users-cog"
+        },
+        "config_profile_url": {
+          "type": "string",
+          "description": "Institutional config URL link.",
+          "hidden": true,
+          "fa_icon": "fas fa-users-cog"
+        }
+      }
+    },
+    "notification_options": {
+      "title": "Notification Options",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Email for notification",
+          "format": "email"
+        },
+        "hook_url": {
+          "type": "string",
+          "description": "Incoming hook URL for messaging service",
+          "fa_icon": "fas fa-broadcast-tower",
+          "help_text": "Incoming hook URL for messaging service. Currently, MS Teams and Slack are supported.",
+          "hidden": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "$ref": "#/$defs/generic_options"
+    },
+    {
+      "$ref": "#/$defs/input_output_options"
+    },
+    {
+      "$ref": "#/$defs/analysis_parameters"
+    },
+    {
+      "$ref": "#/$defs/additional_data"
+    },
+    {
+      "$ref": "#/$defs/plot_parameters"
+    },
+    {
+      "$ref": "#/$defs/institutional_config_options"
+    },
+    {
+      "$ref": "#/$defs/notification_options"
+    }
+  ]
+}

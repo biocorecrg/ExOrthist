@@ -1,0 +1,62 @@
+# YAML 1.2
+---
+authors:
+  -
+    family-names: Cozzuto
+    given-names: Luca
+    orcid: "https://orcid.org/0000-0003-3194-8892"
+  -
+    family-names: Mantica
+    given-names: Federica
+    orcid: "https://orcid.org/0000-0001-9794-9770"
+  -
+    family-names: Hermoso-Pulido
+    given-names: Antonio
+    orcid: "https://orcid.org/0000-0003-2016-6465"
+cff-version: "1.2.0"
+keywords:
+  - exon
+  - orthology
+  - evolution
+  - containerization
+  - pipeline
+  - reproducibility
+license: MIT
+message: "If you use this software, please cite it using these metadata."
+repository-code: "https://github.com/biocorecrg/ExOrthist"
+title: "ExOrthist: a tool to infer exon orthologies at any evolutionary distance"
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Márquez
+      given-names: Yamile
+      orcid: "https://orcid.org/0000-0003-1686-5992"
+    - family-names: Mantica
+      given-names: Federica
+      orcid: "https://orcid.org/0000-0001-9794-9770"
+    - family-names: Cozzuto
+      given-names: Luca
+      orcid: "https://orcid.org/0000-0003-3194-8892"
+    - family-names: Burguera
+      given-names: Demian
+      orcid: "https://orcid.org/0000-0001-8627-1634"
+    - family-names: "Hermoso-Pulido"
+      given-names: Antonio
+      orcid: "https://orcid.org/0000-0003-2016-6465"
+    - family-names: Ponomarenko
+      given-names: Julia
+      orcid: "https://orcid.org/0000-0002-1477-9444"
+    - family-names: W. Roy
+      given-names: Scott
+    - family-names: Irimia
+      given-names: Manuel
+      orcid: "https://orcid.org/0000-0002-2179-2567"
+  doi: "10.1186/s13059-021-02441-9"
+  journal: "Genome Biology"
+  title: "ExOrthist: a tool to infer exon orthologies at any evolutionary distance"
+  abstract: "Several bioinformatic tools have been developed for genome-wide identification of orthologous and paralogous genes. However, no corresponding tool allows the detection of exon homology relationships. Here, we present ExOrthist, a fully reproducible Nextflow-based software enabling inference of exon homologs and orthogroups, visualization of evolution of exon-intron structures, and assessment of conservation of alternative splicing patterns. ExOrthist evaluates exon sequence conservation and considers the surrounding exon-intron context to derive genome-wide multi-species exon homologies at any evolutionary distance. We demonstrate its use in different evolutionary scenarios: whole genome duplication in frogs and convergence of Nova-regulated splicing networks (https://github.com/biocorecrg/ExOrthist)."
+  year: 2021
+  volume: 22
+  number: 1
+  issn: 1474-760X
+...
