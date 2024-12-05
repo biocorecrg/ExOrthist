@@ -163,6 +163,7 @@ workflow PLOT {
             geneID,
             outdir_ch
         )
+        isoform_interesting_exs = GET_ISOFORM_EXONS.out.isoform_interesting_exs
     } else {
         isoform_interesting_exs = Channel.from("None")
     }
@@ -174,7 +175,7 @@ workflow PLOT {
         ordered_target,
         relevant_exons,
         gene_clusters,
-        GET_ISOFORM_EXONS.out.isoform_interesting_exs,
+        isoform_interesting_exs,
         plot_input
     )
 
