@@ -154,16 +154,17 @@ workflow PLOT {
     }
 
     if (isoformID) {
-      GET_ISOFORM_EXONS(
-        isoformID,
-        GENERATE_FAKE_COORDS_TABLE.out.ExNum_number_in_isoform
-            .join(SUBSET_INPUT_FILES.out.overlap_info_4_isoforms)
-            .join(ISOLATE_QUERY_SPECIES.out.query_species),
-        geneID,
-        outdir
-      )
+        outdir_ch = Channel.fromPath(outdir, checkIfExists: true).collect()
+        GET_ISOFORM_EXONS(
+            isoformID,
+            GENERATE_FAKE_COORDS_TABLE.out.ExNum_number_in_isoform
+                .join(SUBSET_INPUT_FILES.out.overlap_info_4_isoforms)
+                .join(ISOLATE_QUERY_SPECIES.out.query_species),
+            geneID,
+            outdir_ch
+        )
     } else {
-      isoform_interesting_exs = Channel.from("None")
+        isoform_interesting_exs = Channel.from("None")
     }
     //Rscript to actually make the plot
 
