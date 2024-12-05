@@ -8,6 +8,7 @@ include { PLOT_EXINT } from "${LOCAL_MODULES}/plot.nf"
 include { SELECT_SPECIES_WITH_ORTHOLOGS } from "${LOCAL_MODULES}/select_species.nf"
 include { SUBSET_BEST_HITS } from "${LOCAL_MODULES}/subset_best.nf"
 include { SUBSET_INPUT_FILES } from "${LOCAL_MODULES}/subset_input.nf"
+include { DERIVE_ORDERED_SPECIES } from "${LOCAL_MODULES}/derive_species.nf"
 
 workflow PLOT {
     take:
@@ -141,7 +142,7 @@ workflow PLOT {
     }
     else {
         all_species = Channel
-          .fromFilePairs(annotations, size: 1)
+          .fromFilePairs(annotations_path, size: 1)
           .map{"${it[0]}".toString()}.flatMap().collect().map{it -> it.join(",")}
 
         DERIVE_ORDERED_SPECIES(
